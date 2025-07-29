@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'export',
-  basePath: "terminal-tones",
+  basePath: "/terminal-tones",
   /**
    * Disable server-based image optimization. Next.js does not support
    * dynamic features with static exports.
