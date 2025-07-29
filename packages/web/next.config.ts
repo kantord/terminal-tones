@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 
-export const BASE_PATH = "/terminal-tones"
+export const BASE_PATH =
+  process.env.NODE_ENV === "development" ? "" : "/terminal-tones"
 
 const nextConfig: NextConfig = {
   output: 'export',
