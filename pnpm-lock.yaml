@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  packages/web:
     dependencies:
       next:
         specifier: 15.4.5
