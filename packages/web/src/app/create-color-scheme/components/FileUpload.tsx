@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { extractColorsFromImage, rgbToHex, cleanupImageUrl, type RGB } from '../utils/colorExtraction';
+import { extractColorsFromImage, rgbToHex, cleanupImageUrl, type RGB } from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
