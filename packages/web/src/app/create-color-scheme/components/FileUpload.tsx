@@ -10,6 +10,8 @@ export function FileUpload() {
   const [isUploaded, setIsUploaded] = useState(false);
   const [extractedColors, setExtractedColors] = useState<RGB[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -42,6 +44,7 @@ export function FileUpload() {
   const handleFileUpload = (file: File) => {
     console.log('Processing file:', file.name);
     setIsProcessing(true);
+    setUploadedFileName(file.name);
     
     // Create a URL for the file and load it into an image
     const imageUrl = URL.createObjectURL(file);
@@ -54,14 +57,16 @@ export function FileUpload() {
         const palette = colorThief.getPalette(img, 8) as RGB[];
         
         setExtractedColors(palette);
+        setUploadedImageUrl(imageUrl); // Store the URL for display
         setIsUploaded(true);
         setIsProcessing(false);
         
-        // Clean up the object URL
-        URL.revokeObjectURL(imageUrl);
+        // Don't clean up the object URL yet - we need it for display
       } catch (error) {
         console.error('Error extracting colors:', error);
         setIsProcessing(false);
+        // Clean up on error
+        URL.revokeObjectURL(imageUrl);
         // Still show success for demo purposes
         setIsUploaded(true);
       }
@@ -70,6 +75,7 @@ export function FileUpload() {
     img.onerror = () => {
       console.error('Error loading image');
       setIsProcessing(false);
+      URL.revokeObjectURL(imageUrl);
     };
     
     img.crossOrigin = 'anonymous';
@@ -88,9 +94,16 @@ export function FileUpload() {
   };
 
   const handleReset = () => {
+    // Clean up the object URL
+    if (uploadedImageUrl) {
+      URL.revokeObjectURL(uploadedImageUrl);
+    }
+    
     setIsUploaded(false);
     setExtractedColors([]);
     setIsProcessing(false);
+    setUploadedImageUrl('');
+    setUploadedFileName('');
   };
 
   if (isProcessing) {
@@ -110,6 +123,25 @@ export function FileUpload() {
         <div className="text-2xl font-semibold text-green-600 dark:text-green-400 mb-6">
           Colorscheme generated
         </div>
+        
+        {uploadedImageUrl && (
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+              Source Image:
+            </h3>
+            <div className="flex justify-center mb-2">
+              <img
+                src={uploadedImageUrl}
+                alt="Uploaded image"
+                className="max-w-xs max-h-64 rounded-lg shadow-md border border-gray-200 dark:border-gray-600"
+                data-testid="uploaded-image"
+              />
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {uploadedFileName}
+            </p>
+          </div>
+        )}
         
         {extractedColors.length > 0 && (
           <div className="mb-8">

@@ -75,4 +75,34 @@ test('extracts and displays colors from uploaded image', async ({ page }) => {
   );
   expect(backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   expect(backgroundColor).not.toBe('');
+});
+
+test('displays uploaded image alongside extracted colors', async ({ page }) => {
+  await page.goto('/create-color-scheme');
+
+  const testImagePath = path.join(__dirname, '..', 'test-files', 'colorful-test-image.png');
+  
+  // Upload the file
+  const fileInput = page.getByTestId('file-input');
+  await fileInput.setInputFiles(testImagePath);
+
+  // Wait for processing to complete
+  await expect(page.locator('text=Colorscheme generated')).toBeVisible({ timeout: 10000 });
+  
+  // Check that the source image section is visible
+  await expect(page.locator('text=Source Image:')).toBeVisible();
+  
+  // Verify the uploaded image is displayed
+  const uploadedImage = page.getByTestId('uploaded-image');
+  await expect(uploadedImage).toBeVisible();
+  
+  // Verify the image has correct attributes
+  await expect(uploadedImage).toHaveAttribute('alt', 'Uploaded image');
+  
+  // Verify the filename is displayed
+  await expect(page.locator('text=colorful-test-image.png')).toBeVisible();
+  
+  // Verify both image and colors are displayed together
+  await expect(page.locator('text=Source Image:')).toBeVisible();
+  await expect(page.locator('text=Extracted Colors:')).toBeVisible();
 }); 
