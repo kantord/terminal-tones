@@ -53,8 +53,8 @@ export function FileUpload() {
     img.onload = () => {
       try {
         const colorThief = new ColorThief();
-        // Extract a palette of 8 colors
-        const palette = colorThief.getPalette(img, 8) as RGB[];
+        // Extract a palette of 14 colors
+        const palette = colorThief.getPalette(img, 14) as RGB[];
         
         setExtractedColors(palette);
         setUploadedImageUrl(imageUrl); // Store the URL for display
