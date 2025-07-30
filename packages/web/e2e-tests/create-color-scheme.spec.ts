@@ -43,9 +43,36 @@ test('shows success message when file is uploaded', async ({ page }) => {
   const fileInput = page.getByTestId('file-input');
   await fileInput.setInputFiles(testImagePath);
 
-  // Wait for the success message to appear
+  // Wait for processing to complete and success message to appear
   await expect(page.locator('text=Colorscheme generated')).toBeVisible({ timeout: 10000 });
   
   // Verify the upload another button is present
   await expect(page.locator('button:has-text("Upload Another Image")')).toBeVisible();
+});
+
+test('extracts and displays colors from uploaded image', async ({ page }) => {
+  await page.goto('/create-color-scheme');
+
+  const testImagePath = path.join(__dirname, '..', 'test-files', 'colorful-test-image.png');
+  
+  // Upload the file
+  const fileInput = page.getByTestId('file-input');
+  await fileInput.setInputFiles(testImagePath);
+
+  // Wait for processing to complete
+  await expect(page.locator('text=Colorscheme generated')).toBeVisible({ timeout: 10000 });
+  
+  // Check that extracted colors section is visible
+  await expect(page.locator('text=Extracted Colors:')).toBeVisible();
+  
+  // Verify that at least one color swatch is displayed
+  const colorSwatch = page.getByTestId('color-0');
+  await expect(colorSwatch).toBeVisible();
+  
+  // Verify the color swatch has a background color style
+  const backgroundColor = await colorSwatch.evaluate(el => 
+    window.getComputedStyle(el).backgroundColor
+  );
+  expect(backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+  expect(backgroundColor).not.toBe('');
 }); 
