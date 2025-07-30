@@ -16,6 +16,7 @@
 # next.js
 packages/web/.next
 packages/web/out
+packages/web/node_modules
 
 # production
 /build
@@ -39,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright
+packages/web/test-results/
+packages/web/playwright-report/
+packages/web/blob-report/
+packages/web/playwright/.cache/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
