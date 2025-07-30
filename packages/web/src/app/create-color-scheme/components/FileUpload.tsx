@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import ColorThief from 'colorthief';
-
-type RGB = [number, number, number];
+import { extractColorsFromImage, rgbToHex, cleanupImageUrl, type RGB } from '../utils/colorExtraction';
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -41,63 +39,33 @@ export function FileUpload() {
     }
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     console.log('Processing file:', file.name);
     setIsProcessing(true);
     setUploadedFileName(file.name);
     
-    // Create a URL for the file and load it into an image
-    const imageUrl = URL.createObjectURL(file);
-    const img = new Image();
-    
-    img.onload = () => {
-      try {
-        const colorThief = new ColorThief();
-        // Extract a palette of 14 colors
-        const palette = colorThief.getPalette(img, 14) as RGB[];
-        
-        setExtractedColors(palette);
-        setUploadedImageUrl(imageUrl); // Store the URL for display
-        setIsUploaded(true);
-        setIsProcessing(false);
-        
-        // Don't clean up the object URL yet - we need it for display
-      } catch (error) {
-        console.error('Error extracting colors:', error);
-        setIsProcessing(false);
-        // Clean up on error
-        URL.revokeObjectURL(imageUrl);
-        // Still show success for demo purposes
-        setIsUploaded(true);
-      }
-    };
-    
-    img.onerror = () => {
-      console.error('Error loading image');
+    try {
+      const result = await extractColorsFromImage(file, 14);
+      
+      setExtractedColors(result.colors);
+      setUploadedImageUrl(result.imageUrl);
+      setIsUploaded(true);
       setIsProcessing(false);
-      URL.revokeObjectURL(imageUrl);
-    };
-    
-    img.crossOrigin = 'anonymous';
-    img.src = imageUrl;
+    } catch (error) {
+      console.error('Error extracting colors:', error);
+      setIsProcessing(false);
+      // Still show success for demo purposes
+      setIsUploaded(true);
+    }
   };
 
   const handleClick = () => {
     fileInputRef.current?.click();
   };
 
-  const rgbToHex = (r: number, g: number, b: number) => {
-    return "#" + [r, g, b].map(x => {
-      const hex = x.toString(16);
-      return hex.length === 1 ? "0" + hex : hex;
-    }).join("");
-  };
-
   const handleReset = () => {
     // Clean up the object URL
-    if (uploadedImageUrl) {
-      URL.revokeObjectURL(uploadedImageUrl);
-    }
+    cleanupImageUrl(uploadedImageUrl);
     
     setIsUploaded(false);
     setExtractedColors([]);
