@@ -32,7 +32,7 @@ describe('cleanupImageUrl', () => {
     global.URL = {
       ...global.URL,
       revokeObjectURL: vi.fn()
-    }
+    } as any
   })
 
   afterEach(() => {

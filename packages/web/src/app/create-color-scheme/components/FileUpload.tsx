@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { extractColorsFromImage, rgbToHex, cleanupImageUrl, type RGB } from '@terminal-tones/theme-generator';
+import { 
+  extractColorsFromImage, 
+  rgbToHex, 
+  cleanupImageUrl, 
+  getAvailableFlavors,
+  getFlavorColors,
+  getFlavorMetadata,
+  type RGB,
+  type FlavorName 
+} from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -10,7 +19,11 @@ export function FileUpload() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
+  const [selectedFlavor, setSelectedFlavor] = useState<FlavorName | null>(null);
+  const [colorSource, setColorSource] = useState<'image' | 'flavor'>('image');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const availableFlavors = getAvailableFlavors();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -45,7 +58,7 @@ export function FileUpload() {
     setUploadedFileName(file.name);
     
     try {
-      const result = await extractColorsFromImage(file, 14);
+      const result = await extractColorsFromImage(file, 16);
       
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);
@@ -72,6 +85,23 @@ export function FileUpload() {
     setIsProcessing(false);
     setUploadedImageUrl('');
     setUploadedFileName('');
+    setSelectedFlavor(null);
+    setColorSource('image');
+  };
+
+  const handleFlavorSelect = (flavorName: FlavorName) => {
+    setSelectedFlavor(flavorName);
+    setColorSource('flavor');
+    
+    // Get colors from flavor
+    const colors = getFlavorColors(flavorName);
+    setExtractedColors(colors);
+    setIsUploaded(true);
+    
+    // Clear image-related states
+    cleanupImageUrl(uploadedImageUrl);
+    setUploadedImageUrl('');
+    setUploadedFileName('');
   };
 
   if (isProcessing) {
@@ -89,10 +119,28 @@ export function FileUpload() {
     return (
       <div className="text-center py-12">
         <div className="text-2xl font-semibold text-green-600 dark:text-green-400 mb-6">
-          Colorscheme generated
+          Color scheme generated
         </div>
         
-        {uploadedImageUrl && (
+        {colorSource === 'flavor' && selectedFlavor && (
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+              Base Scheme:
+            </h3>
+            <div className="flex justify-center">
+              <div className="text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                  {getFlavorMetadata(selectedFlavor)?.scheme}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  by {getFlavorMetadata(selectedFlavor)?.author}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {uploadedImageUrl && colorSource === 'image' && (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
               Source Image:
@@ -143,7 +191,7 @@ export function FileUpload() {
           onClick={handleReset}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
-          Upload Another Image
+          {colorSource === 'flavor' ? 'Choose Another Scheme' : 'Upload Another Image'}
         </button>
       </div>
     );
@@ -151,6 +199,38 @@ export function FileUpload() {
 
   return (
     <div className="w-full">
+      {/* Flavor Selection */}
+      <div className="mb-8">
+        <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300 text-center">
+          Choose a Base Color Scheme or Upload an Image
+        </h3>
+        <div className="flex flex-wrap justify-center gap-4 mb-6">
+          {availableFlavors.map((flavorName) => {
+            const metadata = getFlavorMetadata(flavorName);
+            const isSelected = selectedFlavor === flavorName;
+            return (
+              <button
+                key={flavorName}
+                onClick={() => handleFlavorSelect(flavorName)}
+                className={`
+                  px-6 py-3 rounded-lg border-2 transition-all duration-200
+                  ${isSelected 
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }
+                `}
+              >
+                <div className="text-sm font-medium">{metadata?.scheme}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">by {metadata?.author}</div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+          — or —
+        </div>
+      </div>
+
       <div
         className={`
           border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors

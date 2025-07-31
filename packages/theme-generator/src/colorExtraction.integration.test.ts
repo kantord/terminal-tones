@@ -81,12 +81,12 @@ describe('extractColorsFromImage - Integration Tests', () => {
     expect(result.imageUrl).toBe('blob:http://localhost:3000/test-image.jpg')
   })
 
-  it('should use default color count of 14 when not specified', async () => {
+  it('should use default color count of 16 when not specified', async () => {
     const mockFile = new File(['mock image data'], 'test.png', { type: 'image/png' })
     
     const result = await extractColorsFromImage(mockFile)
     
-    expect(result.colors).toHaveLength(14)
+    expect(result.colors).toHaveLength(16)
   })
 
   it('should handle image loading errors', async () => {

@@ -14,7 +14,7 @@ export interface ColorExtractionError {
 
 export function extractColorsFromImage(
   file: File,
-  colorCount: number = 14
+  colorCount: number = 16
 ): Promise<ColorExtractionResult> {
   return new Promise((resolve, reject) => {
     // Create a URL for the file and load it into an image

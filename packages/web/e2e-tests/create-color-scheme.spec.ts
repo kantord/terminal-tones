@@ -44,7 +44,7 @@ test('shows success message when file is uploaded', async ({ page }) => {
   await fileInput.setInputFiles(testImagePath);
 
   // Wait for processing to complete and success message to appear
-  await expect(page.locator('text=Colorscheme generated')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Color scheme generated')).toBeVisible({ timeout: 10000 });
   
   // Verify the upload another button is present
   await expect(page.locator('button:has-text("Upload Another Image")')).toBeVisible();
@@ -60,7 +60,7 @@ test('extracts and displays colors from uploaded image', async ({ page }) => {
   await fileInput.setInputFiles(testImagePath);
 
   // Wait for processing to complete
-  await expect(page.locator('text=Colorscheme generated')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Color scheme generated')).toBeVisible({ timeout: 10000 });
   
   // Check that extracted colors section is visible
   await expect(page.locator('text=Extracted Colors:')).toBeVisible();
@@ -87,7 +87,7 @@ test('displays uploaded image alongside extracted colors', async ({ page }) => {
   await fileInput.setInputFiles(testImagePath);
 
   // Wait for processing to complete
-  await expect(page.locator('text=Colorscheme generated')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Color scheme generated')).toBeVisible({ timeout: 10000 });
   
   // Check that the source image section is visible
   await expect(page.locator('text=Source Image:')).toBeVisible();
