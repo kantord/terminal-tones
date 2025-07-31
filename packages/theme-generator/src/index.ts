@@ -18,6 +18,10 @@ export {
   type FlavorName
 } from './flavors';
 
-// Future theme generation functionality can be exported here
-// export { generateTerminalTheme } from './themeGeneration';
-// export { exportTheme } from './themeExport'; 
+// Theme generation functionality
+export {
+  generateThemeFromImageAndFlavor,
+  getGeneratedThemeColors,
+  isPerceptible,
+  type GeneratedTheme
+} from './themeGeneration'; 

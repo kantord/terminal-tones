@@ -8,8 +8,11 @@ import {
   getAvailableFlavors,
   getFlavorColors,
   getFlavorMetadata,
+  generateThemeFromImageAndFlavor,
+  getGeneratedThemeColors,
   type RGB,
-  type FlavorName 
+  type FlavorName,
+  type GeneratedTheme
 } from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
@@ -20,7 +23,8 @@ export function FileUpload() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [selectedFlavor, setSelectedFlavor] = useState<FlavorName | null>(null);
-  const [colorSource, setColorSource] = useState<'image' | 'flavor'>('image');
+  const [generatedTheme, setGeneratedTheme] = useState<GeneratedTheme | null>(null);
+  const [displayColors, setDisplayColors] = useState<RGB[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const availableFlavors = getAvailableFlavors();
@@ -52,6 +56,26 @@ export function FileUpload() {
     }
   };
 
+  const generateTheme = (imageColors: RGB[], flavorName: FlavorName) => {
+    console.log('Generating theme from image and flavor:', flavorName);
+    
+    try {
+      const theme = generateThemeFromImageAndFlavor(imageColors, flavorName);
+      const themeColors = getGeneratedThemeColors(theme);
+      
+      setGeneratedTheme(theme);
+      setDisplayColors(themeColors);
+      setIsUploaded(true);
+    } catch (error) {
+      console.error('Error generating theme:', error);
+      // Still show uploaded state with just the extracted colors
+      setDisplayColors(imageColors);
+      setIsUploaded(true);
+    } finally {
+      setIsProcessing(false); // Always stop the loading spinner
+    }
+  };
+
   const handleFileUpload = async (file: File) => {
     console.log('Processing file:', file.name);
     setIsProcessing(true);
@@ -62,13 +86,16 @@ export function FileUpload() {
       
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);
-      setIsUploaded(true);
-      setIsProcessing(false);
+      
+      // If a flavor is already selected, generate the theme immediately
+      if (selectedFlavor) {
+        generateTheme(result.colors, selectedFlavor);
+      } else {
+        setIsProcessing(false);
+      }
     } catch (error) {
       console.error('Error extracting colors:', error);
       setIsProcessing(false);
-      // Still show success for demo purposes
-      setIsUploaded(true);
     }
   };
 
@@ -86,22 +113,17 @@ export function FileUpload() {
     setUploadedImageUrl('');
     setUploadedFileName('');
     setSelectedFlavor(null);
-    setColorSource('image');
+    setGeneratedTheme(null);
+    setDisplayColors([]);
   };
 
   const handleFlavorSelect = (flavorName: FlavorName) => {
     setSelectedFlavor(flavorName);
-    setColorSource('flavor');
     
-    // Get colors from flavor
-    const colors = getFlavorColors(flavorName);
-    setExtractedColors(colors);
-    setIsUploaded(true);
-    
-    // Clear image-related states
-    cleanupImageUrl(uploadedImageUrl);
-    setUploadedImageUrl('');
-    setUploadedFileName('');
+    // If we already have extracted colors from an image, generate the theme
+    if (extractedColors.length > 0) {
+      generateTheme(extractedColors, flavorName);
+    }
   };
 
   if (isProcessing) {
@@ -119,20 +141,36 @@ export function FileUpload() {
     return (
       <div className="text-center py-12">
         <div className="text-2xl font-semibold text-green-600 dark:text-green-400 mb-6">
-          Color scheme generated
+          Custom theme generated!
         </div>
         
-        {colorSource === 'flavor' && selectedFlavor && (
+        {generatedTheme && (
+          <div className="mb-8">
+            <div className="text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg mb-6">
+              <div className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                {generatedTheme.scheme}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {generatedTheme.author}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                Mapping score: {generatedTheme.mappingScore.toFixed(2)} (lower is better)
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedFlavor && (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
-              Base Scheme:
+              Base Flavor:
             </h3>
             <div className="flex justify-center">
-              <div className="text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <div className="text-lg font-medium text-gray-800 dark:text-gray-200">
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
                   {getFlavorMetadata(selectedFlavor)?.scheme}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-xs text-blue-600 dark:text-blue-400">
                   by {getFlavorMetadata(selectedFlavor)?.author}
                 </div>
               </div>
@@ -140,7 +178,7 @@ export function FileUpload() {
           </div>
         )}
         
-        {uploadedImageUrl && colorSource === 'image' && (
+        {uploadedImageUrl && (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
               Source Image:
@@ -159,14 +197,15 @@ export function FileUpload() {
           </div>
         )}
         
-        {extractedColors.length > 0 && (
+        {displayColors.length > 0 && (
           <div className="mb-8">
             <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
-              Extracted Colors:
+              Generated Theme Colors:
             </h3>
             <div className="flex flex-wrap justify-center gap-4 mb-6">
-              {extractedColors.map((color, index) => {
+              {displayColors.map((color, index) => {
                 const hex = rgbToHex(color[0], color[1], color[2]);
+                const baseNames = ['base00', 'base01', 'base02', 'base03', 'base04', 'base05', 'base06', 'base07', 'base08', 'base09', 'base0A', 'base0B', 'base0C', 'base0D', 'base0E', 'base0F'];
                 return (
                   <div key={index} className="text-center">
                     <div
@@ -174,11 +213,11 @@ export function FileUpload() {
                       style={{ backgroundColor: hex }}
                       data-testid={`color-${index}`}
                     />
-                    <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                      {hex}
+                    <div className="text-xs font-mono text-gray-700 dark:text-gray-300 font-semibold">
+                      {baseNames[index]}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">
-                      rgb({color[0]}, {color[1]}, {color[2]})
+                    <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                      {hex}
                     </div>
                   </div>
                 );
@@ -191,7 +230,7 @@ export function FileUpload() {
           onClick={handleReset}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
-          {colorSource === 'flavor' ? 'Choose Another Scheme' : 'Upload Another Image'}
+          Create Another Theme
         </button>
       </div>
     );
@@ -202,7 +241,7 @@ export function FileUpload() {
       {/* Flavor Selection */}
       <div className="mb-8">
         <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300 text-center">
-          Choose a Base Color Scheme or Upload an Image
+          Step 1: Choose a Base Color Flavor
         </h3>
         <div className="flex flex-wrap justify-center gap-4 mb-6">
           {availableFlavors.map((flavorName) => {
@@ -226,23 +265,40 @@ export function FileUpload() {
             );
           })}
         </div>
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-          — or —
+        
+        {selectedFlavor && (
+          <div className="text-center">
+            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800">
+              ✓ Flavor selected: {getFlavorMetadata(selectedFlavor)?.scheme}
+            </div>
+          </div>
+        )}
+        
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400 my-6">
+          {selectedFlavor ? "Now upload an image to generate your custom theme!" : "Select a flavor to continue"}
         </div>
+      </div>
+
+      <div className="mb-4">
+        <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300 text-center">
+          Step 2: Upload Your Image
+        </h3>
       </div>
 
       <div
         className={`
-          border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors
-          ${isDragOver 
-            ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+          border-2 border-dashed rounded-lg p-12 text-center transition-colors
+          ${!selectedFlavor 
+            ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 cursor-not-allowed opacity-60' 
+            : isDragOver 
+              ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 cursor-pointer' 
+              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer'
           }
         `}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={handleClick}
+        onDragOver={selectedFlavor ? handleDragOver : undefined}
+        onDragLeave={selectedFlavor ? handleDragLeave : undefined}
+        onDrop={selectedFlavor ? handleDrop : undefined}
+        onClick={selectedFlavor ? handleClick : undefined}
         data-testid="file-upload-area"
       >
         <input
@@ -252,14 +308,21 @@ export function FileUpload() {
           accept="image/*"
           className="hidden"
           data-testid="file-input"
+          disabled={!selectedFlavor}
         />
         
         <div className="text-4xl mb-4">📁</div>
         <p className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">
-          Drop an image here or click to browse
+          {selectedFlavor 
+            ? "Drop an image here or click to browse" 
+            : "Select a flavor first to upload an image"
+          }
         </p>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Supports PNG, JPG, and other image formats
+          {selectedFlavor 
+            ? "Supports PNG, JPG, and other image formats"
+            : "Choose a base flavor above to enable image upload"
+          }
         </p>
       </div>
     </div>
