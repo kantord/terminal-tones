@@ -11,9 +11,14 @@ import {
   generateThemeFromImageAndFlavor,
   getGeneratedThemeColors,
   findBestMatchingFlavor,
+  generateEnhancedTheme,
+  getEnhancedThemeColors,
   type RGB,
   type FlavorName,
-  type GeneratedTheme
+  type GeneratedTheme,
+  type EnhancedTheme,
+  type ColorVariant,
+  type ColorWithVariants
 } from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
@@ -25,6 +30,7 @@ export function FileUpload() {
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [selectedFlavor, setSelectedFlavor] = useState<FlavorName | null>(null);
   const [generatedTheme, setGeneratedTheme] = useState<GeneratedTheme | null>(null);
+  const [enhancedTheme, setEnhancedTheme] = useState<EnhancedTheme | null>(null);
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
   const [isAutoSelected, setIsAutoSelected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,13 +69,22 @@ export function FileUpload() {
     
     try {
       const theme = generateThemeFromImageAndFlavor(imageColors, flavorName);
-      const themeColors = getGeneratedThemeColors(theme);
+      console.log('Base theme generated:', theme);
+      
+      const enhanced = generateEnhancedTheme(theme);
+      console.log('Enhanced theme generated:', enhanced);
+      console.log('Foreground variants:', enhanced.foregroundVariants);
+      console.log('Color variants count:', enhanced.colorVariants.length);
+      
+      const themeColors = getEnhancedThemeColors(enhanced);
       
       setGeneratedTheme(theme);
+      setEnhancedTheme(enhanced);
       setDisplayColors(themeColors);
       setIsUploaded(true);
     } catch (error) {
       console.error('Error generating theme:', error);
+      console.error('Error stack:', error.stack);
       // Still show uploaded state with just the extracted colors
       setDisplayColors(imageColors);
       setIsUploaded(true);
@@ -124,6 +139,7 @@ export function FileUpload() {
     setUploadedFileName('');
     setSelectedFlavor(null);
     setGeneratedTheme(null);
+    setEnhancedTheme(null);
     setDisplayColors([]);
     setIsAutoSelected(false);
   };
@@ -233,31 +249,108 @@ export function FileUpload() {
           </div>
         )}
         
-        {displayColors.length > 0 && (
+        {enhancedTheme && (
           <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
-              Generated Theme Colors:
+            <h3 className="text-lg font-medium mb-6 text-gray-700 dark:text-gray-300">
+              Enhanced Color Palette with Contrast Variants
             </h3>
-            <div className="flex flex-wrap justify-center gap-4 mb-6">
-              {displayColors.map((color, index) => {
-                const hex = rgbToHex(color[0], color[1], color[2]);
-                const baseNames = ['base00', 'base01', 'base02', 'base03', 'base04', 'base05', 'base06', 'base07', 'base08', 'base09', 'base0A', 'base0B', 'base0C', 'base0D', 'base0E', 'base0F'];
-                return (
+            
+            {/* Background Color */}
+            <div className="mb-8">
+              <h4 className="text-md font-medium mb-3 text-gray-600 dark:text-gray-400">
+                Background (base00)
+              </h4>
+              <div className="flex justify-center">
+                <div className="text-center">
+                  <div
+                    className="w-20 h-20 rounded-lg shadow-md border border-gray-200 dark:border-gray-600 mb-2"
+                    style={{ backgroundColor: enhancedTheme.backgroundHex }}
+                  />
+                  <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                    {enhancedTheme.backgroundHex}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Foreground Variants */}
+            <div className="mb-8">
+              <h4 className="text-md font-medium mb-3 text-gray-600 dark:text-gray-400">
+                Foreground (base05) - 8 Contrast Variants
+              </h4>
+              <div className="flex flex-wrap justify-center gap-3">
+                {enhancedTheme.foregroundVariants.map((variant, index) => (
                   <div key={index} className="text-center">
                     <div
-                      className="w-16 h-16 rounded-lg shadow-md border border-gray-200 dark:border-gray-600 mb-2"
-                      style={{ backgroundColor: hex }}
-                      data-testid={`color-${index}`}
-                    />
-                    <div className="text-xs font-mono text-gray-700 dark:text-gray-300 font-semibold">
-                      {baseNames[index]}
+                      className="w-16 h-16 rounded-lg shadow-md border border-gray-200 dark:border-gray-600 mb-2 flex items-center justify-center text-xs font-mono"
+                      style={{ 
+                        backgroundColor: enhancedTheme.backgroundHex,
+                        color: variant.hex
+                      }}
+                    >
+                      Aa
                     </div>
                     <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                      {hex}
+                      {variant.hex}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                      {variant.contrast.toFixed(1)}:1 {variant.wcagLevel}
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+            </div>
+
+            {/* Color Variants */}
+            <div className="mb-8">
+              <h4 className="text-md font-medium mb-4 text-gray-600 dark:text-gray-400">
+                Theme Colors - 4 Contrast Variants Each
+              </h4>
+              <div className="space-y-6">
+                {enhancedTheme.colorVariants.map((colorGroup, groupIndex) => (
+                  <div key={groupIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="mb-3">
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {colorGroup.baseName}
+                      </h5>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {colorGroup.baseDescription}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {colorGroup.variants.map((variant, variantIndex) => (
+                        <div key={variantIndex} className="text-center">
+                          <div
+                            className="w-12 h-12 rounded-md shadow-sm border border-gray-200 dark:border-gray-600 mb-1"
+                            style={{ backgroundColor: variant.hex }}
+                            title={`${variant.contrast.toFixed(1)}:1 ${variant.wcagLevel}`}
+                          />
+                          <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                            {variant.hex.slice(1, 4)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-500">
+                            {variant.contrast.toFixed(1)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Color Palette Summary */}
+            <div className="mb-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                Palette Summary
+              </h4>
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <div>• 1 Background color (base00)</div>
+                <div>• 8 Foreground variants with contrast ratios from 1.5:1 to 12:1</div>
+                <div>• 14 Theme colors with 4 variants each (56 total variants)</div>
+                <div>• All variants optimized using Leonardo contrast algorithms</div>
+                <div>• WCAG AA/AAA compliance indicated for accessibility</div>
+              </div>
             </div>
           </div>
         )}

@@ -25,4 +25,13 @@ export {
   findBestMatchingFlavor,
   isPerceptible,
   type GeneratedTheme
-} from './themeGeneration'; 
+} from './themeGeneration';
+
+// Color variants with Leonardo contrast
+export {
+  generateEnhancedTheme,
+  getEnhancedThemeColors,
+  type EnhancedTheme,
+  type ColorVariant,
+  type ColorWithVariants
+} from './colorVariants'; 
