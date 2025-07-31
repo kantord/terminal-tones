@@ -2,6 +2,7 @@ import { BackgroundColor, Color, Theme, type CssColor } from '@adobe/leonardo-co
 import { formatHex, oklch, parse } from 'culori';
 import { RGB } from './colorExtraction';
 import { GeneratedTheme } from './themeGeneration';
+import { FlavorScheme } from './flavors';
 
 /**
  * Color variant with contrast information

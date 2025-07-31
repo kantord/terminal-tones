@@ -14,6 +14,7 @@ export {
   getFlavor,
   getFlavorColors,
   getFlavorMetadata,
+  searchFlavors,
   type FlavorScheme,
   type FlavorName
 } from './flavors';

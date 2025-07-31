@@ -15,6 +15,7 @@
     "dist"
   ],
   "scripts": {
+    "prebuild": "node scripts/buildFlavors.js",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
@@ -22,13 +23,16 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@adobe/leonardo-contrast-colors": "^1.0.0",
     "colorthief": "2.6.0",
     "culori": "^4.0.1",
-    "@adobe/leonardo-contrast-colors": "^1.0.0"
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@types/colorthief": "2.6.0",
     "@types/culori": "^4.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.1.0",
     "typescript": "^5"
   },
   "publishConfig": {
