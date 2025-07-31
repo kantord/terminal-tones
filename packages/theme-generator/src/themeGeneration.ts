@@ -166,6 +166,43 @@ export function generateThemeFromImageAndFlavor(
 }
 
 /**
+ * Find the best matching flavor for the given extracted colors
+ * Returns the flavor name that has the lowest total perceptual difference
+ */
+export function findBestMatchingFlavor(extractedColors: RGB[], availableFlavors: FlavorName[]): FlavorName {
+  console.time('findBestMatchingFlavor');
+  
+  let bestFlavor: FlavorName = availableFlavors[0];
+  let bestScore = Infinity;
+  
+  for (const flavorName of availableFlavors) {
+    const flavorColors = getFlavorColors(flavorName);
+    
+    // Normalize extracted colors to 16
+    const normalizedExtractedColors = extractedColors.slice(0, 16);
+    while (normalizedExtractedColors.length < 16) {
+      normalizedExtractedColors.push(...extractedColors.slice(0, 16 - normalizedExtractedColors.length));
+    }
+    
+    // Find optimal mapping and calculate score
+    const mapping = findOptimalColorMapping(normalizedExtractedColors, flavorColors);
+    const score = calculateMappingScore(normalizedExtractedColors, flavorColors, mapping);
+    
+    console.log(`Flavor ${flavorName} score: ${score.toFixed(2)}`);
+    
+    if (score < bestScore) {
+      bestScore = score;
+      bestFlavor = flavorName;
+    }
+  }
+  
+  console.log(`Best matching flavor: ${bestFlavor} with score ${bestScore.toFixed(2)}`);
+  console.timeEnd('findBestMatchingFlavor');
+  
+  return bestFlavor;
+}
+
+/**
  * Get the 16 colors from a generated theme as RGB tuples
  */
 export function getGeneratedThemeColors(theme: GeneratedTheme): RGB[] {

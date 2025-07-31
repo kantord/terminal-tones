@@ -10,6 +10,7 @@ import {
   getFlavorMetadata,
   generateThemeFromImageAndFlavor,
   getGeneratedThemeColors,
+  findBestMatchingFlavor,
   type RGB,
   type FlavorName,
   type GeneratedTheme
@@ -25,6 +26,7 @@ export function FileUpload() {
   const [selectedFlavor, setSelectedFlavor] = useState<FlavorName | null>(null);
   const [generatedTheme, setGeneratedTheme] = useState<GeneratedTheme | null>(null);
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
+  const [isAutoSelected, setIsAutoSelected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const availableFlavors = getAvailableFlavors();
@@ -87,9 +89,17 @@ export function FileUpload() {
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);
       
-      // Pick a random flavor if none is selected
-      const flavorToUse = selectedFlavor || availableFlavors[Math.floor(Math.random() * availableFlavors.length)];
+      // Find the best matching flavor if none is selected
+      let flavorToUse = selectedFlavor;
+      let autoSelected = false;
+      
+      if (!flavorToUse) {
+        flavorToUse = findBestMatchingFlavor(result.colors, availableFlavors);
+        autoSelected = true;
+      }
+      
       setSelectedFlavor(flavorToUse);
+      setIsAutoSelected(autoSelected);
       
       // Generate theme with the selected/random flavor
       generateTheme(result.colors, flavorToUse);
@@ -115,10 +125,12 @@ export function FileUpload() {
     setSelectedFlavor(null);
     setGeneratedTheme(null);
     setDisplayColors([]);
+    setIsAutoSelected(false);
   };
 
   const handleFlavorSelect = (flavorName: FlavorName) => {
     setSelectedFlavor(flavorName);
+    setIsAutoSelected(false); // User manually selected this flavor
     
     // If we already have extracted colors from an image, regenerate the theme
     if (extractedColors.length > 0) {
@@ -131,7 +143,7 @@ export function FileUpload() {
     return (
       <div className="text-center py-12">
         <div className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-          {uploadedImageUrl ? 'Generating new theme...' : 'Extracting colors and generating theme...'}
+          {uploadedImageUrl ? 'Generating new theme...' : 'Extracting colors and finding best matching flavor...'}
         </div>
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
@@ -194,6 +206,9 @@ export function FileUpload() {
             <div className="text-center">
               <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                 Currently using: {getFlavorMetadata(selectedFlavor)?.scheme}
+                {isAutoSelected && (
+                  <span className="ml-2 text-xs opacity-75">(best match)</span>
+                )}
               </div>
             </div>
           </div>
@@ -264,7 +279,7 @@ export function FileUpload() {
           Upload Your Image to Generate a Custom Theme
         </h3>
         <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-          We'll automatically apply a random flavor, then you can experiment with different ones
+          We'll automatically find the best matching flavor for your image, then you can experiment with different ones
         </p>
       </div>
 

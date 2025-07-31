@@ -22,6 +22,7 @@ export {
 export {
   generateThemeFromImageAndFlavor,
   getGeneratedThemeColors,
+  findBestMatchingFlavor,
   isPerceptible,
   type GeneratedTheme
 } from './themeGeneration'; 
