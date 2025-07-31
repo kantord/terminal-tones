@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { FlavorCombobox } from '@/components/FlavorCombobox';
 import { 
   extractColorsFromImage, 
   rgbToHex, 
@@ -13,7 +14,6 @@ import {
   findBestMatchingFlavor,
   generateEnhancedTheme,
   getEnhancedThemeColors,
-  searchFlavors,
   type RGB,
   type FlavorName,
   type GeneratedTheme,
@@ -34,18 +34,10 @@ export function FileUpload() {
   const [enhancedTheme, setEnhancedTheme] = useState<EnhancedTheme | null>(null);
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
   const [isAutoSelected, setIsAutoSelected] = useState(false);
-  const [flavorSearch, setFlavorSearch] = useState('');
-  const [showAllFlavors, setShowAllFlavors] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const availableFlavors = getAvailableFlavors();
-  
-  // Filter flavors based on search
-  const filteredFlavors = flavorSearch.trim() 
-    ? searchFlavors(flavorSearch).slice(0, 20) // Limit search results to 20
-    : showAllFlavors 
-      ? availableFlavors.slice(0, 20) // Show first 20 when "show all" is clicked
-      : availableFlavors.slice(0, 8); // Show first 8 by default
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -152,8 +144,6 @@ export function FileUpload() {
     setEnhancedTheme(null);
     setDisplayColors([]);
     setIsAutoSelected(false);
-    setFlavorSearch('');
-    setShowAllFlavors(false);
   };
 
   const handleFlavorSelect = (flavorName: FlavorName) => {
@@ -206,71 +196,27 @@ export function FileUpload() {
             <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
               Try Different Flavors:
             </h3>
-            {/* Search Bar */}
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search flavors (e.g., gruvbox, solarized, monokai)..."
-                value={flavorSearch}
-                onChange={(e) => setFlavorSearch(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
             
-            {/* Flavor Count Info */}
-            <div className="text-center mb-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {flavorSearch.trim() 
-                  ? `Found ${searchFlavors(flavorSearch).length} flavors (showing first 20)`
-                  : `${availableFlavors.length} total flavors available (showing ${filteredFlavors.length})`
-                }
-              </div>
-            </div>
+            <FlavorCombobox
+              value={selectedFlavor}
+              onValueChange={handleFlavorSelect}
+              placeholder="Select a flavor..."
+              disabled={isProcessing}
+              className="mb-4"
+            />
             
-            {/* Flavor Buttons */}
-            <div className="flex flex-wrap justify-center gap-3 mb-4">
-              {filteredFlavors.map((flavorName) => {
-                const metadata = getFlavorMetadata(flavorName);
-                const isSelected = selectedFlavor === flavorName;
-                return (
-                  <button
-                    key={flavorName}
-                    onClick={() => handleFlavorSelect(flavorName)}
-                    disabled={isProcessing}
-                    className={`
-                      px-4 py-2 rounded-lg border-2 transition-all duration-200 text-sm
-                      ${isSelected 
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
-                        : isProcessing 
-                          ? 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-50'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }
-                    `}
-                  >
-                    <div className="font-medium">{metadata?.scheme}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">by {metadata?.author}</div>
-                  </button>
-                );
-              })}
-            </div>
-            
-            {/* Show More Button */}
-            {!flavorSearch.trim() && !showAllFlavors && availableFlavors.length > 8 && (
-              <div className="text-center mb-4">
-                <button
-                  onClick={() => setShowAllFlavors(true)}
-                  className="px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                >
-                  Show More Flavors ({availableFlavors.length - 8} more)
-                </button>
-              </div>
-            )}
             <div className="text-center">
               <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                 Currently using: {getFlavorMetadata(selectedFlavor)?.scheme}
                 {isAutoSelected && (
                   <span className="ml-2 text-xs opacity-75">(best match)</span>
                 )}
+              </div>
+            </div>
+            
+            <div className="text-center mt-2">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {availableFlavors.length} professional color schemes available
               </div>
             </div>
           </div>
