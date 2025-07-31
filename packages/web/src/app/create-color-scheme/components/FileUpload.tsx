@@ -326,7 +326,7 @@ export function FileUpload() {
                             title={`${variant.contrast.toFixed(1)}:1 ${variant.wcagLevel}`}
                           />
                           <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                            {variant.hex.slice(1, 4)}
+                            {variant.hex}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-500">
                             {variant.contrast.toFixed(1)}
