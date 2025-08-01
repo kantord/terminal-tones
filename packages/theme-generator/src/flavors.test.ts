@@ -16,9 +16,9 @@ describe('getAvailableFlavors', () => {
     expect(flavors).toContain('rose-pine');
   });
 
-  it('should return exactly 2 flavors for now', () => {
+  it('should return all available flavors', () => {
     const flavors = getAvailableFlavors();
-    expect(flavors).toHaveLength(2);
+    expect(flavors.length).toBeGreaterThan(280); // We have ~289 flavors
   });
 });
 
@@ -95,7 +95,7 @@ describe('getFlavorMetadata', () => {
     expect(metadata).toBeTruthy();
     expect(metadata?.scheme).toBe('Fruit Soda');
     expect(metadata?.author).toBe('jozip');
-    expect(metadata?.slug).toBeUndefined();
+    expect(metadata?.slug).toBe('fruit-soda');
     
     // Should not have base color properties
     expect(metadata).not.toHaveProperty('base00');

@@ -39,8 +39,7 @@ function buildFlavors() {
   
   try {
     const yamlFiles = fs.readdirSync(flavorsDir)
-      .filter(file => file.endsWith('.yaml'))
-      .slice(0, 50); // Limit to 50 for performance
+      .filter(file => file.endsWith('.yaml')); // Process all flavor files
     
     console.log(`Processing ${yamlFiles.length} YAML files...`);
     

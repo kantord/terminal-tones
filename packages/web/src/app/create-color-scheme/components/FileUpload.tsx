@@ -316,6 +316,7 @@ export function FileUpload() {
                             className="w-12 h-12 rounded-md shadow-sm border border-gray-200 dark:border-gray-600 mb-1"
                             style={{ backgroundColor: variant.hex }}
                             title={`${variant.contrast.toFixed(1)}:1 ${variant.wcagLevel}`}
+                            data-testid={groupIndex === 0 && variantIndex === 0 ? "color-0" : undefined}
                           />
                           <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
                             {variant.hex}
