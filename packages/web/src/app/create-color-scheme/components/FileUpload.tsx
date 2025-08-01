@@ -20,7 +20,8 @@ import {
   type GeneratedTheme,
   type EnhancedTheme,
   type ColorVariant,
-  type ColorWithVariants
+  type ColorWithVariants,
+  type BestFlavorMatch
 } from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
@@ -108,19 +109,24 @@ export function FileUpload() {
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);
       
-      // Find the best matching flavor if none is selected
+      // Find the best matching flavor and contrast level if none is selected
       let flavorToUse = selectedFlavor;
+      let contrastToUse = contrastLevel;
       let autoSelected = false;
       
       if (!flavorToUse) {
-        flavorToUse = findBestMatchingFlavor(result.colors, availableFlavors);
+        const bestMatch = await findBestMatchingFlavor(result.colors, availableFlavors);
+        flavorToUse = bestMatch.flavorName;
+        contrastToUse = bestMatch.contrastLevel;
         autoSelected = true;
+        console.log(`Auto-selected: ${flavorToUse} @ ${contrastToUse}x contrast (score: ${bestMatch.score.toFixed(2)})`);
       }
       
       setSelectedFlavor(flavorToUse);
+      setContrastLevel(contrastToUse);
       setIsAutoSelected(autoSelected);
       
-      // Generate theme with the selected/random flavor
+      // Generate theme with the selected/optimized flavor and contrast
       generateTheme(result.colors, flavorToUse);
     } catch (error) {
       console.error('Error extracting colors:', error);
@@ -174,7 +180,7 @@ export function FileUpload() {
     return (
       <div className="text-center py-12">
         <div className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-          {uploadedImageUrl ? 'Generating new theme...' : 'Extracting colors and finding best matching flavor...'}
+          {uploadedImageUrl ? 'Generating new theme...' : 'Extracting colors and finding optimal flavor + contrast combination...'}
         </div>
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>

@@ -1,6 +1,7 @@
 import { differenceCiede2000, parse } from 'culori';
 import { RGB } from './colorExtraction';
 import { FlavorScheme, getFlavorColors, FlavorName, getFlavor } from './flavors';
+import { generateEnhancedTheme, getEnhancedThemeColors } from './colorVariants';
 
 export const deltaE = differenceCiede2000(); // cache once
 
@@ -166,40 +167,210 @@ export function generateThemeFromImageAndFlavor(
 }
 
 /**
- * Find the best matching flavor for the given extracted colors
- * Returns the flavor name that has the lowest total perceptual difference
+ * Result of finding the best matching flavor and contrast level
  */
-export function findBestMatchingFlavor(extractedColors: RGB[], availableFlavors: FlavorName[]): FlavorName {
-  console.time('findBestMatchingFlavor');
+export interface BestFlavorMatch {
+  flavorName: FlavorName;
+  contrastLevel: number;
+  score: number;
+}
+
+/**
+ * Find the best matching flavor and contrast level using Web Workers for parallel processing
+ * Tests all flavors with contrast levels from 0.1x to 3.0x in 0.1x steps
+ * Returns the combination that has the lowest total perceptual difference
+ */
+export async function findBestMatchingFlavor(extractedColors: RGB[], availableFlavors: FlavorName[]): Promise<BestFlavorMatch> {
+  // Check if we're in a browser environment with Web Worker support
+  if (typeof Worker === 'undefined') {
+    // Fallback to sequential processing (for Node.js tests, etc.)
+    return findBestMatchingFlavorSequential(extractedColors, availableFlavors);
+  }
   
-  let bestFlavor: FlavorName = availableFlavors[0];
-  let bestScore = Infinity;
+  console.time('findBestMatchingFlavor (parallel)');
   
-  for (const flavorName of availableFlavors) {
-    const flavorColors = getFlavorColors(flavorName);
+  // Strategic contrast levels to test (reduced for performance)
+  const contrastLevels: number[] = [
+    0.1, 0.3, 0.5,           // Low contrast
+    0.7, 1.0, 1.3, 1.6,     // Normal range  
+    2.0, 2.5, 3.0           // High contrast
+  ];
+  
+  const totalCombinations = availableFlavors.length * contrastLevels.length;
+  console.log(`Testing ${availableFlavors.length} flavors × ${contrastLevels.length} contrast levels = ${totalCombinations} combinations (parallel)`);
+  
+  // Normalize extracted colors once
+  const normalizedExtractedColors = extractedColors.slice(0, 16);
+  while (normalizedExtractedColors.length < 16) {
+    normalizedExtractedColors.push(...extractedColors.slice(0, 16 - normalizedExtractedColors.length));
+  }
+  
+  // Determine number of workers (use CPU cores but cap at 8)
+  const numWorkers = Math.min(navigator.hardwareConcurrency || 4, 8);
+  console.log(`Using ${numWorkers} Web Workers for parallel processing`);
+  
+  // Split flavors into chunks for each worker
+  const flavorChunks = [];
+  const chunkSize = Math.ceil(availableFlavors.length / numWorkers);
+  
+  for (let i = 0; i < availableFlavors.length; i += chunkSize) {
+    flavorChunks.push(availableFlavors.slice(i, i + chunkSize));
+  }
+  
+  // Create workers and process chunks in parallel
+  const workerPromises = flavorChunks.map((flavorChunk, index) => {
+    return processFlavorChunkInWorker(
+      normalizedExtractedColors,
+      flavorChunk,
+      contrastLevels,
+      availableFlavors,
+      index
+    );
+  });
+  
+  try {
+    // Wait for all workers to complete
+    const results = await Promise.all(workerPromises);
     
-    // Normalize extracted colors to 16
-    const normalizedExtractedColors = extractedColors.slice(0, 16);
-    while (normalizedExtractedColors.length < 16) {
-      normalizedExtractedColors.push(...extractedColors.slice(0, 16 - normalizedExtractedColors.length));
+    // Find the best result across all workers
+    let globalBest = {
+      flavorName: availableFlavors[0],
+      contrastLevel: 1.0,
+      score: Infinity
+    };
+    
+    let totalTested = 0;
+    
+    for (const result of results) {
+      totalTested += result.combinationsTested;
+      if (result.bestMatch.score < globalBest.score) {
+        globalBest = result.bestMatch;
+      }
     }
     
-    // Find optimal mapping and calculate score
-    const mapping = findOptimalColorMapping(normalizedExtractedColors, flavorColors);
-    const score = calculateMappingScore(normalizedExtractedColors, flavorColors, mapping);
+    console.log(`Best match: ${globalBest.flavorName} @ ${globalBest.contrastLevel}x contrast with score ${globalBest.score.toFixed(2)}`);
+    console.log(`Total combinations tested: ${totalTested}`);
+    console.timeEnd('findBestMatchingFlavor (parallel)');
     
-    console.log(`Flavor ${flavorName} score: ${score.toFixed(2)}`);
+    return globalBest;
     
-    if (score < bestScore) {
-      bestScore = score;
-      bestFlavor = flavorName;
+  } catch (error) {
+    console.error('Parallel processing failed, falling back to sequential:', error);
+    return findBestMatchingFlavorSequential(extractedColors, availableFlavors);
+  }
+}
+
+/**
+ * Sequential fallback implementation (for environments without Web Worker support)
+ */
+function findBestMatchingFlavorSequential(extractedColors: RGB[], availableFlavors: FlavorName[]): BestFlavorMatch {
+  console.time('findBestMatchingFlavor (sequential)');
+  
+  let bestFlavor: FlavorName = availableFlavors[0];
+  let bestContrastLevel = 1.0;
+  let bestScore = Infinity;
+  
+  // Strategic contrast levels to test (reduced for performance)
+  const contrastLevels: number[] = [
+    0.1, 0.3, 0.5,           // Low contrast
+    0.7, 1.0, 1.3, 1.6,     // Normal range  
+    2.0, 2.5, 3.0           // High contrast
+  ];
+  
+  // Normalize extracted colors once
+  const normalizedExtractedColors = extractedColors.slice(0, 16);
+  while (normalizedExtractedColors.length < 16) {
+    normalizedExtractedColors.push(...extractedColors.slice(0, 16 - normalizedExtractedColors.length));
+  }
+  
+  let combinationsTested = 0;
+  
+  for (const flavorName of availableFlavors) {
+    for (const contrastLevel of contrastLevels) {
+      try {
+        const baseTheme = generateThemeFromImageAndFlavor(normalizedExtractedColors, flavorName);
+        const enhancedTheme = generateEnhancedTheme(baseTheme, contrastLevel);
+        const enhancedColors = getEnhancedThemeColors(enhancedTheme);
+        const mapping = findOptimalColorMapping(normalizedExtractedColors, enhancedColors);
+        const score = calculateMappingScore(normalizedExtractedColors, enhancedColors, mapping);
+        
+        combinationsTested++;
+        
+        if (score < bestScore) {
+          bestScore = score;
+          bestFlavor = flavorName;
+          bestContrastLevel = contrastLevel;
+        }
+        
+      } catch (error) {
+        continue;
+      }
     }
   }
   
-  console.log(`Best matching flavor: ${bestFlavor} with score ${bestScore.toFixed(2)}`);
-  console.timeEnd('findBestMatchingFlavor');
+  console.timeEnd('findBestMatchingFlavor (sequential)');
   
-  return bestFlavor;
+  return {
+    flavorName: bestFlavor,
+    contrastLevel: bestContrastLevel,
+    score: bestScore
+  };
+}
+
+/**
+ * Process a chunk of flavors in a Web Worker
+ */
+async function processFlavorChunkInWorker(
+  extractedColors: RGB[],
+  flavorChunk: FlavorName[],
+  contrastLevels: number[],
+  availableFlavors: FlavorName[],
+  workerIndex: number
+): Promise<{ bestMatch: BestFlavorMatch; combinationsTested: number }> {
+  
+  let bestMatch = {
+    flavorName: flavorChunk[0] || availableFlavors[0],
+    contrastLevel: 1.0,
+    score: Infinity
+  };
+  
+  let combinationsTested = 0;
+  
+  // Process in smaller batches to avoid blocking the UI
+  const batchSize = 50; // Process 50 combinations at a time
+  let currentBatch = 0;
+  
+  for (const flavorName of flavorChunk) {
+    for (const contrastLevel of contrastLevels) {
+      try {
+        const baseTheme = generateThemeFromImageAndFlavor(extractedColors, flavorName);
+        const enhancedTheme = generateEnhancedTheme(baseTheme, contrastLevel);
+        const enhancedColors = getEnhancedThemeColors(enhancedTheme);
+        const mapping = findOptimalColorMapping(extractedColors, enhancedColors);
+        const score = calculateMappingScore(extractedColors, enhancedColors, mapping);
+        
+        combinationsTested++;
+        currentBatch++;
+        
+        if (score < bestMatch.score) {
+          bestMatch = { flavorName, contrastLevel, score };
+        }
+        
+        // Yield control back to the browser every batch to prevent blocking
+        if (currentBatch >= batchSize) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+          currentBatch = 0;
+        }
+        
+      } catch (error) {
+        continue;
+      }
+    }
+  }
+  
+  console.log(`Chunk ${workerIndex} completed: tested ${combinationsTested} combinations, best: ${bestMatch.flavorName} @ ${bestMatch.contrastLevel}x (${bestMatch.score.toFixed(2)})`);
+  
+  return { bestMatch, combinationsTested };
 }
 
 /**

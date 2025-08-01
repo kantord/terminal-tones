@@ -25,7 +25,8 @@ export {
   getGeneratedThemeColors,
   findBestMatchingFlavor,
   isPerceptible,
-  type GeneratedTheme
+  type GeneratedTheme,
+  type BestFlavorMatch
 } from './themeGeneration';
 
 // Color variants with Leonardo contrast
