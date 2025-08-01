@@ -11,7 +11,7 @@ export interface ColorVariant {
   hex: string;
   rgb: RGB;
   contrast: number;
-  wcagLevel: 'AA' | 'AAA' | 'fail';
+  wcagLevel: 'AAA+' | 'AAA' | 'AA' | 'A' | 'fail';
 }
 
 /**
@@ -47,9 +47,11 @@ function hexToRgb(hex: string): RGB {
 /**
  * Get WCAG compliance level for contrast ratio
  */
-function getWcagLevel(contrast: number): 'AA' | 'AAA' | 'fail' {
+function getWcagLevel(contrast: number): 'AAA+' | 'AAA' | 'AA' | 'A' | 'fail' {
+  if (contrast >= 12) return 'AAA+'; // Very high contrast
   if (contrast >= 7) return 'AAA';
   if (contrast >= 4.5) return 'AA';
+  if (contrast >= 3) return 'A'; // Basic readability
   return 'fail';
 }
 
@@ -59,15 +61,19 @@ function getWcagLevel(contrast: number): 'AA' | 'AAA' | 'fail' {
 function generateColorVariants(
   colorHex: string, 
   backgroundHex: string, 
-  variantCount: number
+  variantCount: number,
+  contrastMultiplier: number = 1.0
 ): ColorVariant[] {
   console.log(`Generating variants for ${colorHex} on ${backgroundHex}`);
   
   try {
-    // Define target contrast ratios based on variant count
-    const ratios = variantCount === 8 
+    // Define base target contrast ratios based on variant count
+    const baseRatios = variantCount === 8 
       ? [1.5, 2, 3, 4.5, 6, 7, 9, 12] // Foreground variants (more granular)
       : [2, 4.5, 7, 12]; // Other color variants
+    
+    // Apply contrast multiplier to ratios, ensuring minimum of 0.1 for readability
+    const ratios = baseRatios.map(ratio => Math.max(0.1, ratio * contrastMultiplier));
 
     // Create Leonardo background
     const background = new BackgroundColor({
@@ -116,13 +122,13 @@ function generateColorVariants(
     
     if (variants.length === 0) {
       console.warn('No valid Leonardo variants generated, falling back');
-      return generateFallbackVariants(colorHex, backgroundHex, variantCount);
+      return generateFallbackVariants(colorHex, backgroundHex, variantCount, contrastMultiplier);
     }
 
     return variants;
   } catch (error) {
     console.warn('Leonardo generation failed, falling back to manual interpolation:', error);
-    return generateFallbackVariants(colorHex, backgroundHex, variantCount);
+    return generateFallbackVariants(colorHex, backgroundHex, variantCount, contrastMultiplier);
   }
 }
 
@@ -132,7 +138,8 @@ function generateColorVariants(
 function generateFallbackVariants(
   colorHex: string, 
   backgroundHex: string, 
-  variantCount: number
+  variantCount: number,
+  contrastMultiplier: number = 1.0
 ): ColorVariant[] {
   console.log(`Fallback generation for ${colorHex} on ${backgroundHex}`);
   
@@ -153,9 +160,12 @@ function generateFallbackVariants(
   }
 
   const variants: ColorVariant[] = [];
-  const targetRatios = variantCount === 8 
+  const baseRatios = variantCount === 8 
     ? [1.5, 2, 3, 4.5, 6, 7, 9, 12]
     : [2, 4.5, 7, 12];
+  
+  // Apply contrast multiplier to ratios, ensuring minimum of 0.1 for readability  
+  const targetRatios = baseRatios.map(ratio => Math.max(0.1, ratio * contrastMultiplier));
 
   const baseLightness = baseOklch.l || 0.5;
   const bgLightness = bgOklch.l || 0.5;
@@ -197,14 +207,14 @@ function generateFallbackVariants(
 /**
  * Generate enhanced theme with color variants
  */
-export function generateEnhancedTheme(baseTheme: GeneratedTheme): EnhancedTheme {
+export function generateEnhancedTheme(baseTheme: GeneratedTheme, contrastMultiplier: number = 1.0): EnhancedTheme {
   console.time('generateEnhancedTheme');
   
   const backgroundHex = `#${baseTheme.base00}`;
   const foregroundHex = `#${baseTheme.base05}`;
   
   // Generate 8 foreground variants
-  const foregroundVariants = generateColorVariants(foregroundHex, backgroundHex, 8);
+  const foregroundVariants = generateColorVariants(foregroundHex, backgroundHex, 8, contrastMultiplier);
   
   // Base16 color information
   const colorInfo = [
@@ -227,7 +237,7 @@ export function generateEnhancedTheme(baseTheme: GeneratedTheme): EnhancedTheme 
   // Generate 4 variants for each other color
   const colorVariants: ColorWithVariants[] = colorInfo.map(info => {
     const colorHex = `#${(baseTheme as any)[info.key]}`;
-    const variants = generateColorVariants(colorHex, backgroundHex, 4);
+    const variants = generateColorVariants(colorHex, backgroundHex, 4, contrastMultiplier);
     
     return {
       baseHex: colorHex,

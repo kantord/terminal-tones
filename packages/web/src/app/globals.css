@@ -75,3 +75,45 @@ body {
   background: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
 }
+
+/* Range slider styling */
+.range-slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+.range-slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+}
+
+.range-slider::-moz-range-thumb:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+.range-slider:disabled::-webkit-slider-thumb {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.range-slider:disabled::-moz-range-thumb {
+  background: #9ca3af;
+  cursor: not-allowed;
+}

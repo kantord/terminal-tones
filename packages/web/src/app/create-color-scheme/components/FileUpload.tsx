@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Contrast } from 'lucide-react';
 import { FlavorCombobox } from '@/components/FlavorCombobox';
 import { 
   extractColorsFromImage, 
@@ -35,6 +35,7 @@ export function FileUpload() {
   const [enhancedTheme, setEnhancedTheme] = useState<EnhancedTheme | null>(null);
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
   const [isAutoSelected, setIsAutoSelected] = useState(false);
+  const [contrastLevel, setContrastLevel] = useState(1.0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,7 +75,7 @@ export function FileUpload() {
       const theme = generateThemeFromImageAndFlavor(imageColors, flavorName);
       console.log('Base theme generated:', theme);
       
-      const enhanced = generateEnhancedTheme(theme);
+      const enhanced = generateEnhancedTheme(theme, contrastLevel);
       console.log('Enhanced theme generated:', enhanced);
       console.log('Foreground variants:', enhanced.foregroundVariants);
       console.log('Color variants count:', enhanced.colorVariants.length);
@@ -145,6 +146,7 @@ export function FileUpload() {
     setEnhancedTheme(null);
     setDisplayColors([]);
     setIsAutoSelected(false);
+    setContrastLevel(1.0);
   };
 
   const handleFlavorSelect = (flavorName: FlavorName) => {
@@ -155,6 +157,16 @@ export function FileUpload() {
     if (extractedColors.length > 0) {
       setIsProcessing(true);
       generateTheme(extractedColors, flavorName);
+    }
+  };
+
+  const handleContrastChange = (newContrastLevel: number) => {
+    setContrastLevel(newContrastLevel);
+    
+    // If we already have extracted colors and a flavor, regenerate the theme
+    if (extractedColors.length > 0 && selectedFlavor) {
+      setIsProcessing(true);
+      generateTheme(extractedColors, selectedFlavor);
     }
   };
 
@@ -218,6 +230,43 @@ export function FileUpload() {
             <div className="text-center mt-2">
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 {availableFlavors.length} professional color schemes available
+              </div>
+            </div>
+          </div>
+        )}
+
+        {enhancedTheme && (
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <Contrast className="w-5 h-5" />
+              Adjust Contrast Level
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[3rem]">Low</span>
+                <div className="flex-1">
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="3.0"
+                    step="0.05"
+                    value={contrastLevel}
+                    onChange={(e) => handleContrastChange(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-slider"
+                    disabled={isProcessing}
+                  />
+                </div>
+                <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[3rem]">High</span>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Contrast: <span className="font-mono font-medium">{contrastLevel.toFixed(2)}x</span>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  Multiplier for contrast ratios (0.1 = very subtle, 1.0 = default, 3.0 = high contrast)
+                </div>
               </div>
             </div>
           </div>
@@ -366,7 +415,7 @@ export function FileUpload() {
           Upload Your Image to Generate a Custom Theme
         </h3>
         <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-          We'll automatically find the best matching flavor for your image, then you can experiment with different ones
+          We&apos;ll automatically find the best matching flavor for your image, then you can experiment with different ones
         </p>
       </div>
 
