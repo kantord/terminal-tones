@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Upload, Loader2 } from 'lucide-react';
 import { FlavorCombobox } from '@/components/FlavorCombobox';
 import { 
   extractColorsFromImage, 
@@ -163,7 +164,7 @@ export function FileUpload() {
         <div className="text-lg text-gray-600 dark:text-gray-400 mb-4">
           {uploadedImageUrl ? 'Generating new theme...' : 'Extracting colors and finding best matching flavor...'}
         </div>
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -392,7 +393,7 @@ export function FileUpload() {
           data-testid="file-input"
         />
         
-        <div className="text-4xl mb-4">📁</div>
+        <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
         <p className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">
           Drop an image here or click to browse
         </p>
