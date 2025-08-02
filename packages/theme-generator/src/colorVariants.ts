@@ -63,8 +63,6 @@ function generateColorVariants(
   backgroundHex: string, 
   contrastMultiplier: number = 1.0
 ): ColorVariant[] {
-  console.log(`Generating variants for ${colorHex} on ${backgroundHex}`);
-  
   try {
     // Define consistent base target contrast ratios for all colors
     // These ratios provide good coverage from low contrast to high contrast
@@ -96,26 +94,17 @@ function generateColorVariants(
     });
 
     const output = theme.contrastColors;
-    console.log('Leonardo output structure:', JSON.stringify(output, null, 2));
-    console.log('Leonardo output type:', typeof output, 'Array?', Array.isArray(output));
-    
     const variants: ColorVariant[] = [];
 
     // Extract variants from Leonardo output structure
     // Leonardo returns an array of color objects, find our 'variants' color
     const variantsColorObject = output.find((colorObj: any) => colorObj.name === 'variants') as any;
     
-    console.log('Found variants color object:', variantsColorObject);
-    
     if (variantsColorObject && variantsColorObject.values) {
-      console.log('Found variants color object with values:', variantsColorObject.values);
-      
       // Extract each generated color from the values array
       for (const valueObj of variantsColorObject.values) {
         const generatedHex = valueObj.value;
         const actualContrast = valueObj.contrast;
-        
-        console.log(`Leonardo generated: ${generatedHex} with contrast ${actualContrast}`);
         
         if (generatedHex && generatedHex.startsWith('#')) {
           variants.push({
@@ -127,22 +116,14 @@ function generateColorVariants(
         }
       }
     } else {
-      console.error('No variants color object found in Leonardo output!');
-      console.error('Available objects in output:', output.map((obj: any) => ({ name: obj.name, type: typeof obj })));
-      
-      // Let's also try the contrastColorPairs format
-      console.log('Trying contrastColorPairs format...');
+      // Try the contrastColorPairs format as fallback
       const pairsOutput = theme.contrastColorPairs;
-      console.log('Leonardo contrastColorPairs:', pairsOutput);
       
-      // Generate variants from pairs if available
       if (pairsOutput && typeof pairsOutput === 'object') {
         for (const [colorName, colorValue] of Object.entries(pairsOutput)) {
           if (colorName.startsWith('variants') && typeof colorValue === 'string') {
             const ratioMatch = colorName.match(/variants(\d+)/);
             const ratio = ratioMatch ? parseInt(ratioMatch[1]) / 100 : 2;
-            
-            console.log(`Found variant from pairs: ${colorName} = ${colorValue} (ratio: ${ratio})`);
             
             if (colorValue.startsWith('#')) {
               variants.push({
@@ -156,24 +137,16 @@ function generateColorVariants(
         }
       }
     }
-
-    console.log(`Generated ${variants.length} Leonardo variants`);
     
     // If we still have no variants, there's a real problem with Leonardo setup
     if (variants.length === 0) {
-      console.error('Leonardo failed to generate any variants!');
-      console.error('Input color:', colorHex, 'Background:', backgroundHex, 'Ratios:', ratios);
-      console.error('This should not happen with valid inputs. Falling back to manual generation.');
+      console.warn(`No valid Leonardo variants generated for ${colorHex}. Falling back to manual generation.`);
       return generateFallbackVariants(colorHex, backgroundHex, contrastMultiplier);
     }
 
     return variants;
   } catch (error) {
-    console.error('Leonardo generation failed with exception:', error);
-    console.error('Input parameters:', { colorHex, backgroundHex, contrastMultiplier });
-    
-    // This should only happen for truly exceptional cases like invalid color formats or Leonardo bugs
-    console.warn('Using fallback color generation due to Leonardo exception');
+    console.warn(`Leonardo generation failed for ${colorHex}, using fallback:`, error.message);
     return generateFallbackVariants(colorHex, backgroundHex, contrastMultiplier);
   }
 }
@@ -244,7 +217,6 @@ function generateFallbackVariants(
     }
   }
 
-  console.log(`Generated ${variants.length} fallback variants`);
   return variants;
 }
 
