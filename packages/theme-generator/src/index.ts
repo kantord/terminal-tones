@@ -22,4 +22,13 @@ export {
   getEnhancedThemeColors,
   type EnhancedTheme,
   type ColorVariant
-} from './colorVariants'; 
+} from './colorVariants';
+
+// Terminal color pairing
+export {
+  findOptimalAnsiColorPairing,
+  BRIGHT_ANSI_COLORS,
+  ANSI_COLOR_NAMES,
+  type ColorPairing,
+  type OptimalPairingResult
+} from './terminalColors'; 

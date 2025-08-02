@@ -12,10 +12,14 @@ import {
   getGeneratedThemeColors,
   generateEnhancedTheme,
   getEnhancedThemeColors,
+  findOptimalAnsiColorPairing,
+  BRIGHT_ANSI_COLORS,
+  ANSI_COLOR_NAMES,
   type RGB,
   type GeneratedTheme,
   type EnhancedTheme,
-  type ColorVariant
+  type ColorVariant,
+  type OptimalPairingResult
 } from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
@@ -28,6 +32,7 @@ export function FileUpload() {
   const [generatedTheme, setGeneratedTheme] = useState<GeneratedTheme | null>(null);
   const [enhancedTheme, setEnhancedTheme] = useState<EnhancedTheme | null>(null);
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
+  const [ansiPairing, setAnsiPairing] = useState<OptimalPairingResult | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,10 +81,15 @@ export function FileUpload() {
       const enhanced = generateEnhancedTheme(theme);
       console.log('Enhanced theme generated:', enhanced);
       
+      // Find optimal ANSI color pairing
+      const pairingResult = findOptimalAnsiColorPairing(imageColors);
+      console.log('ANSI color pairing result:', pairingResult);
+      
       const themeColors = getEnhancedThemeColors(enhanced);
       
       setGeneratedTheme(theme);
       setEnhancedTheme(enhanced);
+      setAnsiPairing(pairingResult);
       setDisplayColors(themeColors);
       setIsUploaded(true);
     } catch (error) {
@@ -127,6 +137,7 @@ export function FileUpload() {
     setUploadedFileName('');
     setGeneratedTheme(null);
     setEnhancedTheme(null);
+    setAnsiPairing(null);
     setDisplayColors([]);
     setSelectedLanguage('javascript');
   };
@@ -293,6 +304,82 @@ export function FileUpload() {
                     <div>• No complex optimization or contrast calculations</div>
                     <div>• Colors used exactly as extracted, in order</div>
                     <div>• Fast generation with instant results</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {ansiPairing && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 mt-6">
+              <h3 className="text-lg font-medium mb-6 text-gray-700 dark:text-gray-300">
+                Base ANSI Terminal Color Pairing
+              </h3>
+              
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Optimal pairing of 8 extracted colors with standard base ANSI terminal colors.
+                  <br />
+                  <span className="text-xs text-gray-500">
+                    Total perceptual distance: {ansiPairing.totalDistance.toFixed(2)} (lower is better)
+                  </span>
+                </p>
+                
+                <div className="space-y-3">
+                  {ansiPairing.pairings.map((pairing, index) => (
+                    <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      {/* ANSI Color */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-12 rounded-lg shadow-md border border-gray-200 dark:border-gray-600"
+                          style={{ backgroundColor: `rgb(${pairing.ansiColor.join(',')})` }}
+                        />
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-700 dark:text-gray-300">
+                            {pairing.ansiColorName}
+                          </div>
+                          <div className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                            rgb({pairing.ansiColor.join(',')})
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Arrow */}
+                      <div className="text-gray-400 dark:text-gray-500">→</div>
+                      
+                      {/* Extracted Color */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-12 h-12 rounded-lg shadow-md border border-gray-200 dark:border-gray-600"
+                          style={{ backgroundColor: pairing.extractedColorHex }}
+                        />
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-700 dark:text-gray-300">
+                            Extracted Color
+                          </div>
+                          <div className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                            {pairing.extractedColorHex}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Distance */}
+                      <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+                        Δ{pairing.perceptualDistance.toFixed(1)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                    Algorithm Details
+                  </h4>
+                  <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                    <div>• Tested all C(16,8) = {((16*15*14*13*12*11*10*9)/(8*7*6*5*4*3*2*1)).toLocaleString()} combinations</div>
+                    <div>• Used CIEDE2000 perceptual color difference formula</div>
+                    <div>• Selected indices: [{ansiPairing.selectedIndices.join(', ')}]</div>
+                    <div>• Minimized sum of pairwise perceptual distances</div>
                   </div>
                 </div>
               </div>
