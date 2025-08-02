@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, Loader2, Contrast } from 'lucide-react';
+import { Upload, Loader2, Contrast, Code2 } from 'lucide-react';
 import { FlavorCombobox } from '@/components/FlavorCombobox';
+import { SyntaxPreview } from '@/components/SyntaxPreview';
 import { 
   extractColorsFromImage, 
   rgbToHex, 
@@ -37,6 +38,7 @@ export function FileUpload() {
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
   const [isAutoSelected, setIsAutoSelected] = useState(false);
   const [contrastLevel, setContrastLevel] = useState(1.0);
+  const [selectedLanguage, setSelectedLanguage] = useState('javascript');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,6 +155,7 @@ export function FileUpload() {
     setDisplayColors([]);
     setIsAutoSelected(false);
     setContrastLevel(1.0);
+    setSelectedLanguage('javascript');
   };
 
   const handleFlavorSelect = (flavorName: FlavorName) => {
@@ -297,6 +300,33 @@ export function FileUpload() {
 
         {/* Right Column - Preview Content */}
         <div className="space-y-8">
+          {generatedTheme && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Code2 className="w-5 h-5" />
+                  Syntax Highlighting Preview
+                </h3>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="text-sm border border-gray-300 dark:border-gray-600 rounded px-3 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                >
+                  <option value="javascript">JavaScript</option>
+                  <option value="typescript">TypeScript</option>
+                  <option value="python">Python</option>
+                  <option value="rust">Rust</option>
+                  <option value="css">CSS</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+              <SyntaxPreview 
+                theme={generatedTheme} 
+                language={selectedLanguage}
+              />
+            </div>
+          )}
+
           {generatedTheme && (
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
