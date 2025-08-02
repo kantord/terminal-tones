@@ -61,16 +61,15 @@ function getWcagLevel(contrast: number): 'AAA+' | 'AAA' | 'AA' | 'A' | 'fail' {
 function generateColorVariants(
   colorHex: string, 
   backgroundHex: string, 
-  variantCount: number,
   contrastMultiplier: number = 1.0
 ): ColorVariant[] {
   console.log(`Generating variants for ${colorHex} on ${backgroundHex}`);
   
   try {
-    // Define base target contrast ratios based on variant count
-    const baseRatios = variantCount === 8 
-      ? [1.5, 2, 3, 4.5, 6, 7, 9, 12] // Foreground variants (more granular)
-      : [2, 4.5, 7, 12]; // Other color variants
+    // Define consistent base target contrast ratios for all colors
+    // These ratios provide good coverage from low contrast to high contrast
+    // and ensure all colors have the same granular control
+    const baseRatios = [1.5, 2, 3, 4.5, 6, 7, 9, 12];
     
     // Apply contrast multiplier to ratios, ensuring minimum of 0.1 for readability
     const ratios = baseRatios.map(ratio => Math.max(0.1, ratio * contrastMultiplier));
@@ -140,11 +139,11 @@ Leonardo output: ${JSON.stringify(output, null, 2)}`);
     return variants;
   } catch (error) {
     console.error('Leonardo generation failed completely:', error);
-    console.error('Input parameters:', { colorHex, backgroundHex, variantCount, contrastMultiplier });
+    console.error('Input parameters:', { colorHex, backgroundHex, contrastMultiplier });
     
     // Only use fallback for truly exceptional cases (e.g., invalid color inputs, Leonardo bugs)
     console.warn('Using fallback color generation due to Leonardo failure');
-    return generateFallbackVariants(colorHex, backgroundHex, variantCount, contrastMultiplier);
+    return generateFallbackVariants(colorHex, backgroundHex, contrastMultiplier);
   }
 }
 
@@ -154,7 +153,6 @@ Leonardo output: ${JSON.stringify(output, null, 2)}`);
 function generateFallbackVariants(
   colorHex: string, 
   backgroundHex: string, 
-  variantCount: number,
   contrastMultiplier: number = 1.0
 ): ColorVariant[] {
   console.log(`Fallback generation for ${colorHex} on ${backgroundHex}`);
@@ -176,9 +174,8 @@ function generateFallbackVariants(
   }
 
   const variants: ColorVariant[] = [];
-  const baseRatios = variantCount === 8 
-    ? [1.5, 2, 3, 4.5, 6, 7, 9, 12]
-    : [2, 4.5, 7, 12];
+  // Use the same consistent ratios as the main Leonardo generation
+  const baseRatios = [1.5, 2, 3, 4.5, 6, 7, 9, 12];
   
   // Apply contrast multiplier to ratios, ensuring minimum of 0.1 for readability  
   const targetRatios = baseRatios.map(ratio => Math.max(0.1, ratio * contrastMultiplier));
@@ -229,10 +226,10 @@ export function generateEnhancedTheme(baseTheme: GeneratedTheme, contrastMultipl
   const backgroundHex = `#${baseTheme.base00}`;
   const foregroundHex = `#${baseTheme.base05}`;
   
-  // Generate 8 foreground variants
-  const foregroundVariants = generateColorVariants(foregroundHex, backgroundHex, 8, contrastMultiplier);
+  // Generate consistent variants for the main foreground color (base05)
+  const foregroundVariants = generateColorVariants(foregroundHex, backgroundHex, contrastMultiplier);
   
-  // Base16 color information
+  // Base16 color information - all colors now get the same treatment
   const colorInfo = [
     { key: 'base01', name: 'Lighter Background', description: 'Status lines, lighter backgrounds' },
     { key: 'base02', name: 'Selection Background', description: 'Selection, find highlights' },
@@ -250,10 +247,10 @@ export function generateEnhancedTheme(baseTheme: GeneratedTheme, contrastMultipl
     { key: 'base0F', name: 'Deprecated', description: 'Deprecated, embedded language tags' }
   ];
   
-  // Generate 4 variants for each other color
+  // Generate consistent variants for all colors (same as foreground)
   const colorVariants: ColorWithVariants[] = colorInfo.map(info => {
     const colorHex = `#${(baseTheme as any)[info.key]}`;
-    const variants = generateColorVariants(colorHex, backgroundHex, 4, contrastMultiplier);
+    const variants = generateColorVariants(colorHex, backgroundHex, contrastMultiplier);
     
     return {
       baseHex: colorHex,
