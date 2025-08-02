@@ -285,13 +285,13 @@ function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme
     // Use enhanced theme colors with contrast adjustments
     return {
       base00: enhancedTheme.backgroundHex,
-      base01: ensureHexPrefix(theme.base01),
-      base02: ensureHexPrefix(theme.base02),
-      base03: ensureHexPrefix(theme.base03),
-      base04: ensureHexPrefix(theme.base04),
+      base01: enhancedTheme.colorVariants[0]?.variants[1]?.hex || ensureHexPrefix(theme.base01), // Lighter Background
+      base02: enhancedTheme.colorVariants[1]?.variants[1]?.hex || ensureHexPrefix(theme.base02), // Selection Background
+      base03: enhancedTheme.colorVariants[2]?.variants[2]?.hex || ensureHexPrefix(theme.base03), // Comments - uses 3.0 contrast ratio for better readability
+      base04: enhancedTheme.colorVariants[3]?.variants[1]?.hex || ensureHexPrefix(theme.base04), // Dark Foreground
       base05: enhancedTheme.foregroundVariants[2]?.hex || enhancedTheme.foregroundVariants[0]?.hex || ensureHexPrefix(theme.base05),
-      base06: ensureHexPrefix(theme.base06),
-      base07: ensureHexPrefix(theme.base07),
+      base06: enhancedTheme.colorVariants[4]?.variants[1]?.hex || ensureHexPrefix(theme.base06), // Light Foreground
+      base07: enhancedTheme.colorVariants[5]?.variants[1]?.hex || ensureHexPrefix(theme.base07), // Light Background
       base08: enhancedTheme.colorVariants[6]?.variants[1]?.hex || ensureHexPrefix(theme.base08), // Variables (red)
       base09: enhancedTheme.colorVariants[7]?.variants[1]?.hex || ensureHexPrefix(theme.base09), // Numbers (orange)
       base0A: enhancedTheme.colorVariants[8]?.variants[1]?.hex || ensureHexPrefix(theme.base0A), // Classes (yellow)
