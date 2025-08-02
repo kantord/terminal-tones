@@ -171,151 +171,62 @@ export function generateThemeFromImageAndFlavor(
  */
 export interface BestFlavorMatch {
   flavorName: FlavorName;
-  contrastLevel: number;
   score: number;
 }
 
 /**
- * Find the best matching flavor and contrast level using Web Workers for parallel processing
- * Tests all flavors with contrast levels from 0.1x to 3.0x in 0.1x steps
- * Returns the combination that has the lowest total perceptual difference
+ * Find the best matching flavor using a sensible default contrast level
+ * Tests all flavors with a fixed contrast multiplier for speed and simplicity
+ * Returns the flavor that has the lowest total perceptual difference
  */
 export async function findBestMatchingFlavor(extractedColors: RGB[], availableFlavors: FlavorName[]): Promise<BestFlavorMatch> {
-  // Check if we're in a browser environment with Web Worker support
-  if (typeof Worker === 'undefined') {
-    // Fallback to sequential processing (for Node.js tests, etc.)
-    return findBestMatchingFlavorSequential(extractedColors, availableFlavors);
-  }
+  console.time('findBestMatchingFlavor');
   
-  console.time('findBestMatchingFlavor (parallel)');
+  // Use a sensible default contrast level that provides good accessibility
+  // while maintaining color variety and visual appeal
+  const defaultContrastLevel = 1.2; // Slightly enhanced contrast for better readability
   
-  // Strategic contrast levels to test (reduced for performance)
-  const contrastLevels: number[] = [
-    0.1, 0.3, 0.5,           // Low contrast
-    0.7, 1.0, 1.3, 1.6,     // Normal range  
-    2.0, 2.5, 3.0           // High contrast
-  ];
-  
-  const totalCombinations = availableFlavors.length * contrastLevels.length;
-  console.log(`Testing ${availableFlavors.length} flavors × ${contrastLevels.length} contrast levels = ${totalCombinations} combinations (parallel)`);
+  console.log(`Testing ${availableFlavors.length} flavors with default contrast level ${defaultContrastLevel}x`);
   
   // Normalize extracted colors once
   const normalizedExtractedColors = extractedColors.slice(0, 16);
   while (normalizedExtractedColors.length < 16) {
     normalizedExtractedColors.push(...extractedColors.slice(0, 16 - normalizedExtractedColors.length));
   }
-  
-  // Determine number of workers (use CPU cores but cap at 8)
-  const numWorkers = Math.min(navigator.hardwareConcurrency || 4, 8);
-  console.log(`Using ${numWorkers} Web Workers for parallel processing`);
-  
-  // Split flavors into chunks for each worker
-  const flavorChunks = [];
-  const chunkSize = Math.ceil(availableFlavors.length / numWorkers);
-  
-  for (let i = 0; i < availableFlavors.length; i += chunkSize) {
-    flavorChunks.push(availableFlavors.slice(i, i + chunkSize));
-  }
-  
-  // Create workers and process chunks in parallel
-  const workerPromises = flavorChunks.map((flavorChunk, index) => {
-    return processFlavorChunkInWorker(
-      normalizedExtractedColors,
-      flavorChunk,
-      contrastLevels,
-      availableFlavors,
-      index
-    );
-  });
-  
-  try {
-    // Wait for all workers to complete
-    const results = await Promise.all(workerPromises);
-    
-    // Find the best result across all workers
-    let globalBest = {
-      flavorName: availableFlavors[0],
-      contrastLevel: 1.0,
-      score: Infinity
-    };
-    
-    let totalTested = 0;
-    
-    for (const result of results) {
-      totalTested += result.combinationsTested;
-      if (result.bestMatch.score < globalBest.score) {
-        globalBest = result.bestMatch;
-      }
-    }
-    
-    console.log(`Best match: ${globalBest.flavorName} @ ${globalBest.contrastLevel}x contrast with score ${globalBest.score.toFixed(2)}`);
-    console.log(`Total combinations tested: ${totalTested}`);
-    console.timeEnd('findBestMatchingFlavor (parallel)');
-    
-    return globalBest;
-    
-  } catch (error) {
-    console.error('Parallel processing failed, falling back to sequential:', error);
-    return findBestMatchingFlavorSequential(extractedColors, availableFlavors);
-  }
-}
-
-/**
- * Sequential fallback implementation (for environments without Web Worker support)
- */
-function findBestMatchingFlavorSequential(extractedColors: RGB[], availableFlavors: FlavorName[]): BestFlavorMatch {
-  console.time('findBestMatchingFlavor (sequential)');
   
   let bestFlavor: FlavorName = availableFlavors[0];
-  let bestContrastLevel = 1.0;
   let bestScore = Infinity;
   
-  // Strategic contrast levels to test (reduced for performance)
-  const contrastLevels: number[] = [
-    0.1, 0.3, 0.5,           // Low contrast
-    0.7, 1.0, 1.3, 1.6,     // Normal range  
-    2.0, 2.5, 3.0           // High contrast
-  ];
-  
-  // Normalize extracted colors once
-  const normalizedExtractedColors = extractedColors.slice(0, 16);
-  while (normalizedExtractedColors.length < 16) {
-    normalizedExtractedColors.push(...extractedColors.slice(0, 16 - normalizedExtractedColors.length));
-  }
-  
-  let combinationsTested = 0;
-  
+  // Test each flavor with our default contrast level
   for (const flavorName of availableFlavors) {
-    for (const contrastLevel of contrastLevels) {
-      try {
-        const baseTheme = generateThemeFromImageAndFlavor(normalizedExtractedColors, flavorName);
-        const enhancedTheme = generateEnhancedTheme(baseTheme, contrastLevel);
-        const enhancedColors = getEnhancedThemeColors(enhancedTheme);
-        const mapping = findOptimalColorMapping(normalizedExtractedColors, enhancedColors);
-        const score = calculateMappingScore(normalizedExtractedColors, enhancedColors, mapping);
-        
-        combinationsTested++;
-        
-        if (score < bestScore) {
-          bestScore = score;
-          bestFlavor = flavorName;
-          bestContrastLevel = contrastLevel;
-        }
-        
-      } catch (error) {
-        continue;
+    try {
+      const baseTheme = generateThemeFromImageAndFlavor(normalizedExtractedColors, flavorName);
+      const enhancedTheme = generateEnhancedTheme(baseTheme, defaultContrastLevel);
+      const enhancedColors = getEnhancedThemeColors(enhancedTheme);
+      const mapping = findOptimalColorMapping(normalizedExtractedColors, enhancedColors);
+      const score = calculateMappingScore(normalizedExtractedColors, enhancedColors, mapping);
+      
+      if (score < bestScore) {
+        bestScore = score;
+        bestFlavor = flavorName;
       }
+      
+    } catch (error) {
+      console.warn(`Failed to process flavor ${flavorName}:`, error);
+      continue;
     }
   }
   
-  console.timeEnd('findBestMatchingFlavor (sequential)');
+  console.log(`Best match: ${bestFlavor} with score ${bestScore.toFixed(2)}`);
+  console.timeEnd('findBestMatchingFlavor');
   
   return {
     flavorName: bestFlavor,
-    contrastLevel: bestContrastLevel,
     score: bestScore
   };
 }
+
+
 
 /**
  * Process a chunk of flavors in a Web Worker

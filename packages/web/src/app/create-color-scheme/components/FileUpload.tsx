@@ -111,21 +111,18 @@ export function FileUpload() {
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);
       
-      // Find the best matching flavor and contrast level if none is selected
+      // Find the best matching flavor if none is selected
       let flavorToUse = selectedFlavor;
-      let contrastToUse = contrastLevel;
       let autoSelected = false;
       
       if (!flavorToUse) {
         const bestMatch = await findBestMatchingFlavor(result.colors, availableFlavors);
         flavorToUse = bestMatch.flavorName;
-        contrastToUse = bestMatch.contrastLevel;
         autoSelected = true;
-        console.log(`Auto-selected: ${flavorToUse} @ ${contrastToUse}x contrast (score: ${bestMatch.score.toFixed(2)})`);
+        console.log(`Auto-selected: ${flavorToUse} (score: ${bestMatch.score.toFixed(2)})`);
       }
       
       setSelectedFlavor(flavorToUse);
-      setContrastLevel(contrastToUse);
       setIsAutoSelected(autoSelected);
       
       // Generate theme with the selected/optimized flavor and contrast
@@ -402,7 +399,7 @@ export function FileUpload() {
               {/* Color Variants */}
               <div className="mb-8">
                 <h4 className="text-md font-medium mb-4 text-gray-600 dark:text-gray-400">
-                  Theme Colors - 4 Contrast Variants Each
+                  Theme Colors - 8 Contrast Variants Each
                 </h4>
                 <div className="space-y-6">
                   {enhancedTheme.colorVariants.map((colorGroup, groupIndex) => (
