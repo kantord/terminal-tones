@@ -35,13 +35,36 @@ function convertBase16ToFlavor(base16, slug) {
 }
 
 function buildFlavors() {
-  console.log('Building flavor database from YAML files...');
+  console.log('Building curated flavor database from YAML files...');
+  
+  // Curated selection of high-quality, diverse color schemes for faster exhaustive search
+  // 5 dark themes + 5 light themes representing different color palettes and styles
+  const CURATED_FLAVORS = [
+    // Dark themes (5)
+    'dracula',           // Popular purple/pink dark theme
+    'gruvbox-dark',      // Warm, earthy dark theme  
+    'catppuccin-mocha',  // Modern pastel dark theme
+    'tokyo-night-dark',  // Blue/purple dark theme
+    'nord',              // Cool blue/gray dark theme
+    
+    // Light themes (5)  
+    'catppuccin-latte',  // Modern pastel light theme
+    'gruvbox-light',     // Warm, earthy light theme
+    'github',            // Clean, minimal light theme
+    'solarized-light',   // Classic light theme
+    'rose-pine-dawn'     // Warm, rosy light theme
+  ];
   
   try {
-    const yamlFiles = fs.readdirSync(flavorsDir)
-      .filter(file => file.endsWith('.yaml')); // Process all flavor files
+    const allYamlFiles = fs.readdirSync(flavorsDir)
+      .filter(file => file.endsWith('.yaml'));
     
-    console.log(`Processing ${yamlFiles.length} YAML files...`);
+    // Only process curated flavors
+    const yamlFiles = CURATED_FLAVORS.map(name => `${name}.yaml`)
+      .filter(file => allYamlFiles.includes(file));
+    
+    console.log(`Processing ${yamlFiles.length}/${CURATED_FLAVORS.length} curated YAML files...`);
+    console.log(`Curated flavors: ${CURATED_FLAVORS.join(', ')}`);
     
     const flavors = {};
     let successCount = 0;
@@ -70,7 +93,7 @@ function buildFlavors() {
     
     // Generate TypeScript file
     const tsContent = `// Auto-generated file - do not edit manually
-// Generated from ${successCount} YAML flavor files
+// Generated from ${successCount} curated YAML flavor files (optimized for performance)
 
 export interface FlavorScheme {
   scheme: string;

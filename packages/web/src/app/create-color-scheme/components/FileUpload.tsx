@@ -21,7 +21,6 @@ import {
   type GeneratedTheme,
   type EnhancedTheme,
   type ColorVariant,
-  type ColorWithVariants,
   type BestFlavorMatch
 } from '@terminal-tones/theme-generator';
 
@@ -75,18 +74,16 @@ export function FileUpload() {
     console.log('Generating theme from image and flavor:', flavorName);
     
     try {
-      // Ensure we have exactly 20 colors for exhaustive search
-      if (imageColors.length !== 20) {
-        throw new Error(`Expected exactly 20 colors for exhaustive search, got ${imageColors.length}`);
+      // Simplified approach - use 16 colors directly
+      if (imageColors.length < 16) {
+        throw new Error(`Expected at least 16 colors, got ${imageColors.length}`);
       }
       
       const theme = generateThemeFromImageAndFlavor(imageColors, flavorName);
-      console.log('Base theme generated with exhaustive search:', theme);
+      console.log('Base theme generated:', theme);
       
-      const enhanced = generateEnhancedTheme(theme, contrastLevel);
+      const enhanced = generateEnhancedTheme(theme);
       console.log('Enhanced theme generated:', enhanced);
-      console.log('Foreground variants:', enhanced.foregroundVariants);
-      console.log('Color variants count:', enhanced.colorVariants.length);
       
       const themeColors = getEnhancedThemeColors(enhanced);
       
@@ -111,7 +108,7 @@ export function FileUpload() {
     setUploadedFileName(file.name);
     
     try {
-      const result = await extractColorsFromImage(file, 20);
+      const result = await extractColorsFromImage(file, 16);
       
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);
@@ -174,11 +171,8 @@ export function FileUpload() {
   const handleContrastChange = (newContrastLevel: number) => {
     setContrastLevel(newContrastLevel);
     
-    // If we already have extracted colors and a flavor, regenerate the theme
-    if (extractedColors.length > 0 && selectedFlavor) {
-      setIsProcessing(true);
-      generateTheme(extractedColors, selectedFlavor);
-    }
+    // No need to regenerate - contrast doesn't affect the simplified theme
+    // The contrast level is no longer used in the simplified approach
   };
 
   if (isProcessing) {
@@ -233,42 +227,7 @@ export function FileUpload() {
               </div>
             )}
 
-            {enhancedTheme && (
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                  <Contrast className="w-5 h-5" />
-                  Adjust Contrast Level
-                </h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[3rem]">Low</span>
-                    <div className="flex-1">
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="3.0"
-                        step="0.05"
-                        value={contrastLevel}
-                        onChange={(e) => handleContrastChange(parseFloat(e.target.value))}
-                        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-slider"
-                        disabled={isProcessing}
-                      />
-                    </div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[3rem]">High</span>
-                  </div>
-                  
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Contrast: <span className="font-mono font-medium">{contrastLevel.toFixed(2)}x</span>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                      Multiplier for contrast ratios (0.1 = very subtle, 1.0 = default, 3.0 = high contrast)
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Contrast adjustment removed - simplified approach doesn't use complex contrast calculations */}
             
             {uploadedImageUrl && (
               <div className="mb-6">
@@ -343,7 +302,7 @@ export function FileUpload() {
                   {generatedTheme.author}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                  Mapping score: {generatedTheme.mappingScore.toFixed(2)} (lower is better)
+                  Using extracted colors directly in order
                 </div>
               </div>
             </div>
@@ -352,105 +311,51 @@ export function FileUpload() {
           {enhancedTheme && (
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-medium mb-6 text-gray-700 dark:text-gray-300">
-                Enhanced Color Palette with Contrast Variants
+                Extracted Color Palette (16 Colors)
               </h3>
               
-              {/* Background Color */}
-              <div className="mb-8">
-                <h4 className="text-md font-medium mb-3 text-gray-600 dark:text-gray-400">
-                  Background (base00)
-                </h4>
-                <div className="flex justify-center">
-                  <div className="text-center">
-                    <div
-                      className="w-20 h-20 rounded-lg shadow-md border border-gray-200 dark:border-gray-600 mb-2"
-                      style={{ backgroundColor: enhancedTheme.backgroundHex }}
-                    />
-                    <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                      {enhancedTheme.backgroundHex}
-                    </div>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Colors extracted directly from your image in order, mapped to Base16 positions.
+                </p>
+                
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
+                  {enhancedTheme.allColorsHex.map((color, index) => {
+                    const baseNames = [
+                      'base00', 'base01', 'base02', 'base03', 
+                      'base04', 'base05', 'base06', 'base07',
+                      'base08', 'base09', 'base0A', 'base0B', 
+                      'base0C', 'base0D', 'base0E', 'base0F'
+                    ];
+                    
+                    return (
+                      <div key={index} className="text-center">
+                        <div
+                          className="w-16 h-16 rounded-lg shadow-md border border-gray-200 dark:border-gray-600 mb-2"
+                          style={{ backgroundColor: color }}
+                          data-testid={index === 0 ? "color-0" : undefined}
+                        />
+                        <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                          {color}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                          {baseNames[index]}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    Simplified Approach
+                  </h4>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <div>• 16 colors extracted directly from image</div>
+                    <div>• No complex optimization or contrast calculations</div>
+                    <div>• Colors used exactly as extracted, in order</div>
+                    <div>• Fast generation with instant results</div>
                   </div>
-                </div>
-              </div>
-
-              {/* Foreground Variants */}
-              <div className="mb-8">
-                <h4 className="text-md font-medium mb-3 text-gray-600 dark:text-gray-400">
-                  Foreground (base05) - 8 Contrast Variants
-                </h4>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {enhancedTheme.foregroundVariants.map((variant, index) => (
-                    <div key={index} className="text-center">
-                      <div
-                        className="w-16 h-16 rounded-lg shadow-md border border-gray-200 dark:border-gray-600 mb-2 flex items-center justify-center text-xs font-mono"
-                        style={{ 
-                          backgroundColor: enhancedTheme.backgroundHex,
-                          color: variant.hex
-                        }}
-                      >
-                        Aa
-                      </div>
-                      <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                        {variant.hex}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">
-                        {variant.contrast.toFixed(1)}:1 {variant.wcagLevel}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Color Variants */}
-              <div className="mb-8">
-                <h4 className="text-md font-medium mb-4 text-gray-600 dark:text-gray-400">
-                  Theme Colors - 8 Contrast Variants Each
-                </h4>
-                <div className="space-y-6">
-                  {enhancedTheme.colorVariants.map((colorGroup, groupIndex) => (
-                    <div key={groupIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                      <div className="mb-3">
-                        <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {colorGroup.baseName}
-                        </h5>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {colorGroup.baseDescription}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {colorGroup.variants.map((variant, variantIndex) => (
-                          <div key={variantIndex} className="text-center">
-                            <div
-                              className="w-12 h-12 rounded-md shadow-sm border border-gray-200 dark:border-gray-600 mb-1"
-                              style={{ backgroundColor: variant.hex }}
-                              title={`${variant.contrast.toFixed(1)}:1 ${variant.wcagLevel}`}
-                              data-testid={groupIndex === 0 && variantIndex === 0 ? "color-0" : undefined}
-                            />
-                            <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                              {variant.hex}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-500">
-                              {variant.contrast.toFixed(1)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Color Palette Summary */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                  Palette Summary
-                </h4>
-                <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                  <div>• 1 Background color (base00)</div>
-                  <div>• 8 Foreground variants with contrast ratios from 1.5:1 to 12:1</div>
-                  <div>• 14 Theme colors with 4 variants each (56 total variants)</div>
-                  <div>• All variants optimized using Leonardo contrast algorithms</div>
-                  <div>• WCAG AA/AAA compliance indicated for accessibility</div>
                 </div>
               </div>
             </div>

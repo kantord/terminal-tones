@@ -5,14 +5,51 @@ import { GENERATED_FLAVORS, FLAVOR_NAMES, type FlavorScheme } from './generatedF
 let flavorNames: string[] | null = null;
 
 /**
+ * Curated selection of high-quality, diverse color schemes for faster exhaustive search
+ * 5 dark themes + 5 light themes representing different color palettes and styles
+ */
+const CURATED_FLAVORS = [
+  // Dark themes (5)
+  'dracula',           // Popular purple/pink dark theme
+  'gruvbox-dark',      // Warm, earthy dark theme  
+  'catppuccin-mocha',  // Modern pastel dark theme
+  'tokyo-night-dark',  // Blue/purple dark theme
+  'nord',              // Cool blue/gray dark theme
+  
+  // Light themes (5)  
+  'catppuccin-latte',  // Modern pastel light theme
+  'gruvbox-light',     // Warm, earthy light theme
+  'github',            // Clean, minimal light theme
+  'solarized-light',   // Classic light theme
+  'rose-pine-dawn'     // Warm, rosy light theme
+];
+
+/**
  * Get a list of all available flavor names
+ * Returns curated selection for faster exhaustive search performance
  */
 export function getAvailableFlavors(): string[] {
   if (flavorNames) {
     return flavorNames;
   }
   
-  flavorNames = [...FLAVOR_NAMES];
+  // Validate that all curated flavors exist
+  const validatedFlavors = CURATED_FLAVORS.filter(name => {
+    const exists = GENERATED_FLAVORS[name] !== undefined;
+    if (!exists) {
+      console.warn(`Curated flavor "${name}" not found in GENERATED_FLAVORS`);
+    }
+    return exists;
+  });
+  
+  if (validatedFlavors.length < 10) {
+    console.warn(`Only ${validatedFlavors.length}/10 curated flavors found. Falling back to first 10 available flavors.`);
+    flavorNames = FLAVOR_NAMES.slice(0, 10);
+  } else {
+    flavorNames = validatedFlavors;
+  }
+  
+  console.log(`Using ${flavorNames.length} curated flavors for exhaustive search:`, flavorNames);
   return flavorNames;
 }
 

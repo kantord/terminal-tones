@@ -279,31 +279,9 @@ function ensureHexPrefix(color: string): string {
   return color.startsWith('#') ? color : `#${color}`;
 }
 
-// Get colors from enhanced theme or fall back to base theme
+// Get colors from theme - simplified approach
 function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme | null) {
-  if (enhancedTheme) {
-    // Use enhanced theme colors with contrast adjustments
-    return {
-      base00: enhancedTheme.backgroundHex,
-      base01: enhancedTheme.colorVariants[0]?.variants[1]?.hex || ensureHexPrefix(theme.base01), // Lighter Background
-      base02: enhancedTheme.colorVariants[1]?.variants[1]?.hex || ensureHexPrefix(theme.base02), // Selection Background
-      base03: enhancedTheme.colorVariants[2]?.variants[2]?.hex || ensureHexPrefix(theme.base03), // Comments - uses 3.0 contrast ratio for better readability
-      base04: enhancedTheme.colorVariants[3]?.variants[1]?.hex || ensureHexPrefix(theme.base04), // Dark Foreground
-      base05: enhancedTheme.foregroundVariants[2]?.hex || enhancedTheme.foregroundVariants[0]?.hex || ensureHexPrefix(theme.base05),
-      base06: enhancedTheme.colorVariants[4]?.variants[1]?.hex || ensureHexPrefix(theme.base06), // Light Foreground
-      base07: enhancedTheme.colorVariants[5]?.variants[1]?.hex || ensureHexPrefix(theme.base07), // Light Background
-      base08: enhancedTheme.colorVariants[6]?.variants[1]?.hex || ensureHexPrefix(theme.base08), // Variables (red)
-      base09: enhancedTheme.colorVariants[7]?.variants[1]?.hex || ensureHexPrefix(theme.base09), // Numbers (orange)
-      base0A: enhancedTheme.colorVariants[8]?.variants[1]?.hex || ensureHexPrefix(theme.base0A), // Classes (yellow)
-      base0B: enhancedTheme.colorVariants[9]?.variants[1]?.hex || ensureHexPrefix(theme.base0B), // Strings (green)
-      base0C: enhancedTheme.colorVariants[10]?.variants[1]?.hex || ensureHexPrefix(theme.base0C), // Support (cyan)
-      base0D: enhancedTheme.colorVariants[11]?.variants[1]?.hex || ensureHexPrefix(theme.base0D), // Functions (blue)
-      base0E: enhancedTheme.colorVariants[12]?.variants[1]?.hex || ensureHexPrefix(theme.base0E), // Keywords (purple)
-      base0F: enhancedTheme.colorVariants[13]?.variants[1]?.hex || ensureHexPrefix(theme.base0F), // Deprecated
-    };
-  }
-  
-  // Fall back to base theme colors
+  // Always use the base theme colors - enhanced theme in simplified approach is just for internal use
   return {
     base00: ensureHexPrefix(theme.base00),
     base01: ensureHexPrefix(theme.base01),

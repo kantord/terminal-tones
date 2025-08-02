@@ -23,7 +23,6 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@adobe/leonardo-contrast-colors": "^1.0.0",
     "colorthief": "2.6.0",
     "culori": "^4.0.1",
     "js-yaml": "^4.1.0"

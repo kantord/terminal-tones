@@ -29,11 +29,10 @@ export {
   type BestFlavorMatch
 } from './themeGeneration';
 
-// Color variants with Leonardo contrast
+// Simplified color variants
 export {
   generateEnhancedTheme,
   getEnhancedThemeColors,
   type EnhancedTheme,
-  type ColorVariant,
-  type ColorWithVariants
+  type ColorVariant
 } from './colorVariants'; 
