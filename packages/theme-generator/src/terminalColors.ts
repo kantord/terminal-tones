@@ -1,4 +1,4 @@
-import { differenceCiede2000, parse } from 'culori';
+import { differenceCiede2000, parse, hsl } from 'culori';
 import { RGB } from './colorExtraction';
 
 export const deltaE = differenceCiede2000();
@@ -53,6 +53,46 @@ function calculateColorDifference(color1: RGB, color2: RGB): number {
 }
 
 /**
+ * Calculate hue difference between two RGB colors (0-180, circular)
+ */
+function calculateHueDifference(color1: RGB, color2: RGB): number {
+  const hex1 = rgbToHex(color1);
+  const hex2 = rgbToHex(color2);
+  
+  const hsl1 = hsl(parse(hex1));
+  const hsl2 = hsl(parse(hex2));
+  
+  if (!hsl1 || !hsl2 || hsl1.h === undefined || hsl2.h === undefined) {
+    return 0; // No hue difference for achromatic colors
+  }
+  
+  // Calculate circular distance between hues (0-360°)
+  const hue1 = hsl1.h;
+  const hue2 = hsl2.h;
+  
+  const diff = Math.abs(hue1 - hue2);
+  // Handle circular nature of hue (e.g., 350° and 10° are only 20° apart)
+  return Math.min(diff, 360 - diff);
+}
+
+/**
+ * Calculate total distance including hue penalty for semantic colors
+ */
+function calculateTotalDistance(ansiColor: RGB, extractedColor: RGB, isSemanticColor: boolean): number {
+  const perceptualDistance = calculateColorDifference(ansiColor, extractedColor);
+  
+  if (isSemanticColor) {
+    const hueDistance = calculateHueDifference(ansiColor, extractedColor);
+    // Scale hue distance to be roughly comparable to perceptual distance
+    // Hue distance is 0-180, scale it to roughly match CIEDE2000 range
+    const scaledHueDistance = (hueDistance / 180) * 50; // Scale to 0-50 range
+    return perceptualDistance + scaledHueDistance;
+  }
+  
+  return perceptualDistance;
+}
+
+/**
  * Result of finding optimal color pairing
  */
 export interface ColorPairing {
@@ -102,16 +142,22 @@ function* combinations<T>(array: T[], k: number): Generator<T[]> {
 
 /**
  * Find optimal assignment using Hungarian-style greedy approach
+ * Adds hue difference penalty for semantic colors (Red, Green, Yellow)
  */
 function findOptimalAssignment(selectedColors: RGB[], ansiColors: RGB[]): { mapping: number[], totalDistance: number } {
   const numColors = selectedColors.length; // Should be 8
   
-  // Calculate all pairwise distances
+  // Semantic color indices (Red=1, Green=2, Yellow=3) get hue penalty
+  const SEMANTIC_INDICES = new Set([1, 2, 3]); // Red, Green, Yellow
+  
+  // Calculate all pairwise distances with hue penalty for semantic colors
   const distances: number[][] = [];
   for (let ansiIndex = 0; ansiIndex < numColors; ansiIndex++) {
     distances[ansiIndex] = [];
     for (let selectedIndex = 0; selectedIndex < numColors; selectedIndex++) {
-      distances[ansiIndex][selectedIndex] = calculateColorDifference(ansiColors[ansiIndex], selectedColors[selectedIndex]);
+      const isSemanticColor = SEMANTIC_INDICES.has(ansiIndex);
+      const distance = calculateTotalDistance(ansiColors[ansiIndex], selectedColors[selectedIndex], isSemanticColor);
+      distances[ansiIndex][selectedIndex] = distance;
     }
   }
   
@@ -189,12 +235,15 @@ export function findOptimalAnsiColorPairing(extractedColors: RGB[]): OptimalPair
     const globalExtractedIndex = bestSelectedIndices[localSelectedIndex];
     const extractedColor = extractedColors[globalExtractedIndex];
     
+    // Calculate the actual perceptual distance (without semantic weighting for display)
+    const actualDistance = calculateColorDifference(BRIGHT_ANSI_COLORS[ansiIndex], extractedColor);
+    
     pairings.push({
       ansiColor: BRIGHT_ANSI_COLORS[ansiIndex],
       ansiColorName: ANSI_COLOR_NAMES[ansiIndex],
       extractedColor: extractedColor,
       extractedColorHex: rgbToHex(extractedColor),
-      perceptualDistance: calculateColorDifference(BRIGHT_ANSI_COLORS[ansiIndex], extractedColor)
+      perceptualDistance: actualDistance // Show actual distance, not weighted
     });
   }
   

@@ -378,8 +378,9 @@ export function FileUpload() {
                   <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
                     <div>• Tested all C(16,8) = {((16*15*14*13*12*11*10*9)/(8*7*6*5*4*3*2*1)).toLocaleString()} combinations</div>
                     <div>• Used CIEDE2000 perceptual color difference formula</div>
+                    <div>• <strong>Hue penalty</strong> added for semantic colors (Red, Green, Yellow)</div>
                     <div>• Selected indices: [{ansiPairing.selectedIndices.join(', ')}]</div>
-                    <div>• Minimized sum of pairwise perceptual distances</div>
+                    <div>• Minimized perceptual + hue distance for semantic colors</div>
                   </div>
                 </div>
               </div>
