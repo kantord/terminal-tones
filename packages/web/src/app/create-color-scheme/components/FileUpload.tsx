@@ -501,8 +501,9 @@ export function FileUpload() {
                   </div>
                   
                   <div className="mt-3 text-xs text-green-700 dark:text-green-300">
-                    <div>• Colors 0-7: Normal ANSI colors using 4.5:1 contrast variants</div>
-                    <div>• Colors 8-15: Bright ANSI colors using 8:1 contrast variants</div>
+                    <div>• Color 0: Original background, Color 8: 6.0:1 background variant</div>
+                    <div>• Colors 1-7: 4.5:1 contrast variants of matched colors</div>
+                    <div>• Colors 9-15: 8:1 contrast variants of matched colors</div>
                     <div>• Click any color to copy hex value</div>
                   </div>
                 </div>
