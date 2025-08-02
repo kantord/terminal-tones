@@ -37,5 +37,6 @@ export {
 export {
   generateLeonardoVariants,
   type LeonardoVariant,
-  type LeonardoVariantsResult
+  type LeonardoVariantsResult,
+  type TerminalColorSet
 } from './leonardoVariants'; 

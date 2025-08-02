@@ -12,17 +12,27 @@ export interface LeonardoVariant {
 }
 
 /**
+ * Generated terminal color set from Leonardo variants
+ */
+export interface TerminalColorSet {
+  normal: string[]; // Colors 0-7 (4.5:1 contrast variants)
+  bright: string[]; // Colors 8-15 (8:1 contrast variants) 
+  base16: string[]; // All 16 colors in base16 order
+}
+
+/**
  * Leonardo variants result for all accent colors
  */
 export interface LeonardoVariantsResult {
   backgroundColor: string; // hex color matched with black
-  foregroundColor: string; // white
+  foregroundColor: string; // extracted white color
   accentVariants: {
     originalColor: string; // hex of the original extracted color
     colorName: string; // e.g., "accent1", "accent2", etc.
     variants: LeonardoVariant[];
   }[];
   totalVariants: number;
+  terminalColors: TerminalColorSet; // Generated 16 terminal colors
 }
 
 /**
@@ -73,6 +83,7 @@ export function generateLeonardoVariants(
   );
   
   // Add the foreground color as the first accent (so it gets its own variants)
+  // Background stays unchanged as the pure extracted color
   accentColors.unshift(foregroundColorRgb);
   
   // Target contrast ratios - 10 variants from accessible to very high contrast
@@ -129,11 +140,105 @@ export function generateLeonardoVariants(
     };
   });
   
+  // Generate the 16 terminal colors from Leonardo variants
+  const terminalColors = generateTerminalColors(ansiPairing, accentVariants);
+
   return {
     backgroundColor,
     foregroundColor,
     accentVariants,
-    totalVariants: accentVariants.length * contrastRatios.length
+    totalVariants: accentVariants.length * contrastRatios.length,
+    terminalColors
+  };
+}
+
+/**
+ * Generate 16 terminal colors from Leonardo variants
+ * Normal colors (0-7): 4.5:1 contrast variants
+ * Bright colors (8-15): 8:1 contrast variants
+ */
+function generateTerminalColors(
+  ansiPairing: OptimalPairingResult, 
+  accentVariants: LeonardoVariantsResult['accentVariants']
+): TerminalColorSet {
+  // Map ANSI indices to accent variant indices
+  // We need to map each ANSI color to its corresponding Leonardo accent
+  const ansiToAccentMap: { [ansiIndex: number]: number } = {};
+  
+  // Create mapping from ANSI pairing to accent variants
+  ansiPairing.pairings.forEach((pairing, ansiIndex) => {
+    const selectedColorIndex = ansiPairing.selectedIndices[ansiIndex];
+    
+    // Find which accent variant corresponds to this selected color
+    let accentIndex = -1;
+    
+    if (ansiIndex === 7) {
+      // White maps to accent1 (foreground color that we added first)
+      accentIndex = 0;
+    } else if (ansiIndex === 0) {
+      // Black uses the original background color, not variants
+      // We'll handle this specially in the terminal color generation
+      accentIndex = -1; // Special marker for background
+    } else {
+      // Find the accent that matches this extracted color
+      const extractedHex = rgbToHex(pairing.extractedColor);
+      accentIndex = accentVariants.findIndex(accent => 
+        accent.originalColor.toLowerCase() === extractedHex.toLowerCase()
+      );
+      
+      // If not found, map to a reasonable fallback
+      if (accentIndex === -1) {
+        accentIndex = (ansiIndex - 1) % (accentVariants.length - 1) + 1; // Skip first (foreground)
+      }
+    }
+    
+    ansiToAccentMap[ansiIndex] = accentIndex;
+  });
+  
+  const normal: string[] = [];
+  const bright: string[] = [];
+  
+  // Generate colors 0-7 (normal) and 8-15 (bright)
+  for (let i = 0; i < 8; i++) {
+    const accentIndex = ansiToAccentMap[i];
+    
+    if (accentIndex === -1) {
+      // This is the background color (black) - use the original background color
+      const backgroundHex = rgbToHex(ansiPairing.pairings[0].extractedColor);
+      normal.push(backgroundHex);
+      bright.push(backgroundHex);
+      continue;
+    }
+    
+    const accent = accentVariants[accentIndex || 0];
+    
+    if (!accent) {
+      // Fallback colors
+      normal.push('#000000');
+      bright.push('#808080');
+      continue;
+    }
+    
+    // Find 4.5:1 and 8:1 contrast variants
+    const normalVariant = accent.variants.find(v => 
+      Math.abs(v.contrast - 4.5) < 0.5
+    ) || accent.variants.find(v => v.contrast >= 4.5) || accent.variants[3];
+    
+    const brightVariant = accent.variants.find(v => 
+      Math.abs(v.contrast - 8) < 0.5  
+    ) || accent.variants.find(v => v.contrast >= 8) || accent.variants[5];
+    
+    normal.push(normalVariant?.value || accent.originalColor);
+    bright.push(brightVariant?.value || accent.originalColor);
+  }
+  
+  // Combine into base16 format (0-7 normal, 8-15 bright)
+  const base16 = [...normal, ...bright];
+  
+  return {
+    normal,
+    bright,
+    base16
   };
 }
 

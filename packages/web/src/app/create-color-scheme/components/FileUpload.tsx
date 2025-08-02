@@ -448,6 +448,65 @@ export function FileUpload() {
                   ))}
                 </div>
 
+                {/* Generated 16 Terminal Colors */}
+                <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-3">
+                    Generated 16 Terminal Colors
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    {/* Normal Colors (0-7) */}
+                    <div>
+                      <h5 className="text-xs font-medium text-green-800 dark:text-green-200 mb-2">
+                        Normal Colors (0-7) - 4.5:1 Contrast
+                      </h5>
+                      <div className="grid grid-cols-8 gap-1">
+                        {leonardoVariants.terminalColors.normal.map((color, index) => (
+                          <div key={index} className="group relative">
+                            <div 
+                              className="w-full h-10 rounded border shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                              style={{ backgroundColor: color }}
+                              title={`Color ${index}: ${color}`}
+                              onClick={() => navigator.clipboard.writeText(color)}
+                            />
+                            <div className="text-xs text-center mt-1 text-gray-500 dark:text-gray-400">
+                              {index}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Bright Colors (8-15) */}
+                    <div>
+                      <h5 className="text-xs font-medium text-green-800 dark:text-green-200 mb-2">
+                        Bright Colors (8-15) - 8:1 Contrast
+                      </h5>
+                      <div className="grid grid-cols-8 gap-1">
+                        {leonardoVariants.terminalColors.bright.map((color, index) => (
+                          <div key={index} className="group relative">
+                            <div 
+                              className="w-full h-10 rounded border shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                              style={{ backgroundColor: color }}
+                              title={`Color ${index + 8}: ${color}`}
+                              onClick={() => navigator.clipboard.writeText(color)}
+                            />
+                            <div className="text-xs text-center mt-1 text-gray-500 dark:text-gray-400">
+                              {index + 8}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 text-xs text-green-700 dark:text-green-300">
+                    <div>• Colors 0-7: Normal ANSI colors using 4.5:1 contrast variants</div>
+                    <div>• Colors 8-15: Bright ANSI colors using 8:1 contrast variants</div>
+                    <div>• Click any color to copy hex value</div>
+                  </div>
+                </div>
+
                 <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                   <h4 className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2">
                     Leonardo Details
