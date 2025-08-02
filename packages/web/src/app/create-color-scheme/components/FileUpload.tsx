@@ -409,7 +409,7 @@ export function FileUpload() {
                     <strong>Background:</strong> {leonardoVariants.backgroundColor} (matched with black)
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    <strong>Foreground:</strong> {leonardoVariants.foregroundColor} (white)
+                    <strong>Foreground:</strong> {leonardoVariants.foregroundColor} (matched with white)
                   </p>
                 </div>
 
@@ -453,7 +453,7 @@ export function FileUpload() {
                     Leonardo Details
                   </h4>
                   <div className="text-xs text-purple-700 dark:text-purple-300 space-y-1">
-                    <div>• Background color from ANSI black pairing</div>
+                    <div>• Background from ANSI black pairing, foreground from ANSI white pairing</div>
                     <div>• 10 contrast variants per accent color (1.5:1 to 18:1)</div>
                     <div>• LCH colorspace interpolation for perceptual uniformity</div>
                     <div>• Total variants: {leonardoVariants.totalVariants}</div>

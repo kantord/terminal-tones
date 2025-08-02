@@ -51,13 +51,29 @@ export function generateLeonardoVariants(
     throw new Error('Could not find color matched with black in ANSI pairing');
   }
   
+  // Find the color that was matched with white (ANSI index 7)
+  // White is at index 7 in the ANSI colors array
+  const whiteIndex = 7;
+  const whitePairing = ansiPairing.pairings[whiteIndex];
+  
+  if (!whitePairing) {
+    throw new Error('Could not find color matched with white in ANSI pairing');
+  }
+  
   const backgroundColorRgb = blackPairing.extractedColor;
   const backgroundColor = rgbToHex(backgroundColorRgb);
-  const foregroundColor = '#ffffff'; // White
+  const foregroundColorRgb = whitePairing.extractedColor;
+  const foregroundColor = rgbToHex(foregroundColorRgb);
   
-  // Get all extracted colors except the one used as background
+  // Get all extracted colors except the ones used as background and foreground
   const backgroundExtractedIndex = ansiPairing.selectedIndices[blackIndex];
-  const accentColors = allExtractedColors.filter((_, index) => index !== backgroundExtractedIndex);
+  const foregroundExtractedIndex = ansiPairing.selectedIndices[whiteIndex];
+  const accentColors = allExtractedColors.filter((_, index) => 
+    index !== backgroundExtractedIndex && index !== foregroundExtractedIndex
+  );
+  
+  // Add the foreground color as the first accent (so it gets its own variants)
+  accentColors.unshift(foregroundColorRgb);
   
   // Target contrast ratios - 10 variants from accessible to very high contrast
   const contrastRatios = [1.5, 2, 3, 4.5, 6, 8, 10, 12, 15, 18];
