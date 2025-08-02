@@ -1,5 +1,4 @@
 import { RGB } from './colorExtraction';
-import { FlavorScheme, FlavorName, getFlavor } from './flavors';
 
 // Simplified version - no complex perceptual calculations needed
 export function isPerceptible(a: string, b: string, threshold = 2.3): boolean {
@@ -17,16 +16,31 @@ function rgbToHex(rgb: RGB): string {
 // No complex optimization - just use direct mapping
 
 /**
- * Generate a theme by directly using extracted colors
+ * Simple theme interface with just Base16 color scheme
  */
-export interface GeneratedTheme extends FlavorScheme {
-  // No mapping score or complex color mapping needed
+export interface GeneratedTheme {
+  scheme: string;
+  author: string;
+  slug: string;
+  base00: string; // Background
+  base01: string; // Lighter Background
+  base02: string; // Selection Background  
+  base03: string; // Comments
+  base04: string; // Dark Foreground
+  base05: string; // Default Foreground
+  base06: string; // Light Foreground
+  base07: string; // Light Background
+  base08: string; // Variables
+  base09: string; // Integers
+  base0A: string; // Classes
+  base0B: string; // Strings
+  base0C: string; // Support
+  base0D: string; // Functions
+  base0E: string; // Keywords
+  base0F: string; // Deprecated
 }
 
-export function generateThemeFromImageAndFlavor(
-  extractedColors: RGB[], 
-  flavorName: FlavorName
-): GeneratedTheme {
+export function generateThemeFromImage(extractedColors: RGB[]): GeneratedTheme {
   // Simple approach: use the first 16 extracted colors directly
   if (extractedColors.length < 16) {
     throw new Error(`Expected at least 16 extracted colors, got ${extractedColors.length}`);
@@ -35,16 +49,10 @@ export function generateThemeFromImageAndFlavor(
   // Take only the first 16 colors and map them directly to base00-base0F
   const themeColors = extractedColors.slice(0, 16).map(rgb => rgbToHex(rgb));
   
-  // Get base flavor metadata
-  const baseFlavor = getFlavor(flavorName);
-  if (!baseFlavor) {
-    throw new Error(`Flavor "${flavorName}" not found`);
-  }
-  
   return {
-    scheme: `${baseFlavor.scheme} (Custom)`,
-    author: `Generated from ${baseFlavor.author}`,
-    slug: `${baseFlavor.slug || flavorName}-custom`,
+    scheme: 'Custom Image Theme',
+    author: 'Generated from image',
+    slug: 'custom-image-theme',
     base00: themeColors[0].replace('#', ''),
     base01: themeColors[1].replace('#', ''),
     base02: themeColors[2].replace('#', ''),
@@ -64,38 +72,11 @@ export function generateThemeFromImageAndFlavor(
   };
 }
 
-/**
- * Result of finding the best matching flavor and contrast level
- */
-export interface BestFlavorMatch {
-  flavorName: FlavorName;
-  score: number;
-}
-
-/**
- * Find the best matching flavor using simple comparison
- * Just returns the first available flavor for simplicity
- */
-export async function findBestMatchingFlavor(extractedColors: RGB[], availableFlavors: FlavorName[]): Promise<BestFlavorMatch> {
-  if (extractedColors.length < 16) {
-    throw new Error(`Expected at least 16 extracted colors, got ${extractedColors.length}`);
-  }
-
-  if (availableFlavors.length === 0) {
-    throw new Error('No available flavors provided');
-  }
-
-  // Simple approach: just use the first available flavor
-  // In a real implementation, you could add basic color comparison here
-  return {
-    flavorName: availableFlavors[0],
-    score: 0 // No complex scoring needed
-  };
-}
+// No flavor matching needed - removed all flavor logic
 
 
 
-// Removed complex worker-based processing - not needed for simple approach
+// No complex processing needed
 
 /**
  * Get the 16 colors from a generated theme as RGB tuples

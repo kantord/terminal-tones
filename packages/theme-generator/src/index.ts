@@ -8,25 +8,12 @@ export {
   type ColorExtractionError
 } from './colorExtraction';
 
-// Flavor functionality
+// Theme generation functionality (no flavors needed)
 export {
-  getAvailableFlavors,
-  getFlavor,
-  getFlavorColors,
-  getFlavorMetadata,
-  searchFlavors,
-  type FlavorScheme,
-  type FlavorName
-} from './flavors';
-
-// Theme generation functionality
-export {
-  generateThemeFromImageAndFlavor,
+  generateThemeFromImage,
   getGeneratedThemeColors,
-  findBestMatchingFlavor,
   isPerceptible,
-  type GeneratedTheme,
-  type BestFlavorMatch
+  type GeneratedTheme
 } from './themeGeneration';
 
 // Simplified color variants

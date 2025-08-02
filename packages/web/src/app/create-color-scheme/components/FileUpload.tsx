@@ -2,26 +2,20 @@
 
 import { useState, useRef } from 'react';
 import { Upload, Loader2, Contrast, Code2 } from 'lucide-react';
-import { FlavorCombobox } from '@/components/FlavorCombobox';
+// No flavor combobox needed anymore
 import { SyntaxPreview } from '@/components/SyntaxPreview';
 import { 
   extractColorsFromImage, 
   rgbToHex, 
   cleanupImageUrl, 
-  getAvailableFlavors,
-  getFlavorColors,
-  getFlavorMetadata,
-  generateThemeFromImageAndFlavor,
+  generateThemeFromImage,
   getGeneratedThemeColors,
-  findBestMatchingFlavor,
   generateEnhancedTheme,
   getEnhancedThemeColors,
   type RGB,
-  type FlavorName,
   type GeneratedTheme,
   type EnhancedTheme,
-  type ColorVariant,
-  type BestFlavorMatch
+  type ColorVariant
 } from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
@@ -31,17 +25,14 @@ export function FileUpload() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  const [selectedFlavor, setSelectedFlavor] = useState<FlavorName | null>(null);
   const [generatedTheme, setGeneratedTheme] = useState<GeneratedTheme | null>(null);
   const [enhancedTheme, setEnhancedTheme] = useState<EnhancedTheme | null>(null);
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
-  const [isAutoSelected, setIsAutoSelected] = useState(false);
-  const [contrastLevel, setContrastLevel] = useState(1.0);
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const availableFlavors = getAvailableFlavors();
+// No flavors needed anymore
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -70,8 +61,8 @@ export function FileUpload() {
     }
   };
 
-  const generateTheme = (imageColors: RGB[], flavorName: FlavorName) => {
-    console.log('Generating theme from image and flavor:', flavorName);
+  const generateTheme = (imageColors: RGB[]) => {
+    console.log('Generating theme from image colors');
     
     try {
       // Simplified approach - use 16 colors directly
@@ -79,7 +70,7 @@ export function FileUpload() {
         throw new Error(`Expected at least 16 colors, got ${imageColors.length}`);
       }
       
-      const theme = generateThemeFromImageAndFlavor(imageColors, flavorName);
+      const theme = generateThemeFromImage(imageColors);
       console.log('Base theme generated:', theme);
       
       const enhanced = generateEnhancedTheme(theme);
@@ -113,22 +104,8 @@ export function FileUpload() {
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);
       
-      // Find the best matching flavor if none is selected
-      let flavorToUse = selectedFlavor;
-      let autoSelected = false;
-      
-      if (!flavorToUse) {
-        const bestMatch = await findBestMatchingFlavor(result.colors, availableFlavors);
-        flavorToUse = bestMatch.flavorName;
-        autoSelected = true;
-        console.log(`Auto-selected: ${flavorToUse} (score: ${bestMatch.score.toFixed(2)})`);
-      }
-      
-      setSelectedFlavor(flavorToUse);
-      setIsAutoSelected(autoSelected);
-      
-      // Generate theme with the selected/optimized flavor and contrast
-      generateTheme(result.colors, flavorToUse);
+      // Generate theme directly from extracted colors
+      generateTheme(result.colors);
     } catch (error) {
       console.error('Error extracting colors:', error);
       setIsProcessing(false);
@@ -148,38 +125,19 @@ export function FileUpload() {
     setIsProcessing(false);
     setUploadedImageUrl('');
     setUploadedFileName('');
-    setSelectedFlavor(null);
     setGeneratedTheme(null);
     setEnhancedTheme(null);
     setDisplayColors([]);
-    setIsAutoSelected(false);
-    setContrastLevel(1.0);
     setSelectedLanguage('javascript');
   };
 
-  const handleFlavorSelect = (flavorName: FlavorName) => {
-    setSelectedFlavor(flavorName);
-    setIsAutoSelected(false); // User manually selected this flavor
-    
-    // If we already have extracted colors from an image, regenerate the theme
-    if (extractedColors.length > 0) {
-      setIsProcessing(true);
-      generateTheme(extractedColors, flavorName);
-    }
-  };
-
-  const handleContrastChange = (newContrastLevel: number) => {
-    setContrastLevel(newContrastLevel);
-    
-    // No need to regenerate - contrast doesn't affect the simplified theme
-    // The contrast level is no longer used in the simplified approach
-  };
+  // No flavor selection needed anymore
 
   if (isProcessing) {
     return (
       <div className="text-center py-12">
         <div className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-          {uploadedImageUrl ? 'Generating new theme...' : 'Extracting colors and finding optimal flavor + contrast combination...'}
+          {uploadedImageUrl ? 'Generating new theme...' : 'Extracting colors from image...'}
         </div>
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
@@ -196,36 +154,16 @@ export function FileUpload() {
               Custom theme generated!
             </h2>
             
-            {selectedFlavor && (
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
-                  Try Different Flavors:
+            <div className="mb-6">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                  Direct Color Extraction
                 </h3>
-                
-                <FlavorCombobox
-                  value={selectedFlavor}
-                  onValueChange={handleFlavorSelect}
-                  placeholder="Select a flavor..."
-                  disabled={isProcessing}
-                  className="mb-4"
-                />
-                
-                <div className="text-center">
-                  <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    Currently using: {getFlavorMetadata(selectedFlavor)?.scheme}
-                    {isAutoSelected && (
-                      <span className="ml-2 text-xs opacity-75">(best match)</span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="text-center mt-2">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {availableFlavors.length} professional color schemes available
-                  </div>
-                </div>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Colors are extracted directly from your image and used exactly as found - no flavor templates needed!
+                </p>
               </div>
-            )}
+            </div>
 
             {/* Contrast adjustment removed - simplified approach doesn't use complex contrast calculations */}
             
