@@ -101,33 +101,49 @@ function generateColorVariants(
     
     const variants: ColorVariant[] = [];
 
-    // Extract variants from Leonardo output
-    for (const ratio of ratios) {
-      const colorName = `variants${Math.round(ratio * 100)}`;
-      const generatedHex = (output as any)[colorName] as string;
+    // Extract variants from Leonardo output structure
+    // Leonardo returns an array of color objects, find our 'variants' color
+    const variantsColorObject = output.find((colorObj: any) => colorObj.name === 'variants') as any;
+    
+    if (variantsColorObject && variantsColorObject.values) {
+      console.log('Found variants color object with values:', variantsColorObject.values);
       
-      console.log(`Looking for ${colorName}, found: ${generatedHex}`);
-      
-      if (generatedHex && generatedHex.startsWith('#')) {
-        variants.push({
-          hex: generatedHex,
-          rgb: hexToRgb(generatedHex),
-          contrast: ratio,
-          wcagLevel: getWcagLevel(ratio)
-        });
+      // Extract each generated color from the values array
+      for (const valueObj of variantsColorObject.values) {
+        const generatedHex = valueObj.value;
+        const actualContrast = valueObj.contrast;
+        
+        console.log(`Leonardo generated: ${generatedHex} with contrast ${actualContrast}`);
+        
+        if (generatedHex && generatedHex.startsWith('#')) {
+          variants.push({
+            hex: generatedHex,
+            rgb: hexToRgb(generatedHex),
+            contrast: actualContrast,
+            wcagLevel: getWcagLevel(actualContrast)
+          });
+        }
       }
+    } else {
+      console.warn('No variants color object found in Leonardo output:', output);
     }
 
     console.log(`Generated ${variants.length} Leonardo variants`);
     
+    // Leonardo should always generate valid variants when used correctly
     if (variants.length === 0) {
-      console.warn('No valid Leonardo variants generated, falling back');
-      return generateFallbackVariants(colorHex, backgroundHex, variantCount, contrastMultiplier);
+      throw new Error(`Leonardo failed to generate any variants! This indicates a serious issue.
+Input color: ${colorHex}, Background: ${backgroundHex}, Ratios: ${ratios}
+Leonardo output: ${JSON.stringify(output, null, 2)}`);
     }
 
     return variants;
   } catch (error) {
-    console.warn('Leonardo generation failed, falling back to manual interpolation:', error);
+    console.error('Leonardo generation failed completely:', error);
+    console.error('Input parameters:', { colorHex, backgroundHex, variantCount, contrastMultiplier });
+    
+    // Only use fallback for truly exceptional cases (e.g., invalid color inputs, Leonardo bugs)
+    console.warn('Using fallback color generation due to Leonardo failure');
     return generateFallbackVariants(colorHex, backgroundHex, variantCount, contrastMultiplier);
   }
 }
