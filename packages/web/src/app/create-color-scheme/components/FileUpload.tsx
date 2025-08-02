@@ -75,8 +75,13 @@ export function FileUpload() {
     console.log('Generating theme from image and flavor:', flavorName);
     
     try {
+      // Ensure we have exactly 20 colors for exhaustive search
+      if (imageColors.length !== 20) {
+        throw new Error(`Expected exactly 20 colors for exhaustive search, got ${imageColors.length}`);
+      }
+      
       const theme = generateThemeFromImageAndFlavor(imageColors, flavorName);
-      console.log('Base theme generated:', theme);
+      console.log('Base theme generated with exhaustive search:', theme);
       
       const enhanced = generateEnhancedTheme(theme, contrastLevel);
       console.log('Enhanced theme generated:', enhanced);

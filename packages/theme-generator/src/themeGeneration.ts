@@ -41,57 +41,127 @@ function calculateColorDifference(color1: RGB, color2: RGB): number {
 }
 
 /**
- * Find the optimal mapping between extracted colors and flavor colors
- * Returns an array where index corresponds to flavor color position (base00-base0F)
- * and value is the index of the best matching extracted color
- * 
- * Now supports more extracted colors than flavor colors - selects the best matches
- * and discards the unused extracted colors
+ * Generate all combinations of selecting k items from n items
  */
-function findOptimalColorMapping(extractedColors: RGB[], flavorColors: RGB[]): number[] {
-  const numFlavorColors = flavorColors.length; // Always 16 for base16 themes
-  const numExtractedColors = extractedColors.length; // Now 20, we pick best 16
+function* generateCombinations<T>(array: T[], k: number): Generator<T[]> {
+  const n = array.length;
+  if (k > n) return;
+  if (k === 0) {
+    yield [];
+    return;
+  }
   
-  // Calculate all pairwise distances between flavor colors and extracted colors
+  const indices = Array.from({length: k}, (_, i) => i);
+  yield indices.map(i => array[i]);
+  
+  while (true) {
+    let i = k - 1;
+    while (i >= 0 && indices[i] === n - k + i) {
+      i--;
+    }
+    
+    if (i < 0) break;
+    
+    indices[i]++;
+    for (let j = i + 1; j < k; j++) {
+      indices[j] = indices[j - 1] + 1;
+    }
+    
+    yield indices.map(i => array[i]);
+  }
+}
+
+/**
+ * Find optimal assignment between selected colors and flavor colors using Hungarian-style approach
+ */
+function findOptimalAssignment(selectedColors: RGB[], flavorColors: RGB[]): { mapping: number[], totalDistance: number } {
+  const numColors = selectedColors.length; // Should be 16
+  
+  // Calculate all pairwise distances
   const distances: number[][] = [];
-  for (let flavorIndex = 0; flavorIndex < numFlavorColors; flavorIndex++) {
+  for (let flavorIndex = 0; flavorIndex < numColors; flavorIndex++) {
     distances[flavorIndex] = [];
-    for (let extractedIndex = 0; extractedIndex < numExtractedColors; extractedIndex++) {
-      distances[flavorIndex][extractedIndex] = calculateColorDifference(flavorColors[flavorIndex], extractedColors[extractedIndex]);
+    for (let selectedIndex = 0; selectedIndex < numColors; selectedIndex++) {
+      distances[flavorIndex][selectedIndex] = calculateColorDifference(flavorColors[flavorIndex], selectedColors[selectedIndex]);
     }
   }
   
-  // Use greedy assignment: for each flavor color, find its best match from available extracted colors
-  const mapping: number[] = new Array(numFlavorColors);
-  const usedExtractedColors = new Set<number>();
+  // For 16x16 assignment, we use a greedy approach (Hungarian algorithm would be overkill)
+  // Since we're already doing exhaustive search on combinations
+  const mapping: number[] = new Array(numColors);
+  const usedSelectedColors = new Set<number>();
+  let totalDistance = 0;
   
-  // For each flavor color position, find the best available extracted color
-  for (let flavorIndex = 0; flavorIndex < numFlavorColors; flavorIndex++) {
-    let bestExtractedIndex = -1;
+  // Greedy assignment within this specific 16-color selection
+  for (let flavorIndex = 0; flavorIndex < numColors; flavorIndex++) {
+    let bestSelectedIndex = -1;
     let bestDistance = Infinity;
     
-    // Check all extracted colors to find the best match
-    for (let extractedIndex = 0; extractedIndex < numExtractedColors; extractedIndex++) {
-      if (!usedExtractedColors.has(extractedIndex)) {
-        const distance = distances[flavorIndex][extractedIndex];
+    for (let selectedIndex = 0; selectedIndex < numColors; selectedIndex++) {
+      if (!usedSelectedColors.has(selectedIndex)) {
+        const distance = distances[flavorIndex][selectedIndex];
         if (distance < bestDistance) {
           bestDistance = distance;
-          bestExtractedIndex = extractedIndex;
+          bestSelectedIndex = selectedIndex;
         }
       }
     }
     
-    if (bestExtractedIndex !== -1) {
-      mapping[flavorIndex] = bestExtractedIndex;
-      usedExtractedColors.add(bestExtractedIndex);
-    } else {
-      // Fallback if no colors available (shouldn't happen with 20 -> 16 mapping)
-      mapping[flavorIndex] = flavorIndex % numExtractedColors;
+    if (bestSelectedIndex !== -1) {
+      mapping[flavorIndex] = bestSelectedIndex;
+      usedSelectedColors.add(bestSelectedIndex);
+      totalDistance += bestDistance;
     }
   }
   
-  console.log(`Color mapping: selected ${usedExtractedColors.size} colors from ${numExtractedColors} extracted colors`);
-  return mapping;
+  return { mapping, totalDistance };
+}
+
+/**
+ * Find optimal combination of 16 colors from 20 extracted colors and their assignment to flavor colors
+ * Returns the mapping from flavor positions to extracted color indices
+ */
+function findOptimalColorMapping(extractedColors: RGB[], flavorColors: RGB[]): number[] {
+  if (extractedColors.length !== 20) {
+    throw new Error(`Expected exactly 20 extracted colors, got ${extractedColors.length}`);
+  }
+  if (flavorColors.length !== 16) {
+    throw new Error(`Expected exactly 16 flavor colors, got ${flavorColors.length}`);
+  }
+  
+  let bestTotalDistance = Infinity;
+  let bestMapping: number[] = [];
+  let bestSelectedIndices: number[] = [];
+  
+  console.log('Starting exhaustive search: testing all C(20,16) = 4845 combinations...');
+  
+  let combinationCount = 0;
+  const extractedIndices = Array.from({length: 20}, (_, i) => i);
+  
+  // Generate all combinations of 16 colors from 20
+  for (const selectedIndices of generateCombinations(extractedIndices, 16)) {
+    combinationCount++;
+    
+    // Get the actual color values for this combination
+    const selectedColors = selectedIndices.map(index => extractedColors[index]);
+    
+    // Find optimal assignment for this specific 16-color selection
+    const { mapping, totalDistance } = findOptimalAssignment(selectedColors, flavorColors);
+    
+    // Check if this is the best combination so far
+    if (totalDistance < bestTotalDistance) {
+      bestTotalDistance = totalDistance;
+      bestMapping = mapping;
+      bestSelectedIndices = [...selectedIndices];
+    }
+  }
+  
+  console.log(`Tested ${combinationCount} combinations, best total distance: ${bestTotalDistance.toFixed(2)}`);
+  
+  // Convert local mapping (within selected 16) to global mapping (within all 20)
+  const globalMapping = bestMapping.map(localIndex => bestSelectedIndices[localIndex]);
+  
+  return globalMapping;
 }
 
 /**
@@ -120,18 +190,14 @@ export function generateThemeFromImageAndFlavor(
   console.time('generateTheme');
   const flavorColors = getFlavorColors(flavorName);
   
-  // Ensure we have at least 16 colors, but prefer 20 for better selection
+  // Ensure we have exactly 20 colors for exhaustive search
   let workingColors = [...extractedColors];
-  if (workingColors.length < 16) {
-    // If we have fewer than 16 colors, repeat the existing ones until we have 16
-    while (workingColors.length < 16) {
-      workingColors.push(...extractedColors.slice(0, Math.min(extractedColors.length, 16 - workingColors.length)));
-    }
+  if (workingColors.length !== 20) {
+    throw new Error(`Expected exactly 20 extracted colors for exhaustive search, got ${workingColors.length}`);
   }
-  // If we have 20 or more colors, use them as-is (the mapping will select the best 16)
   
   console.time('findOptimalMapping');
-  // Find optimal mapping - this will select the best 16 colors from our working set
+  // Find optimal mapping using exhaustive search - this will test all combinations
   const mapping = findOptimalColorMapping(workingColors, flavorColors);
   console.timeEnd('findOptimalMapping');
   
@@ -189,52 +255,46 @@ export interface BestFlavorMatch {
  */
 export async function findBestMatchingFlavor(extractedColors: RGB[], availableFlavors: FlavorName[]): Promise<BestFlavorMatch> {
   console.time('findBestMatchingFlavor');
+  console.log(`Finding best matching flavor from ${availableFlavors.length} flavors for ${extractedColors.length} extracted colors`);
   
-  // Use a sensible default contrast level that provides good accessibility
-  // while maintaining color variety and visual appeal
-  const defaultContrastLevel = 1.2; // Slightly enhanced contrast for better readability
-  
-  console.log(`Testing ${availableFlavors.length} flavors with default contrast level ${defaultContrastLevel}x`);
-  
-  // Use all extracted colors (should be 20) for better flavor matching
-  const workingColors = [...extractedColors];
-  if (workingColors.length < 16) {
-    // If we have fewer than 16 colors, repeat the existing ones until we have 16
-    while (workingColors.length < 16) {
-      workingColors.push(...extractedColors.slice(0, Math.min(extractedColors.length, 16 - workingColors.length)));
-    }
+  if (extractedColors.length !== 20) {
+    throw new Error(`Expected exactly 20 extracted colors for exhaustive search, got ${extractedColors.length}`);
   }
-  
-  let bestFlavor: FlavorName = availableFlavors[0];
-  let bestScore = Infinity;
-  
-  // Test each flavor with our default contrast level
-  for (const flavorName of availableFlavors) {
-    try {
-      const baseTheme = generateThemeFromImageAndFlavor(workingColors, flavorName);
-      const enhancedTheme = generateEnhancedTheme(baseTheme, defaultContrastLevel);
-      const enhancedColors = getEnhancedThemeColors(enhancedTheme);
-      const mapping = findOptimalColorMapping(workingColors, enhancedColors);
-      const score = calculateMappingScore(workingColors, enhancedColors, mapping);
-      
-      if (score < bestScore) {
-        bestScore = score;
-        bestFlavor = flavorName;
-      }
-      
-    } catch (error) {
-      console.warn(`Failed to process flavor ${flavorName}:`, error);
-      continue;
-    }
-  }
-  
-  console.log(`Best match: ${bestFlavor} with score ${bestScore.toFixed(2)}`);
-  console.timeEnd('findBestMatchingFlavor');
-  
-  return {
-    flavorName: bestFlavor,
-    score: bestScore
+
+  let bestMatch: BestFlavorMatch = {
+    flavorName: availableFlavors[0],
+    score: Infinity
   };
+
+  let flavorsTested = 0;
+  
+  // Test each flavor using exhaustive combination search
+  for (const flavorName of availableFlavors) {
+    flavorsTested++;
+    console.log(`Testing flavor ${flavorsTested}/${availableFlavors.length}: ${flavorName}`);
+    
+    try {
+      const flavorColors = getFlavorColors(flavorName);
+      
+      // This will do exhaustive search for this flavor
+      const mapping = findOptimalColorMapping(extractedColors, flavorColors);
+      const score = calculateMappingScore(extractedColors, flavorColors, mapping);
+      
+      if (score < bestMatch.score) {
+        bestMatch = {
+          flavorName,
+          score
+        };
+        console.log(`New best flavor: ${flavorName} with score ${score.toFixed(2)}`);
+      }
+    } catch (error) {
+      console.warn(`Failed to test flavor ${flavorName}:`, error);
+    }
+  }
+
+  console.log(`Exhaustive search complete. Best flavor: ${bestMatch.flavorName} with score ${bestMatch.score.toFixed(2)}`);
+  console.timeEnd('findBestMatchingFlavor');
+  return bestMatch;
 }
 
 
