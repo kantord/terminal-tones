@@ -2,10 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import hljs from 'highlight.js';
-import type { GeneratedTheme } from '@terminal-tones/theme-generator';
+import type { GeneratedTheme, EnhancedTheme } from '@terminal-tones/theme-generator';
 
 interface SyntaxPreviewProps {
   theme: GeneratedTheme;
+  enhancedTheme?: EnhancedTheme | null;
   language?: string;
   code?: string;
 }
@@ -278,10 +279,32 @@ function ensureHexPrefix(color: string): string {
   return color.startsWith('#') ? color : `#${color}`;
 }
 
-// Generate CSS for base16 theme with unique ID
-function generateBase16CSS(theme: GeneratedTheme, uniqueId: string): string {
-  // Ensure all colors have # prefix
-  const colors = {
+// Get colors from enhanced theme or fall back to base theme
+function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme | null) {
+  if (enhancedTheme) {
+    // Use enhanced theme colors with contrast adjustments
+    return {
+      base00: enhancedTheme.backgroundHex,
+      base01: ensureHexPrefix(theme.base01),
+      base02: ensureHexPrefix(theme.base02),
+      base03: ensureHexPrefix(theme.base03),
+      base04: ensureHexPrefix(theme.base04),
+      base05: enhancedTheme.foregroundVariants[2]?.hex || enhancedTheme.foregroundVariants[0]?.hex || ensureHexPrefix(theme.base05),
+      base06: ensureHexPrefix(theme.base06),
+      base07: ensureHexPrefix(theme.base07),
+      base08: enhancedTheme.colorVariants[6]?.variants[1]?.hex || ensureHexPrefix(theme.base08), // Variables (red)
+      base09: enhancedTheme.colorVariants[7]?.variants[1]?.hex || ensureHexPrefix(theme.base09), // Numbers (orange)
+      base0A: enhancedTheme.colorVariants[8]?.variants[1]?.hex || ensureHexPrefix(theme.base0A), // Classes (yellow)
+      base0B: enhancedTheme.colorVariants[9]?.variants[1]?.hex || ensureHexPrefix(theme.base0B), // Strings (green)
+      base0C: enhancedTheme.colorVariants[10]?.variants[1]?.hex || ensureHexPrefix(theme.base0C), // Support (cyan)
+      base0D: enhancedTheme.colorVariants[11]?.variants[1]?.hex || ensureHexPrefix(theme.base0D), // Functions (blue)
+      base0E: enhancedTheme.colorVariants[12]?.variants[1]?.hex || ensureHexPrefix(theme.base0E), // Keywords (purple)
+      base0F: enhancedTheme.colorVariants[13]?.variants[1]?.hex || ensureHexPrefix(theme.base0F), // Deprecated
+    };
+  }
+  
+  // Fall back to base theme colors
+  return {
     base00: ensureHexPrefix(theme.base00),
     base01: ensureHexPrefix(theme.base01),
     base02: ensureHexPrefix(theme.base02),
@@ -299,6 +322,11 @@ function generateBase16CSS(theme: GeneratedTheme, uniqueId: string): string {
     base0E: ensureHexPrefix(theme.base0E),
     base0F: ensureHexPrefix(theme.base0F),
   };
+}
+
+// Generate CSS for base16 theme with unique ID
+function generateBase16CSS(theme: GeneratedTheme, enhancedTheme: EnhancedTheme | null | undefined, uniqueId: string): string {
+  const colors = getEffectiveColors(theme, enhancedTheme);
 
   return `
     .syntax-preview-${uniqueId} .hljs {
@@ -373,7 +401,7 @@ function generateBase16CSS(theme: GeneratedTheme, uniqueId: string): string {
   `;
 }
 
-export function SyntaxPreview({ theme, language = 'javascript', code }: SyntaxPreviewProps) {
+export function SyntaxPreview({ theme, enhancedTheme, language = 'javascript', code }: SyntaxPreviewProps) {
   const codeRef = useRef<HTMLElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -381,16 +409,20 @@ export function SyntaxPreview({ theme, language = 'javascript', code }: SyntaxPr
 
   const sampleCode = code || SAMPLE_CODE[language as keyof typeof SAMPLE_CODE] || SAMPLE_CODE.javascript;
 
+  // Get effective colors (enhanced or base)
+  const effectiveColors = getEffectiveColors(theme, enhancedTheme);
+  
   // Debug: log theme colors
   console.log('SyntaxPreview theme:', {
-    base00: theme.base00,
-    base05: theme.base05,
-    base08: theme.base08,
-    base0E: theme.base0E
+    hasEnhanced: !!enhancedTheme,
+    base00: effectiveColors.base00,
+    base05: effectiveColors.base05,
+    base08: effectiveColors.base08,
+    base0E: effectiveColors.base0E
   });
 
   useEffect(() => {
-    console.log('SyntaxPreview effect running for:', language);
+    console.log('SyntaxPreview effect running for:', language, 'enhanced:', !!enhancedTheme);
     
     // Remove existing style
     if (styleRef.current && document.head.contains(styleRef.current)) {
@@ -400,11 +432,11 @@ export function SyntaxPreview({ theme, language = 'javascript', code }: SyntaxPr
     // Create and inject new style
     styleRef.current = document.createElement('style');
     styleRef.current.setAttribute('data-syntax-preview', uniqueId.current);
-    const css = generateBase16CSS(theme, uniqueId.current);
+    const css = generateBase16CSS(theme, enhancedTheme, uniqueId.current);
     styleRef.current.textContent = css;
     document.head.appendChild(styleRef.current);
     
-    console.log('Injected CSS:', css.substring(0, 200) + '...');
+    console.log('Injected CSS with enhanced:', !!enhancedTheme);
 
     // Highlight code
     if (codeRef.current) {
@@ -424,12 +456,12 @@ export function SyntaxPreview({ theme, language = 'javascript', code }: SyntaxPr
         styleRef.current = null;
       }
     };
-  }, [theme, language, sampleCode]);
+  }, [theme, enhancedTheme, language, sampleCode]);
 
-  // Ensure colors have # prefix for inline styles
+  // Use effective colors for inline styles
   const safeColors = {
-    background: ensureHexPrefix(theme.base00),
-    color: ensureHexPrefix(theme.base05),
+    background: effectiveColors.base00,
+    color: effectiveColors.base05,
   };
 
   return (
@@ -462,7 +494,7 @@ export function SyntaxPreview({ theme, language = 'javascript', code }: SyntaxPr
       
       {/* Debug info - remove this in production */}
       <div className="text-xs text-gray-500 mt-2">
-        Debug: bg={theme.base00}, fg={theme.base05}, id={uniqueId.current}
+        Debug: bg={effectiveColors.base00}, fg={effectiveColors.base05}, enhanced={!!enhancedTheme}
       </div>
     </div>
   );

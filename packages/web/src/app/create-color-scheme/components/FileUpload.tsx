@@ -321,7 +321,8 @@ export function FileUpload() {
                 </select>
               </div>
               <SyntaxPreview 
-                theme={generatedTheme} 
+                theme={generatedTheme}
+                enhancedTheme={enhancedTheme}
                 language={selectedLanguage}
               />
             </div>
