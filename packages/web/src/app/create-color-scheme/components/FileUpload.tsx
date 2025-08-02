@@ -15,11 +15,13 @@ import {
   findOptimalAnsiColorPairing,
   BRIGHT_ANSI_COLORS,
   ANSI_COLOR_NAMES,
+  generateLeonardoVariants,
   type RGB,
   type GeneratedTheme,
   type EnhancedTheme,
   type ColorVariant,
-  type OptimalPairingResult
+  type OptimalPairingResult,
+  type LeonardoVariantsResult
 } from '@terminal-tones/theme-generator';
 
 export function FileUpload() {
@@ -33,6 +35,7 @@ export function FileUpload() {
   const [enhancedTheme, setEnhancedTheme] = useState<EnhancedTheme | null>(null);
   const [displayColors, setDisplayColors] = useState<RGB[]>([]);
   const [ansiPairing, setAnsiPairing] = useState<OptimalPairingResult | null>(null);
+  const [leonardoVariants, setLeonardoVariants] = useState<LeonardoVariantsResult | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,11 +88,16 @@ export function FileUpload() {
       const pairingResult = findOptimalAnsiColorPairing(imageColors);
       console.log('ANSI color pairing result:', pairingResult);
       
+      // Generate Leonardo variants
+      const leonardoResult = generateLeonardoVariants(pairingResult, imageColors);
+      console.log('Leonardo variants result:', leonardoResult);
+      
       const themeColors = getEnhancedThemeColors(enhanced);
       
       setGeneratedTheme(theme);
       setEnhancedTheme(enhanced);
       setAnsiPairing(pairingResult);
+      setLeonardoVariants(leonardoResult);
       setDisplayColors(themeColors);
       setIsUploaded(true);
     } catch (error) {
@@ -138,6 +146,7 @@ export function FileUpload() {
     setGeneratedTheme(null);
     setEnhancedTheme(null);
     setAnsiPairing(null);
+    setLeonardoVariants(null);
     setDisplayColors([]);
     setSelectedLanguage('javascript');
   };
@@ -381,6 +390,74 @@ export function FileUpload() {
                     <div>• <strong>Hue penalty</strong> added for semantic colors (Red, Green, Yellow)</div>
                     <div>• Selected indices: [{ansiPairing.selectedIndices.join(', ')}]</div>
                     <div>• Minimized perceptual + hue distance for semantic colors</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Leonardo Contrast Variants Section */}
+          {leonardoVariants && (
+            <div className="mb-8">
+              <h3 className="text-xl font-medium mb-4 text-gray-700 dark:text-gray-300">
+                Leonardo Contrast Variants
+              </h3>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <strong>Background:</strong> {leonardoVariants.backgroundColor} (matched with black)
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <strong>Foreground:</strong> {leonardoVariants.foregroundColor} (white)
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {leonardoVariants.accentVariants.map((accent, index) => (
+                    <div key={index} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 pb-4 last:pb-0">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div 
+                          className="w-8 h-8 rounded border shadow-sm"
+                          style={{ backgroundColor: accent.originalColor }}
+                        />
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {accent.colorName} ({accent.originalColor})
+                        </h4>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {accent.variants.length} variants
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
+                        {accent.variants.map((variant, variantIndex) => (
+                          <div key={variantIndex} className="group relative">
+                            <div 
+                              className="w-full h-12 rounded border shadow-sm cursor-pointer hover:scale-105 transition-transform"
+                              style={{ backgroundColor: variant.value }}
+                              title={`${variant.name}: ${variant.value} (${variant.contrast.toFixed(1)}:1)`}
+                              onClick={() => navigator.clipboard.writeText(variant.value)}
+                            />
+                            <div className="text-xs text-center mt-1 text-gray-500 dark:text-gray-400">
+                              {variant.contrast.toFixed(1)}:1
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <h4 className="text-sm font-medium text-purple-900 dark:text-purple-100 mb-2">
+                    Leonardo Details
+                  </h4>
+                  <div className="text-xs text-purple-700 dark:text-purple-300 space-y-1">
+                    <div>• Background color from ANSI black pairing</div>
+                    <div>• 10 contrast variants per accent color (1.5:1 to 18:1)</div>
+                    <div>• LCH colorspace interpolation for perceptual uniformity</div>
+                    <div>• Total variants: {leonardoVariants.totalVariants}</div>
+                    <div>• Click any color to copy hex value</div>
                   </div>
                 </div>
               </div>

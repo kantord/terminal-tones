@@ -31,4 +31,11 @@ export {
   ANSI_COLOR_NAMES,
   type ColorPairing,
   type OptimalPairingResult
-} from './terminalColors'; 
+} from './terminalColors';
+
+// Leonardo variants
+export {
+  generateLeonardoVariants,
+  type LeonardoVariant,
+  type LeonardoVariantsResult
+} from './leonardoVariants'; 
