@@ -106,7 +106,7 @@ export function FileUpload() {
     setUploadedFileName(file.name);
     
     try {
-      const result = await extractColorsFromImage(file, 16);
+      const result = await extractColorsFromImage(file, 20);
       
       setExtractedColors(result.colors);
       setUploadedImageUrl(result.imageUrl);

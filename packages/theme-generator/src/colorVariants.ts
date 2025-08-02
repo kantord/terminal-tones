@@ -96,13 +96,16 @@ function generateColorVariants(
     });
 
     const output = theme.contrastColors;
-    console.log('Leonardo output:', output);
+    console.log('Leonardo output structure:', JSON.stringify(output, null, 2));
+    console.log('Leonardo output type:', typeof output, 'Array?', Array.isArray(output));
     
     const variants: ColorVariant[] = [];
 
     // Extract variants from Leonardo output structure
     // Leonardo returns an array of color objects, find our 'variants' color
     const variantsColorObject = output.find((colorObj: any) => colorObj.name === 'variants') as any;
+    
+    console.log('Found variants color object:', variantsColorObject);
     
     if (variantsColorObject && variantsColorObject.values) {
       console.log('Found variants color object with values:', variantsColorObject.values);
@@ -124,25 +127,53 @@ function generateColorVariants(
         }
       }
     } else {
-      console.warn('No variants color object found in Leonardo output:', output);
+      console.error('No variants color object found in Leonardo output!');
+      console.error('Available objects in output:', output.map((obj: any) => ({ name: obj.name, type: typeof obj })));
+      
+      // Let's also try the contrastColorPairs format
+      console.log('Trying contrastColorPairs format...');
+      const pairsOutput = theme.contrastColorPairs;
+      console.log('Leonardo contrastColorPairs:', pairsOutput);
+      
+      // Generate variants from pairs if available
+      if (pairsOutput && typeof pairsOutput === 'object') {
+        for (const [colorName, colorValue] of Object.entries(pairsOutput)) {
+          if (colorName.startsWith('variants') && typeof colorValue === 'string') {
+            const ratioMatch = colorName.match(/variants(\d+)/);
+            const ratio = ratioMatch ? parseInt(ratioMatch[1]) / 100 : 2;
+            
+            console.log(`Found variant from pairs: ${colorName} = ${colorValue} (ratio: ${ratio})`);
+            
+            if (colorValue.startsWith('#')) {
+              variants.push({
+                hex: colorValue,
+                rgb: hexToRgb(colorValue),
+                contrast: ratio,
+                wcagLevel: getWcagLevel(ratio)
+              });
+            }
+          }
+        }
+      }
     }
 
     console.log(`Generated ${variants.length} Leonardo variants`);
     
-    // Leonardo should always generate valid variants when used correctly
+    // If we still have no variants, there's a real problem with Leonardo setup
     if (variants.length === 0) {
-      throw new Error(`Leonardo failed to generate any variants! This indicates a serious issue.
-Input color: ${colorHex}, Background: ${backgroundHex}, Ratios: ${ratios}
-Leonardo output: ${JSON.stringify(output, null, 2)}`);
+      console.error('Leonardo failed to generate any variants!');
+      console.error('Input color:', colorHex, 'Background:', backgroundHex, 'Ratios:', ratios);
+      console.error('This should not happen with valid inputs. Falling back to manual generation.');
+      return generateFallbackVariants(colorHex, backgroundHex, contrastMultiplier);
     }
 
     return variants;
   } catch (error) {
-    console.error('Leonardo generation failed completely:', error);
+    console.error('Leonardo generation failed with exception:', error);
     console.error('Input parameters:', { colorHex, backgroundHex, contrastMultiplier });
     
-    // Only use fallback for truly exceptional cases (e.g., invalid color inputs, Leonardo bugs)
-    console.warn('Using fallback color generation due to Leonardo failure');
+    // This should only happen for truly exceptional cases like invalid color formats or Leonardo bugs
+    console.warn('Using fallback color generation due to Leonardo exception');
     return generateFallbackVariants(colorHex, backgroundHex, contrastMultiplier);
   }
 }
