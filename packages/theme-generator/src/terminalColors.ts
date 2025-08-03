@@ -1,4 +1,4 @@
-import { differenceCiede2000, parse, hsl } from 'culori';
+import { differenceCiede2000, parse, hsl, lch } from 'culori';
 import { RGB } from './colorExtraction';
 
 export const deltaE = differenceCiede2000();
@@ -76,17 +76,61 @@ function calculateHueDifference(color1: RGB, color2: RGB): number {
 }
 
 /**
- * Calculate total distance including hue penalty for semantic colors
+ * Calculate perceptual vibrance (chroma) of a color using LCH color space
+ * Returns a value from 0-150+ where higher values indicate more vibrant colors
+ */
+function calculatePerceptualVibrance(color: RGB): number {
+  const hex = rgbToHex(color);
+  const lchColor = lch(parse(hex));
+  
+  if (!lchColor || lchColor.c === undefined) {
+    return 0; // Achromatic color has no chroma
+  }
+  
+  return lchColor.c; // Chroma in LCH is the perceptual measure of saturation/vibrance
+}
+
+/**
+ * Calculate total distance including vibrance-weighted hue penalty for semantic colors
+ * Uses multiplicative relationship: poor hue + low vibrance = much worse penalty
  */
 function calculateTotalDistance(ansiColor: RGB, extractedColor: RGB, isSemanticColor: boolean): number {
   const perceptualDistance = calculateColorDifference(ansiColor, extractedColor);
   
   if (isSemanticColor) {
     const hueDistance = calculateHueDifference(ansiColor, extractedColor);
+    const vibrance = calculatePerceptualVibrance(extractedColor);
+    
     // Scale hue distance to be roughly comparable to perceptual distance
     // Hue distance is 0-180, scale it to roughly match CIEDE2000 range
-    const scaledHueDistance = (hueDistance / 180) * 50; // Scale to 0-50 range
-    return perceptualDistance + scaledHueDistance;
+    const baseHuePenalty = (hueDistance / 180) * 50; // Scale to 0-50 range
+    
+    // Calculate vibrance factor: low vibrance = higher penalty multiplier
+    // Vibrance typically ranges 0-150+, normalize to 0-1, then invert for penalty scaling
+    const normalizedVibrance = Math.min(vibrance / 150, 1); // 0-1 where 1 = very vibrant
+    const vibrancePenaltyMultiplier = 1 + (1 - normalizedVibrance) * 2; // 1.0-3.0 multiplier (less vibrant = higher multiplier)
+    
+    // Apply multiplicative relationship: poor hue + low vibrance = much worse
+    // Good hue + high vibrance = minimal penalty
+    const scaledHuePenalty = baseHuePenalty * vibrancePenaltyMultiplier;
+    
+    // Combine: perceptual distance + vibrance-weighted hue penalty
+    const totalDistance = perceptualDistance + scaledHuePenalty;
+    
+    // Debug logging for semantic color scoring
+    const extractedHex = rgbToHex(extractedColor);
+    console.log(`Semantic color scoring for ${extractedHex}:`, {
+      perceptualDistance: perceptualDistance.toFixed(2),
+      hueDistance: hueDistance.toFixed(1),
+      baseHuePenalty: baseHuePenalty.toFixed(2),
+      vibrance: vibrance.toFixed(1),
+      normalizedVibrance: normalizedVibrance.toFixed(2),
+      vibrancePenaltyMultiplier: vibrancePenaltyMultiplier.toFixed(2),
+      scaledHuePenalty: scaledHuePenalty.toFixed(2),
+      totalDistance: totalDistance.toFixed(2)
+    });
+    
+    return totalDistance;
   }
   
   return perceptualDistance;
