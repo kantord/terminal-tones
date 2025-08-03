@@ -84,17 +84,33 @@ function calculatePerceptualVibrance(color: RGB): number {
   const lchColor = lch(parse(hex));
   
   if (!lchColor || lchColor.c === undefined) {
-    return 0; // Achromatic color has no chroma
+    throw new Error(`Invalid color for vibrance calculation: RGB(${color.join(',')}) -> ${hex}`);
   }
   
   return lchColor.c; // Chroma in LCH is the perceptual measure of saturation/vibrance
 }
 
 /**
+ * Calculate perceptual lightness of a color using LCH color space
+ * Returns a value from 0-100 where higher values indicate brighter colors
+ */
+function calculatePerceptualLightness(color: RGB): number {
+  const hex = rgbToHex(color);
+  const lchColor = lch(parse(hex));
+  
+  if (!lchColor || lchColor.l === undefined) {
+    throw new Error(`Invalid color for lightness calculation: RGB(${color.join(',')}) -> ${hex}`);
+  }
+  
+  return lchColor.l; // Lightness in LCH is the perceptual measure of brightness
+}
+
+/**
  * Calculate total distance including vibrance-weighted hue penalty for semantic colors
  * Uses multiplicative relationship: poor hue + low vibrance = much worse penalty
+ * Special handling for white color (index 7) with reduced penalties and lightness bonus
  */
-function calculateTotalDistance(ansiColor: RGB, extractedColor: RGB, isSemanticColor: boolean): number {
+function calculateTotalDistance(ansiColor: RGB, extractedColor: RGB, isSemanticColor: boolean, ansiIndex: number): number {
   const perceptualDistance = calculateColorDifference(ansiColor, extractedColor);
   
   if (isSemanticColor) {
@@ -131,6 +147,34 @@ function calculateTotalDistance(ansiColor: RGB, extractedColor: RGB, isSemanticC
     });
     
     return totalDistance;
+  }
+  
+  // Special handling for white color (ANSI index 7)
+  if (ansiIndex === 7) {
+    const lightness = calculatePerceptualLightness(extractedColor);
+    
+    // Reduce base penalty by dividing by 3
+    const reducedDistance = perceptualDistance / 3;
+    
+    // Add lightness bonus: brighter colors get lower penalties
+    // Lightness ranges 0-100, normalize and scale to 0-15 bonus
+    const normalizedLightness = Math.min(lightness / 100, 1); // 0-1 where 1 = very bright
+    const lightnessBonus = normalizedLightness * 15; // Brighter = larger bonus (penalty reduction)
+    
+    const finalDistance = Math.max(reducedDistance - lightnessBonus, 0);
+    
+    // Debug logging for white color scoring
+    const extractedHex = rgbToHex(extractedColor);
+    console.log(`White color scoring for ${extractedHex}:`, {
+      perceptualDistance: perceptualDistance.toFixed(2),
+      reducedDistance: reducedDistance.toFixed(2),
+      lightness: lightness.toFixed(1),
+      normalizedLightness: normalizedLightness.toFixed(2),
+      lightnessBonus: lightnessBonus.toFixed(2),
+      finalDistance: finalDistance.toFixed(2)
+    });
+    
+    return finalDistance;
   }
   
   return perceptualDistance;
@@ -200,7 +244,7 @@ function findOptimalAssignment(selectedColors: RGB[], ansiColors: RGB[]): { mapp
     distances[ansiIndex] = [];
     for (let selectedIndex = 0; selectedIndex < numColors; selectedIndex++) {
       const isSemanticColor = SEMANTIC_INDICES.has(ansiIndex);
-      const distance = calculateTotalDistance(ansiColors[ansiIndex], selectedColors[selectedIndex], isSemanticColor);
+      const distance = calculateTotalDistance(ansiColors[ansiIndex], selectedColors[selectedIndex], isSemanticColor, ansiIndex);
       distances[ansiIndex][selectedIndex] = distance;
     }
   }
