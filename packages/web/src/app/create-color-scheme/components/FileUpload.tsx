@@ -39,11 +39,15 @@ export function FileUpload() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Function to adjust background luminosity and regenerate Leonardo variants
-  const adjustBackgroundLuminosity = (colors: OkhslColor[], luminosity: number) => {
-    if (!colors.length || !ansiPairing) return colors;
+  const adjustBackgroundLuminosity = (colors: OkhslColor[], luminosity: number, pairingResult?: OptimalPairingResult) => {
+    if (!colors.length) return colors;
+    
+    // Use provided pairingResult or fall back to state
+    const pairing = pairingResult || ansiPairing;
+    if (!pairing) return colors;
     
     // Find the background color index (paired with black, ANSI index 0)
-    const backgroundIndex = ansiPairing.selectedIndices[0];
+    const backgroundIndex = pairing.selectedIndices[0];
     const backgroundColor = colors[backgroundIndex];
     
     // Create adjusted background color with new luminosity
@@ -107,8 +111,18 @@ export function FileUpload() {
       const pairingResult = findOptimalAnsiColorPairing(imageColors);
       console.log('ANSI color pairing result:', pairingResult);
       
-      // Apply initial luminosity adjustment to background color
-      const adjustedColors = adjustBackgroundLuminosity(imageColors, backgroundLuminosity);
+      // Get the actual luminosity from the extracted background color
+      const backgroundIndex = pairingResult.selectedIndices[0]; // Black is at index 0
+      const actualBackgroundColor = imageColors[backgroundIndex];
+      const actualLuminosity = actualBackgroundColor.l || 0.5; // Use actual L value, fallback to 0.5
+      
+      console.log(`Background color detected: L=${actualLuminosity.toFixed(3)} (${(actualLuminosity * 100).toFixed(1)}%)`);
+      
+      // Set the slider to the actual background luminosity
+      setBackgroundLuminosity(actualLuminosity);
+      
+      // Apply initial luminosity adjustment to background color (using actual value)
+      const adjustedColors = adjustBackgroundLuminosity(imageColors, actualLuminosity, pairingResult);
       
       // Generate Leonardo variants with adjusted colors
       const leonardoResult = generateLeonardoVariants(pairingResult, adjustedColors);
@@ -268,7 +282,7 @@ export function FileUpload() {
                     <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Smooth</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Adjust the perceived brightness of the background color to create sharper or smoother contrast.
+                    Slider starts at the detected background brightness. Adjust to create sharper or smoother contrast.
                   </p>
                   <div className="mt-3 text-xs text-gray-600 dark:text-gray-400">
                     <strong>Current Background:</strong> {leonardoVariants.backgroundColor}
