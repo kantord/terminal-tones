@@ -16,7 +16,7 @@ describe('Theme Generator Package Exports', () => {
   })
 
   it('should have rgbToHex function working through main export', () => {
-    const result = themeGenerator.rgbToHex(255, 165, 0)
+    const result = themeGenerator.rgbToHex([255, 165, 0])
     expect(result).toBe('#ffa500') // Orange
   })
 }) 

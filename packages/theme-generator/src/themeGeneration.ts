@@ -1,4 +1,4 @@
-import { RGB } from './colorExtraction';
+import { RGB, OkhslColor, okhslToHex } from './colorExtraction';
 
 // Simplified version - no complex perceptual calculations needed
 export function isPerceptible(a: string, b: string, threshold = 2.3): boolean {
@@ -40,14 +40,15 @@ export interface GeneratedTheme {
   base0F: string; // Deprecated
 }
 
-export function generateThemeFromImage(extractedColors: RGB[]): GeneratedTheme {
+export function generateThemeFromImage(extractedColors: OkhslColor[]): GeneratedTheme {
   // Simple approach: use the first 16 extracted colors directly
   if (extractedColors.length < 16) {
     throw new Error(`Expected at least 16 extracted colors, got ${extractedColors.length}`);
   }
   
   // Take only the first 16 colors and map them directly to base00-base0F
-  const themeColors = extractedColors.slice(0, 16).map(rgb => rgbToHex(rgb));
+  // Convert Okhsl colors to hex strings
+  const themeColors = extractedColors.slice(0, 16).map(okhsl => okhslToHex(okhsl));
   
   return {
     scheme: 'Custom Image Theme',

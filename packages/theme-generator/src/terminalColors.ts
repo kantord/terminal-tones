@@ -1,5 +1,5 @@
 import { differenceCiede2000, parse, hsl, lch } from 'culori';
-import { RGB } from './colorExtraction';
+import { RGB, OkhslColor, okhslToHex, okhslToRgb } from './colorExtraction';
 
 export const deltaE = differenceCiede2000();
 
@@ -282,7 +282,7 @@ function findOptimalAssignment(selectedColors: RGB[], ansiColors: RGB[]): { mapp
  * Find the optimal pairing of 8 extracted colors with 8 ANSI colors
  * Tests all combinations of 8 from 16 extracted colors to minimize perceptual distance
  */
-export function findOptimalAnsiColorPairing(extractedColors: RGB[]): OptimalPairingResult {
+export function findOptimalAnsiColorPairing(extractedColors: OkhslColor[]): OptimalPairingResult {
   if (extractedColors.length < 8) {
     throw new Error(`Expected at least 8 extracted colors, got ${extractedColors.length}`);
   }
@@ -300,8 +300,8 @@ export function findOptimalAnsiColorPairing(extractedColors: RGB[]): OptimalPair
   for (const selectedIndices of combinations(extractedIndices, 8)) {
     combinationCount++;
     
-    // Get the actual color values for this combination
-    const selectedColors = selectedIndices.map(index => extractedColors[index]);
+    // Get the actual color values for this combination and convert to RGB for distance calculation
+    const selectedColors = selectedIndices.map(index => okhslToRgb(extractedColors[index]));
     
     // Find optimal assignment for this specific 8-color selection
     const { mapping, totalDistance } = findOptimalAssignment(selectedColors, BRIGHT_ANSI_COLORS);
@@ -321,7 +321,8 @@ export function findOptimalAnsiColorPairing(extractedColors: RGB[]): OptimalPair
   for (let ansiIndex = 0; ansiIndex < BRIGHT_ANSI_COLORS.length; ansiIndex++) {
     const localSelectedIndex = bestMapping[ansiIndex];
     const globalExtractedIndex = bestSelectedIndices[localSelectedIndex];
-    const extractedColor = extractedColors[globalExtractedIndex];
+    const extractedOkhslColor = extractedColors[globalExtractedIndex];
+    const extractedColor = okhslToRgb(extractedOkhslColor);
     
     // Calculate the actual perceptual distance (without semantic weighting for display)
     const actualDistance = calculateColorDifference(BRIGHT_ANSI_COLORS[ansiIndex], extractedColor);

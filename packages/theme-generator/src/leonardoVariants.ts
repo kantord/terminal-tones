@@ -1,5 +1,5 @@
 import { Color, BackgroundColor, Theme } from '@adobe/leonardo-contrast-colors';
-import { RGB } from './colorExtraction';
+import { RGB, OkhslColor, okhslToHex, okhslToRgb } from './colorExtraction';
 import { OptimalPairingResult } from './terminalColors';
 
 /**
@@ -36,7 +36,7 @@ export interface LeonardoVariantsResult {
 }
 
 /**
- * Convert RGB tuple to hex string
+ * Convert RGB tuple to hex string (kept for backward compatibility)
  */
 function rgbToHex(rgb: RGB): string {
   const [r, g, b] = rgb;
@@ -50,7 +50,7 @@ function rgbToHex(rgb: RGB): string {
  */
 export function generateLeonardoVariants(
   ansiPairing: OptimalPairingResult,
-  allExtractedColors: RGB[]
+  allExtractedColors: OkhslColor[]
 ): LeonardoVariantsResult {
   // Find the color that was matched with black (ANSI index 0)
   // Black is at index 0 in the ANSI colors array
@@ -70,21 +70,25 @@ export function generateLeonardoVariants(
     throw new Error('Could not find color matched with white in ANSI pairing');
   }
   
-  const backgroundColorRgb = blackPairing.extractedColor;
-  const backgroundColor = rgbToHex(backgroundColorRgb);
-  const foregroundColorRgb = whitePairing.extractedColor;
-  const foregroundColor = rgbToHex(foregroundColorRgb);
+  // Note: pairing.extractedColor is still RGB from terminalColors.ts
+  // We need to find the corresponding Okhsl color from allExtractedColors
+  const backgroundIndex = ansiPairing.selectedIndices[blackIndex];
+  const foregroundIndex = ansiPairing.selectedIndices[whiteIndex];
+  
+  const backgroundColorOkhsl = allExtractedColors[backgroundIndex];
+  const foregroundColorOkhsl = allExtractedColors[foregroundIndex];
+  
+  const backgroundColor = okhslToHex(backgroundColorOkhsl);
+  const foregroundColor = okhslToHex(foregroundColorOkhsl);
   
   // Get all extracted colors except the ones used as background and foreground
-  const backgroundExtractedIndex = ansiPairing.selectedIndices[blackIndex];
-  const foregroundExtractedIndex = ansiPairing.selectedIndices[whiteIndex];
   const accentColors = allExtractedColors.filter((_, index) => 
-    index !== backgroundExtractedIndex && index !== foregroundExtractedIndex
+    index !== backgroundIndex && index !== foregroundIndex
   );
   
   // Add both background and foreground colors as accents (so they get their own variants)
   // Background becomes accent0, foreground becomes accent1
-  accentColors.unshift(backgroundColorRgb, foregroundColorRgb);
+  accentColors.unshift(backgroundColorOkhsl, foregroundColorOkhsl);
   
   // Target contrast ratios - 10 variants from accessible to very high contrast
   const contrastRatios = [1.5, 2, 3, 4.5, 6, 8, 10, 12, 15, 18];
@@ -97,8 +101,8 @@ export function generateLeonardoVariants(
   });
   
   // Generate accent color variants
-  const accentVariants = accentColors.map((accentRgb, index) => {
-    const accentHex = rgbToHex(accentRgb);
+  const accentVariants = accentColors.map((accentOkhsl, index) => {
+    const accentHex = okhslToHex(accentOkhsl);
     
     // Generate semantic color names based on mapping
     let colorName: string;
@@ -153,6 +157,7 @@ export function generateLeonardoVariants(
     }
     
     // Create Leonardo Color for this accent
+    // Since we're using Okhsl internally, we can use the perceptually uniform hex output
     const leonardoAccent = new Color({
       name: colorName,
       colorKeys: [accentHex as any],
@@ -192,7 +197,7 @@ export function generateLeonardoVariants(
   });
   
   // Generate the 16 terminal colors from Leonardo variants
-  const terminalColors = generateTerminalColors(ansiPairing, accentVariants);
+  const terminalColors = generateTerminalColors(ansiPairing, accentVariants, allExtractedColors);
 
   return {
     backgroundColor,
@@ -210,7 +215,8 @@ export function generateLeonardoVariants(
  */
 function generateTerminalColors(
   ansiPairing: OptimalPairingResult, 
-  accentVariants: LeonardoVariantsResult['accentVariants']
+  accentVariants: LeonardoVariantsResult['accentVariants'],
+  allExtractedColors: OkhslColor[]
 ): TerminalColorSet {
   // Map ANSI indices to accent variant indices
   // We need to map each ANSI color to its corresponding Leonardo accent
@@ -262,7 +268,8 @@ function generateTerminalColors(
     
     if (i === 0) {
       // Black (0): use original background color for normal, 6.0:1 variant for bright
-      const backgroundHex = rgbToHex(ansiPairing.pairings[0].extractedColor);
+      const backgroundIndex = ansiPairing.selectedIndices[0];
+      const backgroundHex = okhslToHex(allExtractedColors[backgroundIndex]);
       normal.push(backgroundHex);
       
       // Find 6.0:1 contrast variant for bright black

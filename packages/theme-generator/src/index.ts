@@ -3,7 +3,11 @@ export {
   extractColorsFromImage,
   rgbToHex,
   cleanupImageUrl,
+  rgbToOkhsl,
+  okhslToRgb,
+  okhslToHex,
   type RGB,
+  type OkhslColor,
   type ColorExtractionResult,
   type ColorExtractionError
 } from './colorExtraction';

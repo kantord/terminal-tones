@@ -1,15 +1,53 @@
 import ColorThief from 'colorthief';
+import { converter, formatHex, Okhsl } from 'culori';
 
 export type RGB = [number, number, number];
 
+// Okhsl type from culori - perceptually uniform color space
+export type OkhslColor = Okhsl;
+
 export interface ColorExtractionResult {
-  colors: RGB[];
+  colors: OkhslColor[]; // Changed from RGB[] to use Okhsl internally
   imageUrl: string;
 }
 
 export interface ColorExtractionError {
   error: string;
   imageUrl?: string;
+}
+
+// Color conversion utilities
+const rgb2okhsl = converter('okhsl');
+const okhsl2rgb = converter('rgb');
+
+/**
+ * Convert RGB tuple to Okhsl
+ */
+export function rgbToOkhsl(rgb: RGB): OkhslColor {
+  const [r, g, b] = rgb;
+  return rgb2okhsl({ mode: 'rgb', r: r / 255, g: g / 255, b: b / 255 }) as OkhslColor;
+}
+
+/**
+ * Convert Okhsl to RGB tuple
+ */
+export function okhslToRgb(okhsl: OkhslColor): RGB {
+  const rgb = okhsl2rgb(okhsl);
+  if (!rgb) throw new Error('Failed to convert Okhsl to RGB');
+  return [
+    Math.round(rgb.r * 255),
+    Math.round(rgb.g * 255), 
+    Math.round(rgb.b * 255)
+  ];
+}
+
+/**
+ * Convert Okhsl to hex string
+ */
+export function okhslToHex(okhsl: OkhslColor): string {
+  const hex = formatHex(okhsl);
+  if (!hex) throw new Error('Failed to convert Okhsl to hex');
+  return hex;
 }
 
 /**
@@ -88,8 +126,11 @@ export function extractColorsFromImage(
           const colorThief = new ColorThief();
           const palette = colorThief.getPalette(img, colorCount) as RGB[];
           
+          // Convert RGB colors to Okhsl for internal representation
+          const okhslColors = palette.map(rgbToOkhsl);
+          
           resolve({
-            colors: palette,
+            colors: okhslColors,
             imageUrl: imageUrl // Keep original image URL for display
           });
           return;
@@ -102,8 +143,11 @@ export function extractColorsFromImage(
             // Extract colors from the resized image
             const palette = colorThief.getPalette(resizedImg, colorCount) as RGB[];
             
+            // Convert RGB colors to Okhsl for internal representation
+            const okhslColors = palette.map(rgbToOkhsl);
+            
             resolve({
-              colors: palette,
+              colors: okhslColors,
               imageUrl: imageUrl // Keep original image URL for display
             });
           } catch (error) {
@@ -148,7 +192,18 @@ export function extractColorsFromImage(
   });
 }
 
-export function rgbToHex(r: number, g: number, b: number): string {
+/**
+ * Convert RGB tuple to hex string (for consistency with other modules)
+ */
+export function rgbToHex(rgb: RGB): string {
+  const [r, g, b] = rgb;
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * Convert individual RGB values to hex string  
+ */
+export function rgbToHexIndividual(r: number, g: number, b: number): string {
   return "#" + [r, g, b].map(x => {
     const hex = x.toString(16);
     return hex.length === 1 ? "0" + hex : hex;

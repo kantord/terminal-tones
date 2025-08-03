@@ -60,12 +60,15 @@ describe('extractColorsFromImage - Integration Tests', () => {
     expect(result.colors).toHaveLength(8)
     expect(result.imageUrl).toBe('blob:http://localhost:3000/test-image.png')
     
-    // Verify the colors are RGB tuples
+    // Verify the colors are Okhsl objects
     result.colors.forEach(color => {
-      expect(color).toHaveLength(3)
-      expect(typeof color[0]).toBe('number')
-      expect(typeof color[1]).toBe('number')
-      expect(typeof color[2]).toBe('number')
+      expect(color).toHaveProperty('mode', 'okhsl')
+      expect(typeof color.l).toBe('number')
+      expect(typeof color.s).toBe('number')
+      // h property might be undefined for achromatic colors (gray/black/white)
+      if (color.h !== undefined) {
+        expect(typeof color.h).toBe('number')
+      }
     })
 
     // Verify URL methods were called
