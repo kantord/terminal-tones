@@ -99,7 +99,58 @@ export function generateLeonardoVariants(
   // Generate accent color variants
   const accentVariants = accentColors.map((accentRgb, index) => {
     const accentHex = rgbToHex(accentRgb);
-    const colorName = `accent${index + 1}`;
+    
+    // Generate semantic color names based on mapping
+    let colorName: string;
+    if (index === 0) {
+      // Background color (from ANSI black)
+      colorName = 'background';
+    } else if (index === 1) {
+      // Foreground color (from ANSI white)
+      colorName = 'foreground';
+    } else {
+      // For other colors, find their corresponding ANSI color and use semantic naming
+      // We need to find which ANSI color this accent corresponds to
+      // Calculate proper accent number (starting from 1, excluding background and foreground)
+      const accentNumber = index - 1; // index 2 becomes accent 1, index 3 becomes accent 2, etc.
+      let semanticName = `accent ${accentNumber}`; // Default fallback
+      
+      // Find the ANSI color that matches this extracted color
+      for (let ansiIndex = 0; ansiIndex < ansiPairing.pairings.length; ansiIndex++) {
+        const pairing = ansiPairing.pairings[ansiIndex];
+        const pairingHex = rgbToHex(pairing.extractedColor);
+        
+        if (pairingHex.toLowerCase() === accentHex.toLowerCase()) {
+          // Found the matching ANSI color, assign semantic name
+          console.log(`Color ${accentHex} matched to ANSI ${ansiIndex} (${pairing.ansiColorName})`);
+          switch (ansiIndex) {
+            case 1: // Red
+              console.log('Assigning destructive name to red color');
+              semanticName = 'destructive';
+              break;
+            case 2: // Green
+              console.log('Assigning success name to green color');
+              semanticName = 'success';
+              break;
+            case 3: // Yellow
+              console.log('Assigning warning name to yellow color');
+              semanticName = 'warning';
+              break;
+            case 4: // Blue
+            case 5: // Magenta
+            case 6: // Cyan
+            default:
+              // For non-semantic colors, use accent numbering
+              console.log(`Assigning accent ${accentNumber} to ANSI ${ansiIndex} (${pairing.ansiColorName})`);
+              semanticName = `accent ${accentNumber}`;
+              break;
+          }
+          break;
+        }
+      }
+      
+      colorName = semanticName;
+    }
     
     // Create Leonardo Color for this accent
     const leonardoAccent = new Color({

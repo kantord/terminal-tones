@@ -2,11 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import hljs from 'highlight.js';
-import type { GeneratedTheme, EnhancedTheme } from '@terminal-tones/theme-generator';
+import type { GeneratedTheme, EnhancedTheme, TerminalColorSet } from '@terminal-tones/theme-generator';
 
 interface SyntaxPreviewProps {
   theme: GeneratedTheme;
   enhancedTheme?: EnhancedTheme | null;
+  terminalColors?: TerminalColorSet | null;
   language?: string;
   code?: string;
 }
@@ -279,9 +280,32 @@ function ensureHexPrefix(color: string): string {
   return color.startsWith('#') ? color : `#${color}`;
 }
 
-// Get colors from theme - simplified approach
-function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme | null) {
-  // Always use the base theme colors - enhanced theme in simplified approach is just for internal use
+// Get colors from terminal colors or fallback to theme
+function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme | null, terminalColors?: TerminalColorSet | null) {
+  // If we have generated terminal colors, use those for a more accurate preview
+  if (terminalColors && terminalColors.base16.length === 16) {
+    const base16 = terminalColors.base16.map(ensureHexPrefix);
+    return {
+      base00: base16[0],  // Black (background)
+      base01: base16[8],  // Bright Black
+      base02: base16[1],  // Red (for selections/highlights)
+      base03: base16[2],  // Green (for comments)
+      base04: base16[3],  // Yellow
+      base05: base16[7],  // White (foreground)
+      base06: base16[6],  // Cyan
+      base07: base16[15], // Bright White
+      base08: base16[1],  // Red (variables)
+      base09: base16[3],  // Yellow (numbers)
+      base0A: base16[3],  // Yellow (attributes)
+      base0B: base16[2],  // Green (strings)
+      base0C: base16[6],  // Cyan
+      base0D: base16[4],  // Blue (functions)
+      base0E: base16[5],  // Magenta (keywords)
+      base0F: base16[9],  // Bright Red
+    };
+  }
+  
+  // Fallback to original theme colors
   return {
     base00: ensureHexPrefix(theme.base00),
     base01: ensureHexPrefix(theme.base01),
@@ -303,8 +327,8 @@ function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme
 }
 
 // Generate CSS for base16 theme with unique ID
-function generateBase16CSS(theme: GeneratedTheme, enhancedTheme: EnhancedTheme | null | undefined, uniqueId: string): string {
-  const colors = getEffectiveColors(theme, enhancedTheme);
+function generateBase16CSS(theme: GeneratedTheme, enhancedTheme: EnhancedTheme | null | undefined, terminalColors: TerminalColorSet | null | undefined, uniqueId: string): string {
+  const colors = getEffectiveColors(theme, enhancedTheme, terminalColors);
 
   return `
     .syntax-preview-${uniqueId} .hljs {
@@ -379,7 +403,7 @@ function generateBase16CSS(theme: GeneratedTheme, enhancedTheme: EnhancedTheme |
   `;
 }
 
-export function SyntaxPreview({ theme, enhancedTheme, language = 'javascript', code }: SyntaxPreviewProps) {
+export function SyntaxPreview({ theme, enhancedTheme, terminalColors, language = 'javascript', code }: SyntaxPreviewProps) {
   const codeRef = useRef<HTMLElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -387,12 +411,13 @@ export function SyntaxPreview({ theme, enhancedTheme, language = 'javascript', c
 
   const sampleCode = code || SAMPLE_CODE[language as keyof typeof SAMPLE_CODE] || SAMPLE_CODE.javascript;
 
-  // Get effective colors (enhanced or base)
-  const effectiveColors = getEffectiveColors(theme, enhancedTheme);
+  // Get effective colors (terminal colors, enhanced, or base)
+  const effectiveColors = getEffectiveColors(theme, enhancedTheme, terminalColors);
   
   // Debug: log theme colors
   console.log('SyntaxPreview theme:', {
     hasEnhanced: !!enhancedTheme,
+    hasTerminalColors: !!terminalColors,
     base00: effectiveColors.base00,
     base05: effectiveColors.base05,
     base08: effectiveColors.base08,
@@ -410,7 +435,7 @@ export function SyntaxPreview({ theme, enhancedTheme, language = 'javascript', c
     // Create and inject new style
     styleRef.current = document.createElement('style');
     styleRef.current.setAttribute('data-syntax-preview', uniqueId.current);
-    const css = generateBase16CSS(theme, enhancedTheme, uniqueId.current);
+    const css = generateBase16CSS(theme, enhancedTheme, terminalColors, uniqueId.current);
     styleRef.current.textContent = css;
     document.head.appendChild(styleRef.current);
     
@@ -434,7 +459,7 @@ export function SyntaxPreview({ theme, enhancedTheme, language = 'javascript', c
         styleRef.current = null;
       }
     };
-  }, [theme, enhancedTheme, language, sampleCode]);
+  }, [theme, enhancedTheme, terminalColors, language, sampleCode]);
 
   // Use effective colors for inline styles
   const safeColors = {
@@ -472,7 +497,7 @@ export function SyntaxPreview({ theme, enhancedTheme, language = 'javascript', c
       
       {/* Debug info - remove this in production */}
       <div className="text-xs text-gray-500 mt-2">
-        Debug: bg={effectiveColors.base00}, fg={effectiveColors.base05}, enhanced={!!enhancedTheme}
+        Debug: bg={effectiveColors.base00}, fg={effectiveColors.base05}, terminal={!!terminalColors}
       </div>
     </div>
   );

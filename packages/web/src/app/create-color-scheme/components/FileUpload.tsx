@@ -242,6 +242,7 @@ export function FileUpload() {
               <SyntaxPreview 
                 theme={generatedTheme}
                 enhancedTheme={enhancedTheme}
+                terminalColors={leonardoVariants?.terminalColors || null}
                 language={selectedLanguage}
               />
             </div>
