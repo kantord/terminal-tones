@@ -1,25 +1,22 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, Loader2, Contrast, Code2 } from 'lucide-react';
+import { Upload, Loader2, Code2 } from 'lucide-react';
 // No flavor combobox needed anymore
 import { SyntaxPreview } from '@/components/SyntaxPreview';
 import { 
   extractColorsFromImage, 
-  rgbToHex, 
   cleanupImageUrl, 
   generateThemeFromImage,
-  getGeneratedThemeColors,
   generateEnhancedTheme,
   getEnhancedThemeColors,
   findOptimalAnsiColorPairing,
-  BRIGHT_ANSI_COLORS,
-  ANSI_COLOR_NAMES,
   generateLeonardoVariants,
+  okhslToRgb,
   type RGB,
+  type OkhslColor,
   type GeneratedTheme,
   type EnhancedTheme,
-  type ColorVariant,
   type OptimalPairingResult,
   type LeonardoVariantsResult
 } from '@terminal-tones/theme-generator';
@@ -27,18 +24,40 @@ import {
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
-  const [extractedColors, setExtractedColors] = useState<RGB[]>([]);
+  const [extractedColors, setExtractedColors] = useState<OkhslColor[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
   const [generatedTheme, setGeneratedTheme] = useState<GeneratedTheme | null>(null);
   const [enhancedTheme, setEnhancedTheme] = useState<EnhancedTheme | null>(null);
-  const [displayColors, setDisplayColors] = useState<RGB[]>([]);
+  // displayColors removed as it was unused after Okhsl conversion
   const [ansiPairing, setAnsiPairing] = useState<OptimalPairingResult | null>(null);
   const [leonardoVariants, setLeonardoVariants] = useState<LeonardoVariantsResult | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
+  const [backgroundLuminosity, setBackgroundLuminosity] = useState<number>(0.5); // 0 = sharp (dark), 1 = smooth (bright)
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Function to adjust background luminosity and regenerate Leonardo variants
+  const adjustBackgroundLuminosity = (colors: OkhslColor[], luminosity: number) => {
+    if (!colors.length || !ansiPairing) return colors;
+    
+    // Find the background color index (paired with black, ANSI index 0)
+    const backgroundIndex = ansiPairing.selectedIndices[0];
+    const backgroundColor = colors[backgroundIndex];
+    
+    // Create adjusted background color with new luminosity
+    const adjustedBackground: OkhslColor = {
+      ...backgroundColor,
+      l: luminosity // Set luminosity directly (0 = sharp/dark, 1 = smooth/bright)
+    };
+    
+    // Return colors with adjusted background
+    const adjustedColors = [...colors];
+    adjustedColors[backgroundIndex] = adjustedBackground;
+    
+    return adjustedColors;
+  };
 
 // No flavors needed anymore
 
@@ -69,7 +88,7 @@ export function FileUpload() {
     }
   };
 
-  const generateTheme = (imageColors: RGB[]) => {
+  const generateTheme = (imageColors: OkhslColor[]) => {
     console.log('Generating theme from image colors');
     
     try {
@@ -88,23 +107,22 @@ export function FileUpload() {
       const pairingResult = findOptimalAnsiColorPairing(imageColors);
       console.log('ANSI color pairing result:', pairingResult);
       
-      // Generate Leonardo variants
-      const leonardoResult = generateLeonardoVariants(pairingResult, imageColors);
-      console.log('Leonardo variants result:', leonardoResult);
+      // Apply initial luminosity adjustment to background color
+      const adjustedColors = adjustBackgroundLuminosity(imageColors, backgroundLuminosity);
       
-      const themeColors = getEnhancedThemeColors(enhanced);
+      // Generate Leonardo variants with adjusted colors
+      const leonardoResult = generateLeonardoVariants(pairingResult, adjustedColors);
+      console.log('Leonardo variants result:', leonardoResult);
       
       setGeneratedTheme(theme);
       setEnhancedTheme(enhanced);
       setAnsiPairing(pairingResult);
       setLeonardoVariants(leonardoResult);
-      setDisplayColors(themeColors);
       setIsUploaded(true);
     } catch (error) {
       console.error('Error generating theme:', error);
       console.error('Error stack:', error instanceof Error ? error.stack : String(error));
       // Still show uploaded state with just the extracted colors
-      setDisplayColors(imageColors);
       setIsUploaded(true);
     } finally {
       setIsProcessing(false); // Always stop the loading spinner
@@ -147,8 +165,22 @@ export function FileUpload() {
     setEnhancedTheme(null);
     setAnsiPairing(null);
     setLeonardoVariants(null);
-    setDisplayColors([]);
     setSelectedLanguage('javascript');
+    setBackgroundLuminosity(0.5);
+  };
+
+  // Handle luminosity slider changes
+  const handleLuminosityChange = (newLuminosity: number) => {
+    setBackgroundLuminosity(newLuminosity);
+    
+    if (extractedColors.length > 0 && ansiPairing) {
+      // Adjust colors with new luminosity
+      const adjustedColors = adjustBackgroundLuminosity(extractedColors, newLuminosity);
+      
+      // Regenerate Leonardo variants with adjusted colors
+      const leonardoResult = generateLeonardoVariants(ansiPairing, adjustedColors);
+      setLeonardoVariants(leonardoResult);
+    }
   };
 
   // No flavor selection needed anymore
@@ -203,6 +235,45 @@ export function FileUpload() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
                   {uploadedFileName}
                 </p>
+              </div>
+            )}
+
+            {/* Background Luminosity Control */}
+            {leonardoVariants && (
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+                  Background Tone Control
+                </h3>
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-3">
+                    <label htmlFor="bg-luminosity-slider" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Background Tone
+                    </label>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {(backgroundLuminosity * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Sharp</span>
+                    <input
+                      id="bg-luminosity-slider"
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={backgroundLuminosity}
+                      onChange={(e) => handleLuminosityChange(parseFloat(e.target.value))}
+                      className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-slider"
+                    />
+                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Smooth</span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Adjust the perceived brightness of the background color to create sharper or smoother contrast.
+                  </p>
+                  <div className="mt-3 text-xs text-gray-600 dark:text-gray-400">
+                    <strong>Current Background:</strong> {leonardoVariants.backgroundColor}
+                  </div>
+                </div>
               </div>
             )}
 
