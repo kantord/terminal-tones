@@ -13,6 +13,7 @@ import {
   findOptimalAnsiColorPairing,
   generateLeonardoVariants,
   okhslToRgb,
+  okhslToHex,
   type RGB,
   type OkhslColor,
   type GeneratedTheme,
@@ -39,6 +40,7 @@ export function FileUpload() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Function to adjust background luminosity and regenerate Leonardo variants
+  // The background is ALWAYS the color that was matched with black (ANSI index 0)
   const adjustBackgroundLuminosity = (colors: OkhslColor[], luminosity: number, pairingResult?: OptimalPairingResult) => {
     if (!colors.length) return colors;
     
@@ -46,17 +48,30 @@ export function FileUpload() {
     const pairing = pairingResult || ansiPairing;
     if (!pairing) return colors;
     
-    // Find the background color index (paired with black, ANSI index 0)
-    const backgroundIndex = pairing.selectedIndices[0];
+    // Find the background color - this is ALWAYS the color paired with black (ANSI index 0)
+    const blackPairing = pairing.pairings[0]; // ANSI black is at index 0
+    const expectedBackgroundHex = blackPairing.extractedColorHex; // Hex value
+    
+    // Find the corresponding Okhsl color and its index by matching hex values
+    const backgroundIndex = colors.findIndex(color => {
+      const hex = okhslToHex(color);
+      return hex.toLowerCase() === expectedBackgroundHex.toLowerCase();
+    });
+    
+    if (backgroundIndex === -1) {
+      console.error('Could not find matching background color');
+      return colors;
+    }
+    
     const backgroundColor = colors[backgroundIndex];
     
-    // Create adjusted background color with new luminosity
+    // Create adjusted background color with new luminosity, preserving hue and saturation
     const adjustedBackground: OkhslColor = {
       ...backgroundColor,
       l: luminosity // Set luminosity directly (0 = sharp/dark, 1 = smooth/bright)
     };
     
-    // Return colors with adjusted background
+    // Return colors with adjusted background (the black equivalent)
     const adjustedColors = [...colors];
     adjustedColors[backgroundIndex] = adjustedBackground;
     
@@ -111,14 +126,27 @@ export function FileUpload() {
       const pairingResult = findOptimalAnsiColorPairing(imageColors);
       console.log('ANSI color pairing result:', pairingResult);
       
-      // Get the actual luminosity from the extracted background color
-      const backgroundIndex = pairingResult.selectedIndices[0]; // Black is at index 0
-      const actualBackgroundColor = imageColors[backgroundIndex];
-      const actualLuminosity = actualBackgroundColor.l || 0.5; // Use actual L value, fallback to 0.5
+      // Get the actual luminosity from the extracted background color (always the color matched with black)
+      // Find the actual color that was paired with black from the pairings array
+      const blackPairing = pairingResult.pairings[0]; // ANSI black is at index 0
+      const expectedBackgroundHex = blackPairing.extractedColorHex; // Hex value
       
-      console.log(`Background color detected: L=${actualLuminosity.toFixed(3)} (${(actualLuminosity * 100).toFixed(1)}%)`);
+      // Find the corresponding Okhsl color by matching hex values
+      const actualBackgroundColor = imageColors.find(color => {
+        const hex = okhslToHex(color);
+        return hex.toLowerCase() === expectedBackgroundHex.toLowerCase();
+      });
       
-      // Set the slider to the actual background luminosity
+      if (!actualBackgroundColor) {
+        throw new Error('Could not find matching Okhsl color for background');
+      }
+      
+      const actualLuminosity = actualBackgroundColor.l || 0.5; // Use actual L value from the "black equivalent" color
+      
+      console.log(`Background (black equivalent) color detected: L=${actualLuminosity.toFixed(3)} (${(actualLuminosity * 100).toFixed(1)}%)`);
+      console.log(`Background color:`, actualBackgroundColor);
+      
+      // Set the slider to the actual luminosity of the black-equivalent background color
       setBackgroundLuminosity(actualLuminosity);
       
       // Apply initial luminosity adjustment to background color (using actual value)
@@ -282,10 +310,10 @@ export function FileUpload() {
                     <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Smooth</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Slider starts at the detected background brightness. Adjust to create sharper or smoother contrast.
+                    Adjusts the black-equivalent background color&apos;s brightness. Slider starts at the detected luminosity.
                   </p>
                   <div className="mt-3 text-xs text-gray-600 dark:text-gray-400">
-                    <strong>Current Background:</strong> {leonardoVariants.backgroundColor}
+                    <strong>Background (Black equivalent):</strong> {leonardoVariants.backgroundColor}
                   </div>
                 </div>
               </div>

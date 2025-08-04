@@ -70,13 +70,35 @@ export function generateLeonardoVariants(
     throw new Error('Could not find color matched with white in ANSI pairing');
   }
   
-  // Note: pairing.extractedColor is still RGB from terminalColors.ts
-  // We need to find the corresponding Okhsl color from allExtractedColors
+  console.log('Available Okhsl colors:', allExtractedColors);
+  console.log('Looking for background hex (from black pairing):', blackPairing.extractedColorHex);
+  console.log('Looking for foreground hex (from white pairing):', whitePairing.extractedColorHex);
+  
+  // Get the hex values from the pairings (these are the correct colors)
+  const expectedBackgroundHex = blackPairing.extractedColorHex;
+  const expectedForegroundHex = whitePairing.extractedColorHex;
+  
+  // Since colors may have been adjusted (e.g., luminosity changed), we need to find them by index
+  // rather than exact hex matching. The ANSI pairing gives us the selectedIndices which tell us
+  // which positions in the original array were selected.
   const backgroundIndex = ansiPairing.selectedIndices[blackIndex];
   const foregroundIndex = ansiPairing.selectedIndices[whiteIndex];
   
+  console.log('Background index from ANSI pairing:', backgroundIndex);
+  console.log('Foreground index from ANSI pairing:', foregroundIndex);
+  
+  // Get the colors by their indices in the adjusted array
   const backgroundColorOkhsl = allExtractedColors[backgroundIndex];
   const foregroundColorOkhsl = allExtractedColors[foregroundIndex];
+  
+  if (!backgroundColorOkhsl || !foregroundColorOkhsl) {
+    console.error('Failed to find matching Okhsl colors');
+    console.error('backgroundColorOkhsl:', backgroundColorOkhsl);
+    console.error('foregroundColorOkhsl:', foregroundColorOkhsl);
+    console.error('backgroundIndex:', backgroundIndex, 'foregroundIndex:', foregroundIndex);
+    console.error('allExtractedColors length:', allExtractedColors.length);
+    throw new Error('Could not find matching Okhsl colors for background/foreground');
+  }
   
   const backgroundColor = okhslToHex(backgroundColorOkhsl);
   const foregroundColor = okhslToHex(foregroundColorOkhsl);
@@ -224,9 +246,7 @@ function generateTerminalColors(
   
   // Create mapping from ANSI pairing to accent variants
   ansiPairing.pairings.forEach((pairing, ansiIndex) => {
-    const selectedColorIndex = ansiPairing.selectedIndices[ansiIndex];
-    
-    // Find which accent variant corresponds to this selected color
+    // Find which accent variant corresponds to this extracted color from the pairing
     let accentIndex = -1;
     
     if (ansiIndex === 7) {
@@ -236,7 +256,7 @@ function generateTerminalColors(
       // Black maps to accent0 (background color that we added first)
       accentIndex = 0;
     } else {
-      // Find the accent that matches this extracted color
+      // Find the accent that matches this extracted color from the pairing
       const extractedHex = rgbToHex(pairing.extractedColor);
       accentIndex = accentVariants.findIndex(accent => 
         accent.originalColor.toLowerCase() === extractedHex.toLowerCase()
@@ -268,8 +288,9 @@ function generateTerminalColors(
     
     if (i === 0) {
       // Black (0): use original background color for normal, 6.0:1 variant for bright
-      const backgroundIndex = ansiPairing.selectedIndices[0];
-      const backgroundHex = okhslToHex(allExtractedColors[backgroundIndex]);
+      // Get the actual background color from the pairing (not selectedIndices)
+      const blackPairing = ansiPairing.pairings[0];
+      const backgroundHex = rgbToHex(blackPairing.extractedColor);
       normal.push(backgroundHex);
       
       // Find 6.0:1 contrast variant for bright black
