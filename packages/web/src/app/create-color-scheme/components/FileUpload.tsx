@@ -2,11 +2,13 @@
 
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
+import { extractColorsFromImage, type OkhslColor } from "@terminal-tones/theme-generator";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [extractedColors, setExtractedColors] = useState<OkhslColor[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,7 +42,16 @@ export function FileUpload() {
   const handleFileUpload = async (file: File) => {
     console.log("Processing file:", file.name);
     setUploadedFileName(file.name);
-    setIsUploaded(true);
+    
+    try {
+      const result = await extractColorsFromImage(file, 24);
+      setExtractedColors(result.colors);
+      setIsUploaded(true);
+    } catch (error) {
+      console.error("Error extracting colors:", error);
+      // Still show uploaded state even if color extraction fails
+      setIsUploaded(true);
+    }
   };
 
   const handleClick = () => {
@@ -50,30 +61,42 @@ export function FileUpload() {
   const handleReset = () => {
     setIsUploaded(false);
     setUploadedFileName("");
+    setExtractedColors([]);
   };
 
   if (isUploaded) {
     return (
-      <div className="text-center py-12">
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8 max-w-md mx-auto">
-          <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-          <h2 className="text-2xl font-semibold text-green-600 dark:text-green-400 mb-4">
-            Success!
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-2">
-            Your image <strong>{uploadedFileName}</strong> has been uploaded
-            successfully.
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-            Theme generation complete!
-          </p>
-          <button
-            onClick={handleReset}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Upload Another Image
-          </button>
+      <div className="py-12 max-w-4xl mx-auto">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-8 mb-8">
+          <div className="text-center">
+            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
+            <h2 className="text-2xl font-semibold text-green-600 dark:text-green-400 mb-4">
+              Success!
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
+              Extracted 24 colors from <strong>{uploadedFileName}</strong>
+            </p>
+            <button
+              onClick={handleReset}
+              className="mt-4 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Upload Another Image
+            </button>
+          </div>
         </div>
+
+        {extractedColors.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+              Extracted Colors (JSON)
+            </h3>
+            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+              <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                {JSON.stringify(extractedColors, null, 2)}
+              </pre>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
