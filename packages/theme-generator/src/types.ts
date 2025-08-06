@@ -2,9 +2,9 @@ import type { Okhsl } from "culori";
 
 export type Palette = Okhsl[];
 export type ReferenceColorWeights = {
-  h?: number; // Hue weight
-  s?: number; // Saturation weight
-  l?: number; // Lightness weight
+  h?: number;
+  s?: number;
+  l?: number;
 };
 export type ReferenceColor = [Okhsl, ReferenceColorWeights] | [Okhsl];
 export function ref(
