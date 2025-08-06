@@ -3,13 +3,14 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { ColorSwatch } from "@/components/ColorSwatch";
-import { extractColorsFromImage, type OkhslColor } from "@terminal-tones/theme-generator";
+import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE, type OkhslColor } from "@terminal-tones/theme-generator";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [extractedColors, setExtractedColors] = useState<OkhslColor[]>([]);
+  const [generatedTheme, setGeneratedTheme] = useState<OkhslColor[]>([]);
   const [imageUrl, setImageUrl] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,6 +53,16 @@ export function FileUpload() {
     try {
       const result = await extractColorsFromImage(file, 24);
       setExtractedColors(result.colors);
+      
+      // Generate theme using getBestColorScheme if we have enough colors
+      if (result.colors.length >= REFERENCE_PALETTE.length) {
+        const theme = getBestColorScheme(result.colors, REFERENCE_PALETTE);
+        setGeneratedTheme(theme);
+      } else {
+        console.warn(`Need at least ${REFERENCE_PALETTE.length} colors for theme generation, got ${result.colors.length}`);
+        setGeneratedTheme([]);
+      }
+      
       setIsUploaded(true);
     } catch (error) {
       console.error("Error extracting colors:", error);
@@ -68,6 +79,7 @@ export function FileUpload() {
     setIsUploaded(false);
     setUploadedFileName("");
     setExtractedColors([]);
+    setGeneratedTheme([]);
     // Clean up the image URL to prevent memory leaks
     if (imageUrl) {
       URL.revokeObjectURL(imageUrl);
@@ -119,6 +131,13 @@ export function FileUpload() {
               colors={extractedColors} 
               title="Extracted Colors (24 colors)" 
             />
+            
+            {generatedTheme.length > 0 && (
+              <ColorSwatch 
+                colors={generatedTheme} 
+                title="Generated Terminal Theme (16 colors)" 
+              />
+            )}
             
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
