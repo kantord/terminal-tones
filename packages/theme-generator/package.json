@@ -27,7 +27,8 @@
     "colorthief": "2.6.0",
     "culori": "^4.0.1",
     "es-toolkit": "^1.39.8",
-    "itertools": "^2.4.1"
+    "itertools": "^2.4.1",
+    "munkres": "^2.0.4"
   },
   "devDependencies": {
     "@types/colorthief": "2.6.0",
