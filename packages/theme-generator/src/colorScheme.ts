@@ -4,7 +4,6 @@ import { ReferenceColor } from "./types";
 import munkres from "munkres";
 import { convertRgbToOkhsl } from "./extractColorsFromImage";
 
-// Dark terminal theme reference palette (black background, white text)
 export const REFERENCE_PALETTE_DARK: ReferenceColor[] = [
   [convertRgbToOkhsl([0, 0, 0]), { l: 2 }],           // Black
   [convertRgbToOkhsl([128, 0, 0]), { h: 3, s: 2 }],   // Dark Red
@@ -25,7 +24,6 @@ export const REFERENCE_PALETTE_DARK: ReferenceColor[] = [
   [convertRgbToOkhsl([255, 255, 255]), { l: 2 }],     // White
 ];
 
-// Light terminal theme reference palette (white background, black text)
 export const REFERENCE_PALETTE_LIGHT: ReferenceColor[] = [
   [convertRgbToOkhsl([255, 255, 255]), { l: 2 }],     // White (background)
   [convertRgbToOkhsl([128, 0, 0]), { h: 3, s: 2 }],   // Dark Red
