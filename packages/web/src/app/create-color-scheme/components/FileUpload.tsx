@@ -3,7 +3,8 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { ColorSwatch } from "@/components/ColorSwatch";
-import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE, type OkhslColor } from "@terminal-tones/theme-generator";
+import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor } from "@terminal-tones/theme-generator";
+import { Switch } from "@/components/ui/switch";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -12,8 +13,32 @@ export function FileUpload() {
   const [extractedColors, setExtractedColors] = useState<OkhslColor[]>([]);
   const [generatedTheme, setGeneratedTheme] = useState<OkhslColor[]>([]);
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Function to generate theme based on current palette preference
+  const generateTheme = (colors: OkhslColor[], useLightPalette: boolean) => {
+    const palette = useLightPalette ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+    
+    if (colors.length >= palette.length) {
+      return getBestColorScheme(colors, palette);
+    } else {
+      console.warn(`Need at least ${palette.length} colors for theme generation, got ${colors.length}`);
+      return [];
+    }
+  };
+
+  // Handle theme toggle change
+  const handleThemeToggle = (checked: boolean) => {
+    setIsLightTheme(checked);
+    
+    // Regenerate theme if we have extracted colors
+    if (extractedColors.length > 0) {
+      const newTheme = generateTheme(extractedColors, checked);
+      setGeneratedTheme(newTheme);
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -54,14 +79,9 @@ export function FileUpload() {
       const result = await extractColorsFromImage(file, 24);
       setExtractedColors(result.colors);
       
-      // Generate theme using getBestColorScheme if we have enough colors
-      if (result.colors.length >= REFERENCE_PALETTE.length) {
-        const theme = getBestColorScheme(result.colors, REFERENCE_PALETTE);
-        setGeneratedTheme(theme);
-      } else {
-        console.warn(`Need at least ${REFERENCE_PALETTE.length} colors for theme generation, got ${result.colors.length}`);
-        setGeneratedTheme([]);
-      }
+      // Generate theme using current palette preference
+      const theme = generateTheme(result.colors, isLightTheme);
+      setGeneratedTheme(theme);
       
       setIsUploaded(true);
     } catch (error) {
@@ -133,10 +153,37 @@ export function FileUpload() {
             />
             
             {generatedTheme.length > 0 && (
-              <ColorSwatch 
-                colors={generatedTheme} 
-                title="Generated Terminal Theme (16 colors)" 
-              />
+              <div className="space-y-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Theme Style
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Choose between dark or light terminal theme
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className={`text-sm ${!isLightTheme ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                        Dark
+                      </span>
+                      <Switch
+                        checked={isLightTheme}
+                        onCheckedChange={handleThemeToggle}
+                      />
+                      <span className={`text-sm ${isLightTheme ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                        Light
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <ColorSwatch 
+                  colors={generatedTheme} 
+                  title={`Generated Terminal Theme (${isLightTheme ? 'Light' : 'Dark'} - 16 colors)`}
+                />
+              </div>
             )}
             
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">

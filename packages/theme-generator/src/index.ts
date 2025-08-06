@@ -8,4 +8,8 @@ export * from './types';
 export type { Okhsl as OkhslColor } from 'culori';
 
 // Explicit exports for better clarity
-export { default as getBestColorScheme, REFERENCE_PALETTE } from './colorScheme';
+export { 
+  default as getBestColorScheme, 
+  REFERENCE_PALETTE_DARK, 
+  REFERENCE_PALETTE_LIGHT 
+} from './colorScheme';
