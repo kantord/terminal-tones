@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { extractColorsFromImage, type OkhslColor } from "@terminal-tones/theme-generator";
+import { ColorSwatch } from "@/components/ColorSwatch";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -86,14 +87,21 @@ export function FileUpload() {
         </div>
 
         {extractedColors.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
-              Extracted Colors (JSON)
-            </h3>
-            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
-              <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                {JSON.stringify(extractedColors, null, 2)}
-              </pre>
+          <div className="space-y-6">
+            <ColorSwatch 
+              colors={extractedColors} 
+              title="Extracted Colors (24 colors)" 
+            />
+            
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+                Raw Color Data (JSON)
+              </h3>
+              <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+                <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                  {JSON.stringify(extractedColors, null, 2)}
+                </pre>
+              </div>
             </div>
           </div>
         )}
