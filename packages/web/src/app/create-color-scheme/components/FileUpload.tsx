@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, Loader2, CheckCircle } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,14 +39,8 @@ export function FileUpload() {
 
   const handleFileUpload = async (file: File) => {
     console.log("Processing file:", file.name);
-    setIsProcessing(true);
     setUploadedFileName(file.name);
-
-    // Simulate processing time
-    setTimeout(() => {
-      setIsProcessing(false);
-      setIsUploaded(true);
-    }, 1500);
+    setIsUploaded(true);
   };
 
   const handleClick = () => {
@@ -56,20 +49,8 @@ export function FileUpload() {
 
   const handleReset = () => {
     setIsUploaded(false);
-    setIsProcessing(false);
     setUploadedFileName("");
   };
-
-  if (isProcessing) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-          Processing your image...
-        </div>
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-      </div>
-    );
-  }
 
   if (isUploaded) {
     return (
@@ -80,7 +61,8 @@ export function FileUpload() {
             Success!
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-2">
-            Your image <strong>{uploadedFileName}</strong> has been uploaded successfully.
+            Your image <strong>{uploadedFileName}</strong> has been uploaded
+            successfully.
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
             Theme generation complete!
