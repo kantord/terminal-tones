@@ -1,6 +1,9 @@
 "use client";
 
-import OriginalImage, { type ImageProps, type StaticImageData } from "next/image";
+import OriginalImage, {
+  type ImageProps,
+  type StaticImageData,
+} from "next/image";
 import { forwardRef } from "react";
 import { BASE_PATH } from "../../next.config";
 
@@ -17,7 +20,7 @@ const Image = forwardRef<HTMLImageElement, BasePathImageProps>(
         : src;
 
     return <OriginalImage ref={ref} src={finalSrc} {...rest} />;
-  }
+  },
 );
 
 Image.displayName = "Image";

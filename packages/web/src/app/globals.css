@@ -4,7 +4,7 @@
   /* Original background/foreground as HSL for Tailwind compatibility */
   --background: 0 0% 100%;
   --foreground: 0 0% 9%;
-  
+
   /* shadcn/ui variables */
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
@@ -37,7 +37,7 @@
   :root {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    
+
     /* shadcn/ui dark mode variables */
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;

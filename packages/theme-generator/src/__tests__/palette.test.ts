@@ -1,100 +1,86 @@
-import { describe, it, expect } from "vitest";
-import { getPaletteScore, Palette, REFERENCE_PALETTE, ReferencePalette } from "../palette";
+import { describe, expect, it } from "vitest";
 import { convertRgbToOkhsl } from "../extractColorsFromImage";
+import { getColorScore } from "../palette";
 
-function extractColors(referencePalette: ReferencePalette): Palette {
-  return referencePalette.map(([color,]) => color)
-}
+describe("getColorScore", () => {
+  it("returns 0 when palettes are identical", () => {
+    expect(
+      getColorScore(convertRgbToOkhsl([0, 0, 0]), [
+        convertRgbToOkhsl([0, 0, 0]),
+      ]),
+    ).toEqual(0);
+  });
 
-const REFERENCE_PALETTE_COLORS = extractColors(REFERENCE_PALETTE)
-const REFERENCE_PALETTE_WITHOUT_WEIGHTS: ReferencePalette = REFERENCE_PALETTE.map(([item,]) => ([item]))
+  it("considers hue", () => {
+    const referenceColor = convertRgbToOkhsl([200, 100, 50]);
+    const alteredReferenceColor = {
+      ...referenceColor,
+      h: 10,
+    };
 
-describe('getPaletteScore', () => {
-  it('throws when the palette size does not match the reference palette', () => {
-    expect(() => getPaletteScore([], REFERENCE_PALETTE)).toThrow()
-  })
+    expect(
+      getColorScore(alteredReferenceColor, [referenceColor]),
+    ).toBeGreaterThan(0);
+  });
 
-  it('returns 0 when palettes are empty', () => {
-    expect(getPaletteScore([], [])).toEqual(0)
-  })
+  it("hue wraps around correctly at 360 degrees", () => {
+    const referenceColor = { ...convertRgbToOkhsl([200, 100, 50]), h: 10 };
+    const farReferenceColor = {
+      ...referenceColor,
+      h: 50,
+    };
 
-  it('returns 0 when palettes are identical', () => {
-    expect(getPaletteScore(extractColors(REFERENCE_PALETTE), REFERENCE_PALETTE)).toEqual(0)
-  })
+    const closeReferenceColor = {
+      ...referenceColor,
+      h: 358,
+    };
+    const closeDistance = getColorScore(closeReferenceColor, [referenceColor]);
+    const farDistance = getColorScore(farReferenceColor, [referenceColor]);
 
-  it('returns a larger value when palette is not a perfect match', () => {
-    const palette = [...REFERENCE_PALETTE_COLORS]
-    palette[1] = convertRgbToOkhsl([0, 0, 0])
+    expect(farDistance).toBeGreaterThan(closeDistance);
+  });
 
-    expect(getPaletteScore(palette, REFERENCE_PALETTE)).toBeGreaterThan(0)
-  })
+  it("considers lightness", () => {
+    const referenceColor = convertRgbToOkhsl([200, 100, 50]);
+    const alteredReferenceColor = {
+      ...referenceColor,
+      l: 10,
+    };
 
-  it('considers multiple colors', () => {
-    const palette1 = [...REFERENCE_PALETTE_COLORS]
-    palette1[1] = convertRgbToOkhsl([0, 0, 0])
+    expect(
+      getColorScore(alteredReferenceColor, [referenceColor]),
+    ).toBeGreaterThan(0);
+  });
 
-    const score1 = getPaletteScore(palette1, REFERENCE_PALETTE)
+  it("considers saturation", () => {
+    const referenceColor = convertRgbToOkhsl([200, 100, 50]);
+    const alteredReferenceColor = {
+      ...referenceColor,
+      s: 10,
+    };
 
-    const palette2 = [...REFERENCE_PALETTE_COLORS]
-    palette2[1] = convertRgbToOkhsl([0, 0, 0])
-    palette2[2] = convertRgbToOkhsl([0, 0, 0])
+    expect(
+      getColorScore(alteredReferenceColor, [referenceColor]),
+    ).toBeGreaterThan(0);
+  });
 
-    const score2 = getPaletteScore(palette2, REFERENCE_PALETTE)
+  it.each([["h"], ["s"], ["l"]])("considers %s weights", (weightKey) => {
+    const referenceColor = { ...convertRgbToOkhsl([200, 100, 50]), h: 10 };
+    const farReferenceColor = {
+      ...referenceColor,
+      [weightKey]: 50,
+    };
 
-    expect(score2).toBeGreaterThan(score1)
-  })
+    const closeReferenceColor = {
+      ...referenceColor,
+      [weightKey]: 50,
+    };
+    const closeDistance = getColorScore(closeReferenceColor, [referenceColor]);
+    const farDistance = getColorScore(farReferenceColor, [
+      referenceColor,
+      { [weightKey]: 2 },
+    ]);
 
-  it('considers hue', () => {
-    const palette = [...REFERENCE_PALETTE_COLORS]
-    palette[1] = { ...palette[1], h: (palette[1].h ?? 0) * 0.7 }
-
-    expect(getPaletteScore(palette, REFERENCE_PALETTE)).toBeGreaterThan(0)
-  })
-
-  it('considers saturation', () => {
-    const palette = [...REFERENCE_PALETTE_COLORS]
-    palette[1] = { ...palette[1], s: (palette[1].s ?? 0) * 0.7 }
-
-    expect(getPaletteScore(palette, REFERENCE_PALETTE)).toBeGreaterThan(0)
-  })
-
-  it('considers saturation', () => {
-    const palette = [...REFERENCE_PALETTE_COLORS]
-    palette[1] = { ...palette[1], s: (palette[1].s ?? 0) * 0.7 }
-
-    expect(getPaletteScore(palette, REFERENCE_PALETTE)).toBeGreaterThan(0)
-  })
-
-  it('considers hue weights', () => {
-    const palette = [...REFERENCE_PALETTE_COLORS]
-    palette[1] = { ...palette[1], h: 0 }
-
-    const scoreWithoutWeight = getPaletteScore(palette, REFERENCE_PALETTE_WITHOUT_WEIGHTS)
-    const scoreWithWeight = getPaletteScore(palette, REFERENCE_PALETTE)
-
-    expect(scoreWithWeight).toBeGreaterThan(scoreWithoutWeight)
-  })
-
-  it('considers lightness weights', () => {
-    const palette = [...REFERENCE_PALETTE_COLORS]
-    palette[0] = { ...palette[0], l: 100 }
-
-    const scoreWithoutWeight = getPaletteScore(palette, REFERENCE_PALETTE_WITHOUT_WEIGHTS)
-    const scoreWithWeight = getPaletteScore(palette, REFERENCE_PALETTE)
-
-    expect(scoreWithWeight).toBeGreaterThan(scoreWithoutWeight)
-  })
-
-  it('considers saturation weights', () => {
-    const palette = [...REFERENCE_PALETTE_COLORS]
-    palette[1] = { ...palette[1], s: 0 }
-
-    const scoreWithoutWeight = getPaletteScore(palette, REFERENCE_PALETTE_WITHOUT_WEIGHTS)
-    const scoreWithWeight = getPaletteScore(palette, REFERENCE_PALETTE)
-
-    expect(scoreWithWeight).toBeGreaterThan(scoreWithoutWeight)
-  })
-
-
-
-})
+    expect(farDistance).toBeGreaterThan(closeDistance);
+  });
+});

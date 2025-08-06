@@ -11,12 +11,14 @@
     "start": "pnpm --filter web start",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "format": "prettier . --write"
   },
   "devDependencies": {
     "@types/node": "^20.19.9",
     "@vitest/ui": "^3.2.4",
     "jsdom": "^26.1.0",
+    "prettier": "3.6.2",
     "vitest": "^3.2.4"
   }
 }

@@ -1,8 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import hljs from 'highlight.js';
-import type { GeneratedTheme, EnhancedTheme, TerminalColorSet } from '@terminal-tones/theme-generator';
+import { useEffect, useRef } from "react";
+import hljs from "highlight.js";
+import type {
+  GeneratedTheme,
+  EnhancedTheme,
+  TerminalColorSet,
+} from "@terminal-tones/theme-generator";
 
 interface SyntaxPreviewProps {
   theme: GeneratedTheme;
@@ -272,39 +276,43 @@ impl Theme {
     fn export_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
-}`
+}`,
 };
 
 // Helper function to ensure hex color has # prefix
 function ensureHexPrefix(color: string): string {
-  return color.startsWith('#') ? color : `#${color}`;
+  return color.startsWith("#") ? color : `#${color}`;
 }
 
 // Get colors from terminal colors or fallback to theme
-function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme | null, terminalColors?: TerminalColorSet | null) {
+function getEffectiveColors(
+  theme: GeneratedTheme,
+  enhancedTheme?: EnhancedTheme | null,
+  terminalColors?: TerminalColorSet | null,
+) {
   // If we have generated terminal colors, use those for a more accurate preview
   if (terminalColors && terminalColors.base16.length === 16) {
     const base16 = terminalColors.base16.map(ensureHexPrefix);
     return {
-      base00: base16[0],  // Black (background)
-      base01: base16[8],  // Bright Black
-      base02: base16[1],  // Red (for selections/highlights)
-      base03: base16[2],  // Green (for comments)
-      base04: base16[3],  // Yellow
-      base05: base16[7],  // White (foreground)
-      base06: base16[6],  // Cyan
+      base00: base16[0], // Black (background)
+      base01: base16[8], // Bright Black
+      base02: base16[1], // Red (for selections/highlights)
+      base03: base16[2], // Green (for comments)
+      base04: base16[3], // Yellow
+      base05: base16[7], // White (foreground)
+      base06: base16[6], // Cyan
       base07: base16[15], // Bright White
-      base08: base16[1],  // Red (variables)
-      base09: base16[3],  // Yellow (numbers)
-      base0A: base16[3],  // Yellow (attributes)
-      base0B: base16[2],  // Green (strings)
-      base0C: base16[6],  // Cyan
-      base0D: base16[4],  // Blue (functions)
-      base0E: base16[5],  // Magenta (keywords)
-      base0F: base16[9],  // Bright Red
+      base08: base16[1], // Red (variables)
+      base09: base16[3], // Yellow (numbers)
+      base0A: base16[3], // Yellow (attributes)
+      base0B: base16[2], // Green (strings)
+      base0C: base16[6], // Cyan
+      base0D: base16[4], // Blue (functions)
+      base0E: base16[5], // Magenta (keywords)
+      base0F: base16[9], // Bright Red
     };
   }
-  
+
   // Fallback to original theme colors
   return {
     base00: ensureHexPrefix(theme.base00),
@@ -327,7 +335,12 @@ function getEffectiveColors(theme: GeneratedTheme, enhancedTheme?: EnhancedTheme
 }
 
 // Generate CSS for base16 theme with unique ID
-function generateBase16CSS(theme: GeneratedTheme, enhancedTheme: EnhancedTheme | null | undefined, terminalColors: TerminalColorSet | null | undefined, uniqueId: string): string {
+function generateBase16CSS(
+  theme: GeneratedTheme,
+  enhancedTheme: EnhancedTheme | null | undefined,
+  terminalColors: TerminalColorSet | null | undefined,
+  uniqueId: string,
+): string {
   const colors = getEffectiveColors(theme, enhancedTheme, terminalColors);
 
   return `
@@ -403,53 +416,76 @@ function generateBase16CSS(theme: GeneratedTheme, enhancedTheme: EnhancedTheme |
   `;
 }
 
-export function SyntaxPreview({ theme, enhancedTheme, terminalColors, language = 'javascript', code }: SyntaxPreviewProps) {
+export function SyntaxPreview({
+  theme,
+  enhancedTheme,
+  terminalColors,
+  language = "javascript",
+  code,
+}: SyntaxPreviewProps) {
   const codeRef = useRef<HTMLElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const uniqueId = useRef(`preview-${Math.random().toString(36).substr(2, 9)}`);
 
-  const sampleCode = code || SAMPLE_CODE[language as keyof typeof SAMPLE_CODE] || SAMPLE_CODE.javascript;
+  const sampleCode =
+    code ||
+    SAMPLE_CODE[language as keyof typeof SAMPLE_CODE] ||
+    SAMPLE_CODE.javascript;
 
   // Get effective colors (terminal colors, enhanced, or base)
-  const effectiveColors = getEffectiveColors(theme, enhancedTheme, terminalColors);
-  
+  const effectiveColors = getEffectiveColors(
+    theme,
+    enhancedTheme,
+    terminalColors,
+  );
+
   // Debug: log theme colors
-  console.log('SyntaxPreview theme:', {
+  console.log("SyntaxPreview theme:", {
     hasEnhanced: !!enhancedTheme,
     hasTerminalColors: !!terminalColors,
     base00: effectiveColors.base00,
     base05: effectiveColors.base05,
     base08: effectiveColors.base08,
-    base0E: effectiveColors.base0E
+    base0E: effectiveColors.base0E,
   });
 
   useEffect(() => {
-    console.log('SyntaxPreview effect running for:', language, 'enhanced:', !!enhancedTheme);
-    
+    console.log(
+      "SyntaxPreview effect running for:",
+      language,
+      "enhanced:",
+      !!enhancedTheme,
+    );
+
     // Remove existing style
     if (styleRef.current && document.head.contains(styleRef.current)) {
       document.head.removeChild(styleRef.current);
     }
-    
+
     // Create and inject new style
-    styleRef.current = document.createElement('style');
-    styleRef.current.setAttribute('data-syntax-preview', uniqueId.current);
-    const css = generateBase16CSS(theme, enhancedTheme, terminalColors, uniqueId.current);
+    styleRef.current = document.createElement("style");
+    styleRef.current.setAttribute("data-syntax-preview", uniqueId.current);
+    const css = generateBase16CSS(
+      theme,
+      enhancedTheme,
+      terminalColors,
+      uniqueId.current,
+    );
     styleRef.current.textContent = css;
     document.head.appendChild(styleRef.current);
-    
-    console.log('Injected CSS with enhanced:', !!enhancedTheme);
+
+    console.log("Injected CSS with enhanced:", !!enhancedTheme);
 
     // Highlight code
     if (codeRef.current) {
       // Clear previous highlighting
-      codeRef.current.removeAttribute('data-highlighted');
+      codeRef.current.removeAttribute("data-highlighted");
       codeRef.current.className = `language-${language}`;
-      
+
       // Apply highlighting
       hljs.highlightElement(codeRef.current);
-      console.log('Highlighted element classes:', codeRef.current.className);
+      console.log("Highlighted element classes:", codeRef.current.className);
     }
 
     // Cleanup function
@@ -468,36 +504,41 @@ export function SyntaxPreview({ theme, enhancedTheme, terminalColors, language =
   };
 
   return (
-    <div ref={containerRef} className={`syntax-preview syntax-preview-${uniqueId.current}`}>
+    <div
+      ref={containerRef}
+      className={`syntax-preview syntax-preview-${uniqueId.current}`}
+    >
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-        <pre 
+        <pre
           className="m-0"
           style={{
             background: safeColors.background,
             color: safeColors.color,
-            padding: '1rem',
+            padding: "1rem",
             margin: 0,
-            fontSize: '14px',
-            lineHeight: '1.5',
-            fontFamily: "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace"
+            fontSize: "14px",
+            lineHeight: "1.5",
+            fontFamily:
+              "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
           }}
         >
-          <code 
-            ref={codeRef} 
+          <code
+            ref={codeRef}
             className={`language-${language}`}
             style={{
-              background: 'transparent',
-              color: 'inherit'
+              background: "transparent",
+              color: "inherit",
             }}
           >
             {sampleCode}
           </code>
         </pre>
       </div>
-      
+
       {/* Debug info - remove this in production */}
       <div className="text-xs text-gray-500 mt-2">
-        Debug: bg={effectiveColors.base00}, fg={effectiveColors.base05}, terminal={!!terminalColors}
+        Debug: bg={effectiveColors.base00}, fg={effectiveColors.base05},
+        terminal={!!terminalColors}
       </div>
     </div>
   );

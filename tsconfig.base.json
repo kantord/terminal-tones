@@ -9,6 +9,6 @@
     "module": "esnext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "incremental": true,
+    "incremental": true
   }
 }

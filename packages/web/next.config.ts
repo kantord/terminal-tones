@@ -1,11 +1,10 @@
 import type { NextConfig } from "next";
 
-
 export const BASE_PATH =
-  process.env.NODE_ENV === "development" ? "" : "/terminal-tones"
+  process.env.NODE_ENV === "development" ? "" : "/terminal-tones";
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  output: "export",
   basePath: BASE_PATH,
   /**
    * Disable server-based image optimization. Next.js does not support

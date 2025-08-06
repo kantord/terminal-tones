@@ -23,9 +23,11 @@
   },
   "dependencies": {
     "@adobe/leonardo-contrast-colors": "^1.0.0",
+    "add": "^2.0.6",
     "colorthief": "2.6.0",
     "culori": "^4.0.1",
-    "es-toolkit": "^1.39.8"
+    "es-toolkit": "^1.39.8",
+    "itertools": "^2.4.1"
   },
   "devDependencies": {
     "@types/colorthief": "2.6.0",
