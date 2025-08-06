@@ -2,14 +2,15 @@
 
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
-import { extractColorsFromImage, type OkhslColor } from "@terminal-tones/theme-generator";
 import { ColorSwatch } from "@/components/ColorSwatch";
+import { extractColorsFromImage, type OkhslColor } from "@terminal-tones/theme-generator";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploaded, setIsUploaded] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [extractedColors, setExtractedColors] = useState<OkhslColor[]>([]);
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,6 +45,10 @@ export function FileUpload() {
     console.log("Processing file:", file.name);
     setUploadedFileName(file.name);
     
+    // Create URL for displaying the image
+    const url = URL.createObjectURL(file);
+    setImageUrl(url);
+    
     try {
       const result = await extractColorsFromImage(file, 24);
       setExtractedColors(result.colors);
@@ -63,6 +68,11 @@ export function FileUpload() {
     setIsUploaded(false);
     setUploadedFileName("");
     setExtractedColors([]);
+    // Clean up the image URL to prevent memory leaks
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl);
+      setImageUrl("");
+    }
   };
 
   if (isUploaded) {
@@ -85,6 +95,23 @@ export function FileUpload() {
             </button>
           </div>
         </div>
+
+        {imageUrl && (
+          <div className="mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+                Uploaded Image
+              </h3>
+              <div className="flex justify-center">
+                <img 
+                  src={imageUrl} 
+                  alt={`Uploaded file: ${uploadedFileName}`}
+                  className="max-w-full max-h-96 object-contain rounded-lg shadow-md border border-gray-200 dark:border-gray-600"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {extractedColors.length > 0 && (
           <div className="space-y-6">

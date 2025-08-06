@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  transpilePackages: ["@terminal-tones/theme-generator"]
 };
 
 export default nextConfig;
