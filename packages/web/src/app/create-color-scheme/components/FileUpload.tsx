@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { ColorSwatch } from "@/components/ColorSwatch";
 import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor } from "@terminal-tones/theme-generator";
+import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
 
 export function FileUpload() {
@@ -183,6 +184,13 @@ export function FileUpload() {
                   colors={generatedTheme} 
                   title={`Generated Terminal Theme (${isLightTheme ? 'Light' : 'Dark'} - 16 colors)`}
                 />
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+                    Syntax highlighting preview
+                  </h3>
+                  <SyntaxPreview okhslBase16={generatedTheme} language="typescript" />
+                </div>
               </div>
             )}
             

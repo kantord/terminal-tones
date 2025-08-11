@@ -2,16 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import hljs from "highlight.js";
-import type {
-  GeneratedTheme,
-  EnhancedTheme,
-  TerminalColorSet,
-} from "@terminal-tones/theme-generator";
+import type { OkhslColor } from "@terminal-tones/theme-generator";
+import { okhslToHex } from "@terminal-tones/theme-generator";
 
 interface SyntaxPreviewProps {
-  theme: GeneratedTheme;
-  enhancedTheme?: EnhancedTheme | null;
-  terminalColors?: TerminalColorSet | null;
+  okhslBase16?: OkhslColor[] | null;
   language?: string;
   code?: string;
 }
@@ -279,69 +274,57 @@ impl Theme {
 }`,
 };
 
-// Helper function to ensure hex color has # prefix
-function ensureHexPrefix(color: string): string {
-  return color.startsWith("#") ? color : `#${color}`;
-}
-
-// Get colors from terminal colors or fallback to theme
-function getEffectiveColors(
-  theme: GeneratedTheme,
-  enhancedTheme?: EnhancedTheme | null,
-  terminalColors?: TerminalColorSet | null,
-) {
-  // If we have generated terminal colors, use those for a more accurate preview
-  if (terminalColors && terminalColors.base16.length === 16) {
-    const base16 = terminalColors.base16.map(ensureHexPrefix);
+// Derive a base16-like mapping from OKHSL colors
+function getEffectiveColorsFromOkhsl(base16Okhsl?: OkhslColor[] | null) {
+  if (base16Okhsl && base16Okhsl.length === 16) {
+    const base16Hex = base16Okhsl.map(okhslToHex);
     return {
-      base00: base16[0], // Black (background)
-      base01: base16[8], // Bright Black
-      base02: base16[1], // Red (for selections/highlights)
-      base03: base16[2], // Green (for comments)
-      base04: base16[3], // Yellow
-      base05: base16[7], // White (foreground)
-      base06: base16[6], // Cyan
-      base07: base16[15], // Bright White
-      base08: base16[1], // Red (variables)
-      base09: base16[3], // Yellow (numbers)
-      base0A: base16[3], // Yellow (attributes)
-      base0B: base16[2], // Green (strings)
-      base0C: base16[6], // Cyan
-      base0D: base16[4], // Blue (functions)
-      base0E: base16[5], // Magenta (keywords)
-      base0F: base16[9], // Bright Red
-    };
+      base00: base16Hex[0], // background
+      base01: base16Hex[8],
+      base02: base16Hex[1],
+      base03: base16Hex[2],
+      base04: base16Hex[3],
+      base05: base16Hex[7], // foreground
+      base06: base16Hex[6],
+      base07: base16Hex[15],
+      base08: base16Hex[1],
+      base09: base16Hex[3],
+      base0A: base16Hex[3],
+      base0B: base16Hex[2],
+      base0C: base16Hex[6],
+      base0D: base16Hex[4],
+      base0E: base16Hex[5],
+      base0F: base16Hex[9],
+    } as const;
   }
 
-  // Fallback to original theme colors
+  // Neutral defaults if colors not provided
   return {
-    base00: ensureHexPrefix(theme.base00),
-    base01: ensureHexPrefix(theme.base01),
-    base02: ensureHexPrefix(theme.base02),
-    base03: ensureHexPrefix(theme.base03),
-    base04: ensureHexPrefix(theme.base04),
-    base05: ensureHexPrefix(theme.base05),
-    base06: ensureHexPrefix(theme.base06),
-    base07: ensureHexPrefix(theme.base07),
-    base08: ensureHexPrefix(theme.base08),
-    base09: ensureHexPrefix(theme.base09),
-    base0A: ensureHexPrefix(theme.base0A),
-    base0B: ensureHexPrefix(theme.base0B),
-    base0C: ensureHexPrefix(theme.base0C),
-    base0D: ensureHexPrefix(theme.base0D),
-    base0E: ensureHexPrefix(theme.base0E),
-    base0F: ensureHexPrefix(theme.base0F),
-  };
+    base00: "#1e1e1e",
+    base01: "#2d2d2d",
+    base02: "#3c3c3c",
+    base03: "#5a5a5a",
+    base04: "#b0b0b0",
+    base05: "#d4d4d4",
+    base06: "#e0e0e0",
+    base07: "#ffffff",
+    base08: "#f44747",
+    base09: "#d19a66",
+    base0A: "#e5c07b",
+    base0B: "#98c379",
+    base0C: "#56b6c2",
+    base0D: "#61afef",
+    base0E: "#c678dd",
+    base0F: "#be5046",
+  } as const;
 }
 
 // Generate CSS for base16 theme with unique ID
 function generateBase16CSS(
-  theme: GeneratedTheme,
-  enhancedTheme: EnhancedTheme | null | undefined,
-  terminalColors: TerminalColorSet | null | undefined,
+  base16Okhsl: OkhslColor[] | null | undefined,
   uniqueId: string,
 ): string {
-  const colors = getEffectiveColors(theme, enhancedTheme, terminalColors);
+  const colors = getEffectiveColorsFromOkhsl(base16Okhsl);
 
   return `
     .syntax-preview-${uniqueId} .hljs {
@@ -417,9 +400,7 @@ function generateBase16CSS(
 }
 
 export function SyntaxPreview({
-  theme,
-  enhancedTheme,
-  terminalColors,
+  okhslBase16,
   language = "javascript",
   code,
 }: SyntaxPreviewProps) {
@@ -433,17 +414,12 @@ export function SyntaxPreview({
     SAMPLE_CODE[language as keyof typeof SAMPLE_CODE] ||
     SAMPLE_CODE.javascript;
 
-  // Get effective colors (terminal colors, enhanced, or base)
-  const effectiveColors = getEffectiveColors(
-    theme,
-    enhancedTheme,
-    terminalColors,
-  );
+  // Get effective colors based on provided OKHSL base16 palette
+  const effectiveColors = getEffectiveColorsFromOkhsl(okhslBase16 || null);
 
   // Debug: log theme colors
-  console.log("SyntaxPreview theme:", {
-    hasEnhanced: !!enhancedTheme,
-    hasTerminalColors: !!terminalColors,
+  console.log("SyntaxPreview colors:", {
+    hasOkhsl: Array.isArray(okhslBase16) && okhslBase16.length === 16,
     base00: effectiveColors.base00,
     base05: effectiveColors.base05,
     base08: effectiveColors.base08,
@@ -451,12 +427,7 @@ export function SyntaxPreview({
   });
 
   useEffect(() => {
-    console.log(
-      "SyntaxPreview effect running for:",
-      language,
-      "enhanced:",
-      !!enhancedTheme,
-    );
+    console.log("SyntaxPreview effect running for:", language);
 
     // Remove existing style
     if (styleRef.current && document.head.contains(styleRef.current)) {
@@ -466,16 +437,11 @@ export function SyntaxPreview({
     // Create and inject new style
     styleRef.current = document.createElement("style");
     styleRef.current.setAttribute("data-syntax-preview", uniqueId.current);
-    const css = generateBase16CSS(
-      theme,
-      enhancedTheme,
-      terminalColors,
-      uniqueId.current,
-    );
+    const css = generateBase16CSS(okhslBase16 || null, uniqueId.current);
     styleRef.current.textContent = css;
     document.head.appendChild(styleRef.current);
 
-    console.log("Injected CSS with enhanced:", !!enhancedTheme);
+    console.log("Injected syntax preview CSS");
 
     // Highlight code
     if (codeRef.current) {
@@ -495,7 +461,7 @@ export function SyntaxPreview({
         styleRef.current = null;
       }
     };
-  }, [theme, enhancedTheme, terminalColors, language, sampleCode]);
+  }, [okhslBase16, language, sampleCode]);
 
   // Use effective colors for inline styles
   const safeColors = {
@@ -537,8 +503,7 @@ export function SyntaxPreview({
 
       {/* Debug info - remove this in production */}
       <div className="text-xs text-gray-500 mt-2">
-        Debug: bg={effectiveColors.base00}, fg={effectiveColors.base05},
-        terminal={!!terminalColors}
+        Debug: bg={effectiveColors.base00}, fg={effectiveColors.base05}
       </div>
     </div>
   );
