@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { ColorSwatch } from "@/components/ColorSwatch";
-import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor } from "@terminal-tones/theme-generator";
+import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, optimizeColorscheme } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
 
@@ -15,6 +15,9 @@ export function FileUpload() {
   const [generatedTheme, setGeneratedTheme] = useState<OkhslColor[]>([]);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
+  const [bgL, setBgL] = useState<number>(0.08);
+  const [fgL, setFgL] = useState<number>(0.9);
+  const [optimizedTheme, setOptimizedTheme] = useState<OkhslColor[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,6 +33,19 @@ export function FileUpload() {
     }
   };
 
+  // Recompute optimized theme whenever base theme or sliders change
+  const recomputeOptimized = (base: OkhslColor[]) => {
+    if (base.length === 16) {
+      const tuned = optimizeColorscheme(base, {
+        backgroundLightness: bgL,
+        foregroundLightness: fgL,
+      });
+      setOptimizedTheme(tuned);
+    } else {
+      setOptimizedTheme([]);
+    }
+  };
+
   // Handle theme toggle change
   const handleThemeToggle = (checked: boolean) => {
     setIsLightTheme(checked);
@@ -38,6 +54,7 @@ export function FileUpload() {
     if (extractedColors.length > 0) {
       const newTheme = generateTheme(extractedColors, checked);
       setGeneratedTheme(newTheme);
+      recomputeOptimized(newTheme);
     }
   };
 
@@ -83,6 +100,7 @@ export function FileUpload() {
       // Generate theme using current palette preference
       const theme = generateTheme(result.colors, isLightTheme);
       setGeneratedTheme(theme);
+      recomputeOptimized(theme);
       
       setIsUploaded(true);
     } catch (error) {
@@ -101,6 +119,7 @@ export function FileUpload() {
     setUploadedFileName("");
     setExtractedColors([]);
     setGeneratedTheme([]);
+    setOptimizedTheme([]);
     // Clean up the image URL to prevent memory leaks
     if (imageUrl) {
       URL.revokeObjectURL(imageUrl);
@@ -191,6 +210,74 @@ export function FileUpload() {
                   </h3>
                   <SyntaxPreview okhslBase16={generatedTheme} language="typescript" />
                 </div>
+
+                {/* Optimizer controls */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+                    Optimize Lightness
+                  </h3>
+
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Background lightness</label>
+                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{bgL.toFixed(2)}</span>
+                      </div>
+                      {/* Reuse native range for simplicity */}
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={bgL}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          setBgL(v);
+                          recomputeOptimized(generatedTheme);
+                        }}
+                        className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                        aria-label="Background lightness"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Foreground lightness</label>
+                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{fgL.toFixed(2)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={fgL}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          setFgL(v);
+                          recomputeOptimized(generatedTheme);
+                        }}
+                        className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                        aria-label="Foreground lightness"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {optimizedTheme.length === 16 && (
+                  <div className="space-y-4">
+                    <ColorSwatch 
+                      colors={optimizedTheme} 
+                      title={`Optimized Theme (L tuned)`}
+                    />
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+                        Optimized syntax preview
+                      </h3>
+                      <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             

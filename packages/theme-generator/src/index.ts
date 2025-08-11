@@ -3,6 +3,7 @@ export * from './extractColorsFromImage';
 export * from './colorScheme';
 export * from './palette';
 export * from './types';
+export * from './optimizeColorscheme';
 
 // Re-export types from culori that we use
 export type { Okhsl as OkhslColor } from 'culori';
