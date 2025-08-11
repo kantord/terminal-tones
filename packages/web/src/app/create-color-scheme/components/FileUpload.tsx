@@ -46,6 +46,35 @@ export function FileUpload() {
     }
   };
 
+  const deriveLightnessDefaults = (base: OkhslColor[]) => {
+    if (base.length < 16) {
+      return { bg: bgL, fg: fgL };
+    }
+    const l0 = base[0]?.l ?? 0;
+    const l15 = base[15]?.l ?? 1;
+    const isIndex0Black = l0 <= l15;
+    let bg = isIndex0Black ? l0 : l15;
+    // Foreground: derive from BRIGHT color slots average to avoid pure white (l=1)
+    const brightIndices = [9, 10, 11, 12, 13, 14];
+    const brightLs = brightIndices
+      .map((i) => base[i]?.l)
+      .filter((v): v is number => typeof v === "number");
+    const avgBright = brightLs.length
+      ? brightLs.reduce((a, b) => a + b, 0) / brightLs.length
+      : isIndex0Black ? l15 : l0;
+    // Nudge away from extremes
+    let fg = Math.max(0.02, Math.min(0.98, avgBright));
+    // Ensure usable separation; expand range if palette extremes are too close
+    if (fg - bg < 0.35) {
+      bg = Math.min(bg, 0.12);
+      fg = Math.max(fg, 0.9);
+    }
+    // Clamp final
+    bg = Math.max(0, Math.min(1, bg));
+    fg = Math.max(0, Math.min(1, fg));
+    return { bg, fg };
+  };
+
   // Handle theme toggle change
   const handleThemeToggle = (checked: boolean) => {
     setIsLightTheme(checked);
@@ -54,7 +83,20 @@ export function FileUpload() {
     if (extractedColors.length > 0) {
       const newTheme = generateTheme(extractedColors, checked);
       setGeneratedTheme(newTheme);
-      recomputeOptimized(newTheme);
+      // Reset sliders based on the new theme extremes
+      const { bg, fg } = deriveLightnessDefaults(newTheme);
+      setBgL(bg);
+      setFgL(fg);
+      // Compute optimized theme using the freshly derived values to avoid state lag
+      if (newTheme.length === 16) {
+        const tuned = optimizeColorscheme(newTheme, {
+          backgroundLightness: bg,
+          foregroundLightness: fg,
+        });
+        setOptimizedTheme(tuned);
+      } else {
+        setOptimizedTheme([]);
+      }
     }
   };
 
@@ -100,7 +142,18 @@ export function FileUpload() {
       // Generate theme using current palette preference
       const theme = generateTheme(result.colors, isLightTheme);
       setGeneratedTheme(theme);
-      recomputeOptimized(theme);
+      const { bg, fg } = deriveLightnessDefaults(theme);
+      setBgL(bg);
+      setFgL(fg);
+      if (theme.length === 16) {
+        const tuned = optimizeColorscheme(theme, {
+          backgroundLightness: bg,
+          foregroundLightness: fg,
+        });
+        setOptimizedTheme(tuned);
+      } else {
+        setOptimizedTheme([]);
+      }
       
       setIsUploaded(true);
     } catch (error) {
@@ -233,7 +286,13 @@ export function FileUpload() {
                         onChange={(e) => {
                           const v = Number(e.target.value);
                           setBgL(v);
-                          recomputeOptimized(generatedTheme);
+                          if (generatedTheme.length === 16) {
+                            const tuned = optimizeColorscheme(generatedTheme, {
+                              backgroundLightness: v,
+                              foregroundLightness: fgL,
+                            });
+                            setOptimizedTheme(tuned);
+                          }
                         }}
                         className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
                         aria-label="Background lightness"
@@ -254,7 +313,13 @@ export function FileUpload() {
                         onChange={(e) => {
                           const v = Number(e.target.value);
                           setFgL(v);
-                          recomputeOptimized(generatedTheme);
+                          if (generatedTheme.length === 16) {
+                            const tuned = optimizeColorscheme(generatedTheme, {
+                              backgroundLightness: bgL,
+                              foregroundLightness: v,
+                            });
+                            setOptimizedTheme(tuned);
+                          }
                         }}
                         className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
                         aria-label="Foreground lightness"

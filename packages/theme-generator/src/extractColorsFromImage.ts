@@ -57,13 +57,15 @@ export function extractColorsFromImage(
  * @returns A hex color string (e.g., "#ff0000")
  */
 export function okhslToHex(color: Okhsl): string {
-  // Normalize the color values - culori expects lightness in 0-1 range, not 0-100
+  // Normalize the color values - culori expects values in 0..1 range
+  const l = color.l > 1 ? color.l / 100 : color.l;
   const normalizedColor: Okhsl = {
-    ...color,
-    // Convert lightness from 0-100 to 0-1 range if needed
-    l: color.l > 1 ? color.l / 100 : color.l
-  };
-  
+    mode: "okhsl",
+    h: color.h ?? 0,
+    s: Math.max(0, Math.min(1, (color.s ?? 0))),
+    l: Math.max(0, Math.min(1, l)),
+  } as Okhsl;
+
   // Convert OKHSL → OKLAB → RGB → HEX (culori doesn't have direct OKHSL → RGB)
   const oklabColor = convertOkhslToOklab(normalizedColor);
   const rgbColor = convertOklabToRgb(oklabColor);
