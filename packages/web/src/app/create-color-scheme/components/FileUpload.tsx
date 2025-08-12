@@ -36,9 +36,11 @@ export function FileUpload() {
   // Recompute optimized theme whenever base theme or sliders change
   const recomputeOptimized = (base: OkhslColor[]) => {
     if (base.length === 16) {
-      const tuned = optimizeColorscheme(base, {
+      const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+      const tuned = optimizeColorscheme(base, reference, {
         backgroundLightness: bgL,
         foregroundLightness: fgL,
+        isLightTheme,
       });
       setOptimizedTheme(tuned);
     } else {
@@ -87,11 +89,13 @@ export function FileUpload() {
       const { bg, fg } = deriveLightnessDefaults(newTheme);
       setBgL(bg);
       setFgL(fg);
-      // Compute optimized theme using the freshly derived values to avoid state lag
+      // Compute optimized theme
       if (newTheme.length === 16) {
-        const tuned = optimizeColorscheme(newTheme, {
+        const reference = checked ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+        const tuned = optimizeColorscheme(newTheme, reference, {
           backgroundLightness: bg,
           foregroundLightness: fg,
+          isLightTheme: checked,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -142,13 +146,15 @@ export function FileUpload() {
       // Generate theme using current palette preference
       const theme = generateTheme(result.colors, isLightTheme);
       setGeneratedTheme(theme);
-      const { bg, fg } = deriveLightnessDefaults(theme);
-      setBgL(bg);
-      setFgL(fg);
       if (theme.length === 16) {
-        const tuned = optimizeColorscheme(theme, {
+        const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+        const { bg, fg } = deriveLightnessDefaults(theme);
+        setBgL(bg);
+        setFgL(fg);
+        const tuned = optimizeColorscheme(theme, reference, {
           backgroundLightness: bg,
           foregroundLightness: fg,
+          isLightTheme,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -276,7 +282,6 @@ export function FileUpload() {
                         <label className="text-sm text-gray-600 dark:text-gray-400">Background lightness</label>
                         <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{bgL.toFixed(2)}</span>
                       </div>
-                      {/* Reuse native range for simplicity */}
                       <input
                         type="range"
                         min={0}
@@ -287,9 +292,11 @@ export function FileUpload() {
                           const v = Number(e.target.value);
                           setBgL(v);
                           if (generatedTheme.length === 16) {
-                            const tuned = optimizeColorscheme(generatedTheme, {
+                            const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                            const tuned = optimizeColorscheme(generatedTheme, reference, {
                               backgroundLightness: v,
                               foregroundLightness: fgL,
+                              isLightTheme,
                             });
                             setOptimizedTheme(tuned);
                           }
@@ -314,9 +321,11 @@ export function FileUpload() {
                           const v = Number(e.target.value);
                           setFgL(v);
                           if (generatedTheme.length === 16) {
-                            const tuned = optimizeColorscheme(generatedTheme, {
+                            const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                            const tuned = optimizeColorscheme(generatedTheme, reference, {
                               backgroundLightness: bgL,
                               foregroundLightness: v,
+                              isLightTheme,
                             });
                             setOptimizedTheme(tuned);
                           }

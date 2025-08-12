@@ -1,8 +1,10 @@
 import type { Okhsl } from "culori";
+import type { ReferenceColor } from "./types";
 
 export type OptimizeColorschemeOptions = {
-  backgroundLightness: number; // target L for the "black" slot
-  foregroundLightness: number; // target L for bright color slots
+  backgroundLightness: number;
+  foregroundLightness: number;
+  isLightTheme: boolean;
 };
 
 function clamp01(value: number): number {
@@ -13,63 +15,66 @@ function clamp01(value: number): number {
 }
 
 /**
- * Adjusts lightness values of a 16-color terminal palette.
+ * Adjusts lightness values of a 16-color terminal palette by referencing
+ * the lightness distribution of a reference palette, instead of using
+ * hardcoded indices.
  *
- * Expected input order is the same as produced by getBestColorScheme using
- * either the dark or light reference palettes.
+ * Expected input order for `colours` is the same as produced by
+ * getBestColorScheme using the provided `referencePalette`.
  *
- * Rules:
- * - Set the lightness of the "black" slot to backgroundLightness
- * - Set the lightness of bright color slots (indices 9..14) to foregroundLightness
- * - Set the lightness of dark color slots (indices 1..6) to midpoint(background, foreground)
- * - For grayscale helpers: set dark gray (index 8) to midpoint; set light gray (index 7) to foreground
- * - Set the opposite extreme ("white" slot) to foregroundLightness
+ * Mapping logic:
+ * - Take the lightness of the reference palette's first entry as the
+ *   reference "background" lightness (works for both dark and light
+ *   reference palettes used by the project).
+ * - Find the entry whose reference lightness is farthest from background;
+ *   treat that as the opposite extreme.
+ * - For every slot, linearly interpolate its new lightness between
+ *   backgroundLightness (t=0) and foregroundLightness (t=1) based on its
+ *   reference lightness position between these two extremes.
  */
 export function optimizeColorscheme(
   colours: Okhsl[],
+  referencePalette: ReferenceColor[],
   options: OptimizeColorschemeOptions,
 ): Okhsl[] {
-  const { backgroundLightness, foregroundLightness } = options;
-
+  const { backgroundLightness, foregroundLightness, isLightTheme } = options;
   if (!Array.isArray(colours) || colours.length < 2) {
     throw new Error(
       "optimizeColorscheme requires at least 2 colors (background and foreground)",
     );
   }
 
-  if (colours.length < 16) {
-    // Return a shallow copy without changes if the input doesn't look like a base16 palette
-    return colours.slice();
+  if (!Array.isArray(referencePalette) || referencePalette.length !== colours.length) {
+    throw new Error(
+      "optimizeColorscheme requires a reference palette with the same length as colours",
+    );
   }
 
+  // Determine background and foreground anchors from the reference palette
+  let refMin = 1;
+  let refMax = 0;
+  for (const [ref] of referencePalette) {
+    const l = clamp01(ref.l ?? 0);
+    if (l < refMin) refMin = l;
+    if (l > refMax) refMax = l;
+  }
+
+  // Map background/foreground depending on theme type
+  const refBg = isLightTheme ? refMax : refMin; // background anchor in reference
+  const refFg = isLightTheme ? refMin : refMax; // foreground anchor in reference
+
+  const denom = refFg - refBg;
   const bgL = clamp01(backgroundLightness);
   const fgL = clamp01(foregroundLightness);
-  const midL = clamp01((bgL + fgL) / 2);
-
-  // Assume black is the first color and white is the last color
-  // (the calling code must ensure palettes follow this convention)
-  const blackIndex = 0;
-  const whiteIndex = colours.length - 1;
-
-  // Indices by convention (same for dark and light reference palettes)
-  const darkColorIndices = [1, 2, 3, 4, 5, 6];
-  const lightGrayIndex = 7;
-  const darkGrayIndex = 8;
-  const brightColorIndices = [9, 10, 11, 12, 13, 14];
 
   return colours.map((color, index) => {
-    const newL = (() => {
-      if (index === blackIndex) return bgL;
-      if (index === whiteIndex) return fgL;
-      if (brightColorIndices.includes(index)) return fgL;
-      if (darkColorIndices.includes(index)) return midL;
-      if (index === darkGrayIndex) return midL;
-      if (index === lightGrayIndex) return fgL;
-      // Any other slots: keep their original lightness
-      return color.l;
-    })();
-
-    return { ...color, l: newL } as Okhsl;
+    const refL = clamp01(referencePalette[index][0].l ?? color.l ?? 0);
+    let t = 0;
+    if (Math.abs(denom) > 1e-6) {
+      t = clamp01((refL - refBg) / denom);
+    }
+    const newL = bgL + t * (fgL - bgL);
+    return { ...color, l: clamp01(newL) } as Okhsl;
   });
 }
 
