@@ -4,6 +4,7 @@ import type { ReferenceColor } from "./types";
 export type CustomizeColorSchemeOptions = {
   blackPointLightness: number; // target L for the darkest slot
   whitePointLightness: number; // target L for the brightest slot
+  midpoint?: number; // where reference t=0.5 maps within [black, white]
 };
 
 function clamp01(value: number): number {
@@ -41,7 +42,7 @@ export function customizeColorScheme(
   referencePalette: ReferenceColor[],
   options: CustomizeColorSchemeOptions,
 ): Okhsl[] {
-  const { blackPointLightness, whitePointLightness } = options;
+  const { blackPointLightness, whitePointLightness, midpoint } = options;
   if (!Array.isArray(colours) || colours.length < 2) {
     throw new Error(
       "customizeColorScheme requires at least 2 colors (background and foreground)",
@@ -71,6 +72,8 @@ export function customizeColorScheme(
   const denom = refMax - refMin;
   const blackL = clamp01(blackPointLightness);
   const whiteL = clamp01(whitePointLightness);
+  const midParam = clamp01(midpoint ?? 0.5);
+  const midL = blackL + (whiteL - blackL) * midParam;
 
   return colours.map((color, index) => {
     const refL = normalizeL(referencePalette[index][0].l ?? color.l ?? 0);
@@ -81,7 +84,15 @@ export function customizeColorScheme(
     // Set exact endpoints for background/foreground slots
     // If background is lighter than foreground (light scheme), background maps to white point.
     // Otherwise (dark scheme), background maps to black point.
-    let newL = blackL + t * (whiteL - blackL);
+    // Piecewise linear mapping so that t=0.5 maps to chosen midpoint
+    let newL: number;
+    if (t <= 0.5) {
+      const lt = denom === 0 ? 0 : (t / 0.5);
+      newL = blackL + (midL - blackL) * lt;
+    } else {
+      const rt = denom === 0 ? 0 : ((t - 0.5) / 0.5);
+      newL = midL + (whiteL - midL) * rt;
+    }
     if (index === backgroundIndex) {
       newL = refBgAnchor > refFgAnchor ? whiteL : blackL;
     } else if (index === foregroundIndex) {

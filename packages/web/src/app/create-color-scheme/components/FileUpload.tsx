@@ -19,6 +19,7 @@ export function FileUpload() {
   const [whitePoint, setWhitePoint] = useState<number | null>(null);
   const [dynamicRange, setDynamicRange] = useState<number | null>(null);
   const [optimizedTheme, setOptimizedTheme] = useState<OkhslColor[]>([]);
+  const [midpoint, setMidpoint] = useState<number | null>(0.5);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,9 +42,12 @@ export function FileUpload() {
         return;
       }
       const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+      const range = Math.max(1e-6, whitePoint - blackPoint);
+      const midParam = ((blackPoint + whitePoint) / 2 - blackPoint) / range;
       const tuned = customizeColorScheme(base, reference, {
         blackPointLightness: blackPoint,
         whitePointLightness: whitePoint,
+        midpoint: midParam,
       });
       setOptimizedTheme(tuned);
     } else {
@@ -77,15 +81,17 @@ export function FileUpload() {
         const init = deriveInitialCustomization(newTheme, ref);
         setBlackPoint(init.blackPointLightness);
         setWhitePoint(init.whitePointLightness);
-        setDynamicRange(init.dynamicRange);
       }
       // Compute optimized theme
       if (newTheme.length === 16) {
         const reference = checked ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
         const init = deriveInitialCustomization(newTheme, reference);
+        const range2 = Math.max(1e-6, init.whitePointLightness - init.blackPointLightness);
+        const midParam2 = (((init.blackPointLightness + init.whitePointLightness) / 2) - init.blackPointLightness) / range2;
         const tuned = customizeColorScheme(newTheme, reference, {
           blackPointLightness: init.blackPointLightness,
           whitePointLightness: init.whitePointLightness,
+          midpoint: midParam2,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -141,10 +147,12 @@ export function FileUpload() {
         const init = deriveInitialCustomization(theme, REFERENCE_PALETTE_DARK);
         setBlackPoint(init.blackPointLightness);
         setWhitePoint(init.whitePointLightness);
-        setDynamicRange(init.dynamicRange);
+        const range = Math.max(1e-6, init.whitePointLightness - init.blackPointLightness);
+        const midParam = (((init.blackPointLightness + init.whitePointLightness) / 2) - init.blackPointLightness) / range;
         const tuned = customizeColorScheme(theme, REFERENCE_PALETTE_DARK, {
           blackPointLightness: init.blackPointLightness,
           whitePointLightness: init.whitePointLightness,
+          midpoint: midParam,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -268,21 +276,64 @@ export function FileUpload() {
 
                   {blackPoint !== null && whitePoint !== null ? (
                     <div className="space-y-6">
-                      {/* Dynamic range slider */}
+                      {/* Midpoint slider (edits black/white symmetrically) */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="text-sm text-gray-600 dark:text-gray-400">Dynamic range</label>
-                          <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(dynamicRange ?? (whitePoint - blackPoint)).toFixed(2)}</span>
+                          <label className="text-sm text-gray-600 dark:text-gray-400">Midpoint</label>
+                          <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(((blackPoint + whitePoint) / 2) ).toFixed(2)}</span>
                         </div>
                         <input
                           type="range"
                           min={0}
                           max={1}
                           step={0.01}
-                          value={dynamicRange ?? (whitePoint - blackPoint)}
+                          value={(blackPoint + whitePoint) / 2}
+                          onChange={(e) => {
+                            const desiredMid = Number(e.target.value);
+                            // Keep current range length; recenter around desired midpoint
+                            const currentRange = Math.max(0, whitePoint - blackPoint);
+                            let newBlack = desiredMid - currentRange / 2;
+                            let newWhite = desiredMid + currentRange / 2;
+                            if (newBlack < 0 && newWhite > 1) {
+                              newBlack = 0; newWhite = 1;
+                            } else if (newBlack < 0) {
+                              const shift = -newBlack; newBlack = 0; newWhite = Math.min(1, newWhite + shift);
+                            } else if (newWhite > 1) {
+                              const shift = newWhite - 1; newWhite = 1; newBlack = Math.max(0, newBlack - shift);
+                            }
+                            setBlackPoint(newBlack);
+                            setWhitePoint(newWhite);
+                            if (generatedTheme.length === 16) {
+                              const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                              const range = Math.max(1e-6, newWhite - newBlack);
+                              const midParam = (desiredMid - newBlack) / range;
+                              const tuned = customizeColorScheme(generatedTheme, reference, {
+                                blackPointLightness: newBlack,
+                                whitePointLightness: newWhite,
+                                midpoint: midParam,
+                              });
+                              setOptimizedTheme(tuned);
+                            }
+                          }}
+                          className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                          aria-label="Midpoint"
+                        />
+                      </div>
+
+                      {/* Dynamic range slider (changes distance, preserves midpoint) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm text-gray-600 dark:text-gray-400">Dynamic range</label>
+                          <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(whitePoint - blackPoint).toFixed(2)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={whitePoint - blackPoint}
                           onChange={(e) => {
                             const desired = Number(e.target.value);
-                            setDynamicRange(desired);
                             const mid = (blackPoint + whitePoint) / 2;
                             let newBlack = mid - desired / 2;
                             let newWhite = mid + desired / 2;
@@ -303,9 +354,11 @@ export function FileUpload() {
                             setWhitePoint(newWhite);
                             if (generatedTheme.length === 16) {
                               const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                              const midParam = (mid - newBlack) / Math.max(1e-6, desired);
                               const tuned = customizeColorScheme(generatedTheme, reference, {
                                 blackPointLightness: newBlack,
                                 whitePointLightness: newWhite,
+                                midpoint: midParam,
                               });
                               setOptimizedTheme(tuned);
                             }
