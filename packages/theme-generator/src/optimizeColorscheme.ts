@@ -1,7 +1,7 @@
 import type { Okhsl } from "culori";
 import type { ReferenceColor } from "./types";
 
-export type OptimizeColorschemeOptions = {
+export type CustomizeColorSchemeOptions = {
   blackPointLightness: number; // target L for the darkest slot
   whitePointLightness: number; // target L for the brightest slot
 };
@@ -31,21 +31,21 @@ function clamp01(value: number): number {
  *   backgroundLightness (t=0) and foregroundLightness (t=1) based on its
  *   reference lightness position between these two extremes.
  */
-export function optimizeColorscheme(
+export function customizeColorScheme(
   colours: Okhsl[],
   referencePalette: ReferenceColor[],
-  options: OptimizeColorschemeOptions,
+  options: CustomizeColorSchemeOptions,
 ): Okhsl[] {
   const { blackPointLightness, whitePointLightness } = options;
   if (!Array.isArray(colours) || colours.length < 2) {
     throw new Error(
-      "optimizeColorscheme requires at least 2 colors (background and foreground)",
+      "customizeColorScheme requires at least 2 colors (background and foreground)",
     );
   }
 
   if (!Array.isArray(referencePalette) || referencePalette.length !== colours.length) {
     throw new Error(
-      "optimizeColorscheme requires a reference palette with the same length as colours",
+      "customizeColorScheme requires a reference palette with the same length as colours",
     );
   }
 
@@ -93,4 +93,4 @@ export function optimizeColorscheme(
   });
 }
 
-export default optimizeColorscheme;
+export default customizeColorScheme;

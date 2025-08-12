@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { convertRgbToOkhsl } from "../extractColorsFromImage";
 import getBestColorScheme, { REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT } from "../colorScheme";
-import { optimizeColorscheme } from "../optimizeColorscheme";
+import { customizeColorScheme } from "../optimizeColorscheme";
 
 describe("optimizeColorscheme black/white point mapping", () => {
   it("maps darkest reference to black point and brightest to white point (dark)", () => {
@@ -9,7 +9,7 @@ describe("optimizeColorscheme black/white point mapping", () => {
     const base16 = getBestColorScheme(candidates, REFERENCE_PALETTE_DARK);
     const blackPoint = 0.1;
     const whitePoint = 0.9;
-    const optimized = optimizeColorscheme(base16, REFERENCE_PALETTE_DARK, {
+    const optimized = customizeColorScheme(base16, REFERENCE_PALETTE_DARK, {
       blackPointLightness: blackPoint,
       whitePointLightness: whitePoint,
     });
@@ -27,7 +27,7 @@ describe("optimizeColorscheme black/white point mapping", () => {
     const base16 = getBestColorScheme(candidates, REFERENCE_PALETTE_LIGHT);
     const blackPoint = 0.1;
     const whitePoint = 0.9;
-    const optimized = optimizeColorscheme(base16, REFERENCE_PALETTE_LIGHT, {
+    const optimized = customizeColorScheme(base16, REFERENCE_PALETTE_LIGHT, {
       blackPointLightness: blackPoint,
       whitePointLightness: whitePoint,
     });

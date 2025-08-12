@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { ColorSwatch } from "@/components/ColorSwatch";
-import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, optimizeColorscheme } from "@terminal-tones/theme-generator";
+import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, customizeColorScheme } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
 
@@ -17,6 +17,7 @@ export function FileUpload() {
   const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
   const [blackPoint, setBlackPoint] = useState<number>(0.08);
   const [whitePoint, setWhitePoint] = useState<number>(0.9);
+  const [dynamicRange, setDynamicRange] = useState<number>(0.82);
   const [optimizedTheme, setOptimizedTheme] = useState<OkhslColor[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +38,7 @@ export function FileUpload() {
   const recomputeOptimized = (base: OkhslColor[]) => {
     if (base.length === 16) {
       const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-      const tuned = optimizeColorscheme(base, reference, {
+      const tuned = customizeColorScheme(base, reference, {
         blackPointLightness: blackPoint,
         whitePointLightness: whitePoint,
       });
@@ -88,10 +89,11 @@ export function FileUpload() {
       const { bg, fg } = deriveLightnessDefaults(newTheme);
       setBlackPoint(bg);
       setWhitePoint(fg);
+      setDynamicRange(Math.max(0, Math.min(1, fg - bg)));
       // Compute optimized theme
       if (newTheme.length === 16) {
         const reference = checked ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-        const tuned = optimizeColorscheme(newTheme, reference, {
+        const tuned = customizeColorScheme(newTheme, reference, {
           blackPointLightness: bg,
           whitePointLightness: fg,
         });
@@ -149,7 +151,8 @@ export function FileUpload() {
         const { bg, fg } = deriveLightnessDefaults(theme);
         setBlackPoint(bg);
         setWhitePoint(fg);
-        const tuned = optimizeColorscheme(theme, reference, {
+        setDynamicRange(Math.max(0, Math.min(1, fg - bg)));
+        const tuned = customizeColorScheme(theme, reference, {
           blackPointLightness: bg,
           whitePointLightness: fg,
         });
@@ -274,6 +277,54 @@ export function FileUpload() {
                   </h3>
 
                   <div className="space-y-6">
+                    {/* Dynamic range slider */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Dynamic range</label>
+                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{dynamicRange.toFixed(2)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={dynamicRange}
+                        onChange={(e) => {
+                          const desired = Number(e.target.value);
+                          setDynamicRange(desired);
+                          // Adjust black/white points symmetrically around current midpoint
+                          const mid = (blackPoint + whitePoint) / 2;
+                          let newBlack = mid - desired / 2;
+                          let newWhite = mid + desired / 2;
+                          // Keep range within [0,1] while preserving distance if possible
+                          if (newBlack < 0 && newWhite > 1) {
+                            newBlack = 0;
+                            newWhite = 1;
+                          } else if (newBlack < 0) {
+                            const shift = -newBlack;
+                            newBlack = 0;
+                            newWhite = Math.min(1, newWhite + shift);
+                          } else if (newWhite > 1) {
+                            const shift = newWhite - 1;
+                            newWhite = 1;
+                            newBlack = Math.max(0, newBlack - shift);
+                          }
+                          setBlackPoint(newBlack);
+                          setWhitePoint(newWhite);
+                          if (generatedTheme.length === 16) {
+                            const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                            const tuned = customizeColorScheme(generatedTheme, reference, {
+                              blackPointLightness: newBlack,
+                              whitePointLightness: newWhite,
+                            });
+                            setOptimizedTheme(tuned);
+                          }
+                        }}
+                        className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                        aria-label="Dynamic range"
+                      />
+                    </div>
+
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-sm text-gray-600 dark:text-gray-400">Black point</label>
@@ -290,12 +341,13 @@ export function FileUpload() {
                           setBlackPoint(v);
                           if (generatedTheme.length === 16) {
                             const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                            const tuned = optimizeColorscheme(generatedTheme, reference, {
+                            const tuned = customizeColorScheme(generatedTheme, reference, {
                               blackPointLightness: v,
                               whitePointLightness: whitePoint,
                             });
                             setOptimizedTheme(tuned);
                           }
+                          setDynamicRange(Math.max(0, Math.min(1, whitePoint - v)));
                         }}
                         className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
                         aria-label="Black point"
@@ -318,12 +370,13 @@ export function FileUpload() {
                           setWhitePoint(v);
                           if (generatedTheme.length === 16) {
                             const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                            const tuned = optimizeColorscheme(generatedTheme, reference, {
+                            const tuned = customizeColorScheme(generatedTheme, reference, {
                               blackPointLightness: blackPoint,
                               whitePointLightness: v,
                             });
                             setOptimizedTheme(tuned);
                           }
+                          setDynamicRange(Math.max(0, Math.min(1, v - blackPoint)));
                         }}
                         className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
                         aria-label="White point"
