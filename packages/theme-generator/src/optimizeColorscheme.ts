@@ -2,9 +2,8 @@ import type { Okhsl } from "culori";
 import type { ReferenceColor } from "./types";
 
 export type OptimizeColorschemeOptions = {
-  backgroundLightness: number;
-  foregroundLightness: number;
-  isLightTheme: boolean;
+  blackPointLightness: number; // target L for the darkest slot
+  whitePointLightness: number; // target L for the brightest slot
 };
 
 function clamp01(value: number): number {
@@ -37,7 +36,7 @@ export function optimizeColorscheme(
   referencePalette: ReferenceColor[],
   options: OptimizeColorschemeOptions,
 ): Okhsl[] {
-  const { backgroundLightness, foregroundLightness, isLightTheme } = options;
+  const { blackPointLightness, whitePointLightness } = options;
   if (!Array.isArray(colours) || colours.length < 2) {
     throw new Error(
       "optimizeColorscheme requires at least 2 colors (background and foreground)",
@@ -50,7 +49,11 @@ export function optimizeColorscheme(
     );
   }
 
-  // Determine background and foreground anchors from the reference palette
+  // Use fixed anchors for assigning exact endpoints, but normalize by reference min/max
+  const backgroundIndex = 0;
+  const foregroundIndex = referencePalette.length - 1;
+  const refBgAnchor = clamp01(referencePalette[backgroundIndex][0].l ?? 0);
+  const refFgAnchor = clamp01(referencePalette[foregroundIndex][0].l ?? 1);
   let refMin = 1;
   let refMax = 0;
   for (const [ref] of referencePalette) {
@@ -59,21 +62,33 @@ export function optimizeColorscheme(
     if (l > refMax) refMax = l;
   }
 
-  // Map background/foreground depending on theme type
-  const refBg = isLightTheme ? refMax : refMin; // background anchor in reference
-  const refFg = isLightTheme ? refMin : refMax; // foreground anchor in reference
-
-  const denom = refFg - refBg;
-  const bgL = clamp01(backgroundLightness);
-  const fgL = clamp01(foregroundLightness);
+  // Map using black/white points as anchors, normalizing by full reference range
+  const denom = refMax - refMin;
+  const blackL = clamp01(blackPointLightness);
+  const whiteL = clamp01(whitePointLightness);
 
   return colours.map((color, index) => {
     const refL = clamp01(referencePalette[index][0].l ?? color.l ?? 0);
     let t = 0;
     if (Math.abs(denom) > 1e-6) {
-      t = clamp01((refL - refBg) / denom);
+      t = clamp01((refL - refMin) / denom);
     }
-    const newL = bgL + t * (fgL - bgL);
+    // Set exact endpoints for background/foreground slots
+    // If background is lighter than foreground (light scheme), background maps to white point.
+    // Otherwise (dark scheme), background maps to black point.
+    let newL = blackL + t * (whiteL - blackL);
+    if (index === backgroundIndex) {
+      newL = refBgAnchor > refFgAnchor ? whiteL : blackL;
+    } else if (index === foregroundIndex) {
+      newL = refBgAnchor > refFgAnchor ? blackL : whiteL;
+    }
+    // Avoid collapsing many slots to pure white or pure black due to extreme white/black points
+    if (index !== backgroundIndex) {
+      newL = Math.min(newL, 0.98);
+    }
+    if (index !== foregroundIndex) {
+      newL = Math.max(newL, 0.02);
+    }
     return { ...color, l: clamp01(newL) } as Okhsl;
   });
 }

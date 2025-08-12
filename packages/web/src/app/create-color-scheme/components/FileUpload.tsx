@@ -15,8 +15,8 @@ export function FileUpload() {
   const [generatedTheme, setGeneratedTheme] = useState<OkhslColor[]>([]);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
-  const [bgL, setBgL] = useState<number>(0.08);
-  const [fgL, setFgL] = useState<number>(0.9);
+  const [blackPoint, setBlackPoint] = useState<number>(0.08);
+  const [whitePoint, setWhitePoint] = useState<number>(0.9);
   const [optimizedTheme, setOptimizedTheme] = useState<OkhslColor[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,9 +38,8 @@ export function FileUpload() {
     if (base.length === 16) {
       const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
       const tuned = optimizeColorscheme(base, reference, {
-        backgroundLightness: bgL,
-        foregroundLightness: fgL,
-        isLightTheme,
+        blackPointLightness: blackPoint,
+        whitePointLightness: whitePoint,
       });
       setOptimizedTheme(tuned);
     } else {
@@ -50,7 +49,7 @@ export function FileUpload() {
 
   const deriveLightnessDefaults = (base: OkhslColor[]) => {
     if (base.length < 16) {
-      return { bg: bgL, fg: fgL };
+      return { bg: blackPoint, fg: whitePoint };
     }
     const l0 = base[0]?.l ?? 0;
     const l15 = base[15]?.l ?? 1;
@@ -85,17 +84,16 @@ export function FileUpload() {
     if (extractedColors.length > 0) {
       const newTheme = generateTheme(extractedColors, checked);
       setGeneratedTheme(newTheme);
-      // Reset sliders based on the new theme extremes
+      // Re-derive default black/white points from the new theme
       const { bg, fg } = deriveLightnessDefaults(newTheme);
-      setBgL(bg);
-      setFgL(fg);
+      setBlackPoint(bg);
+      setWhitePoint(fg);
       // Compute optimized theme
       if (newTheme.length === 16) {
         const reference = checked ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
         const tuned = optimizeColorscheme(newTheme, reference, {
-          backgroundLightness: bg,
-          foregroundLightness: fg,
-          isLightTheme: checked,
+          blackPointLightness: bg,
+          whitePointLightness: fg,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -149,12 +147,11 @@ export function FileUpload() {
       if (theme.length === 16) {
         const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
         const { bg, fg } = deriveLightnessDefaults(theme);
-        setBgL(bg);
-        setFgL(fg);
+        setBlackPoint(bg);
+        setWhitePoint(fg);
         const tuned = optimizeColorscheme(theme, reference, {
-          backgroundLightness: bg,
-          foregroundLightness: fg,
-          isLightTheme,
+          blackPointLightness: bg,
+          whitePointLightness: fg,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -273,65 +270,63 @@ export function FileUpload() {
                 {/* Optimizer controls */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                   <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
-                    Optimize Lightness
+                    Optimize Lightness (Black/White points)
                   </h3>
 
                   <div className="space-y-6">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">Background lightness</label>
-                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{bgL.toFixed(2)}</span>
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Black point</label>
+                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{blackPoint.toFixed(2)}</span>
                       </div>
                       <input
                         type="range"
                         min={0}
                         max={1}
                         step={0.01}
-                        value={bgL}
+                        value={blackPoint}
                         onChange={(e) => {
                           const v = Number(e.target.value);
-                          setBgL(v);
+                          setBlackPoint(v);
                           if (generatedTheme.length === 16) {
                             const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
                             const tuned = optimizeColorscheme(generatedTheme, reference, {
-                              backgroundLightness: v,
-                              foregroundLightness: fgL,
-                              isLightTheme,
+                              blackPointLightness: v,
+                              whitePointLightness: whitePoint,
                             });
                             setOptimizedTheme(tuned);
                           }
                         }}
                         className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                        aria-label="Background lightness"
+                        aria-label="Black point"
                       />
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">Foreground lightness</label>
-                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{fgL.toFixed(2)}</span>
+                        <label className="text-sm text-gray-600 dark:text-gray-400">White point</label>
+                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{whitePoint.toFixed(2)}</span>
                       </div>
                       <input
                         type="range"
                         min={0}
                         max={1}
                         step={0.01}
-                        value={fgL}
+                        value={whitePoint}
                         onChange={(e) => {
                           const v = Number(e.target.value);
-                          setFgL(v);
+                          setWhitePoint(v);
                           if (generatedTheme.length === 16) {
                             const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
                             const tuned = optimizeColorscheme(generatedTheme, reference, {
-                              backgroundLightness: bgL,
-                              foregroundLightness: v,
-                              isLightTheme,
+                              blackPointLightness: blackPoint,
+                              whitePointLightness: v,
                             });
                             setOptimizedTheme(tuned);
                           }
                         }}
                         className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                        aria-label="Foreground lightness"
+                        aria-label="White point"
                       />
                     </div>
                   </div>
