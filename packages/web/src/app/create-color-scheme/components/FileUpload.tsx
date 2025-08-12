@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { ColorSwatch } from "@/components/ColorSwatch";
-import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, customizeColorScheme, deriveInitialCustomization } from "@terminal-tones/theme-generator";
+import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, customizeColorScheme, deriveInitialCustomization, generateKittyConfig } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
 
@@ -19,6 +19,7 @@ export function FileUpload() {
   const [whitePoint, setWhitePoint] = useState<number | null>(null);
   const [dynamicRange, setDynamicRange] = useState<number | null>(null);
   const [optimizedTheme, setOptimizedTheme] = useState<OkhslColor[]>([]);
+  const [kittyConfig, setKittyConfig] = useState<string>("");
   const [midpoint, setMidpoint] = useState<number | null>(0.5);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,6 +51,7 @@ export function FileUpload() {
         midpoint: midParam,
       });
       setOptimizedTheme(tuned);
+      try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
     } else {
       setOptimizedTheme([]);
     }
@@ -94,6 +96,7 @@ export function FileUpload() {
           midpoint: midParam2,
         });
         setOptimizedTheme(tuned);
+        try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
       } else {
         setOptimizedTheme([]);
       }
@@ -155,6 +158,7 @@ export function FileUpload() {
           midpoint: midParam,
         });
         setOptimizedTheme(tuned);
+        try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
       } else {
         setOptimizedTheme([]);
       }
@@ -313,6 +317,7 @@ export function FileUpload() {
                                 midpoint: midParam,
                               });
                               setOptimizedTheme(tuned);
+                              try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
                             }
                           }}
                           className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
@@ -361,6 +366,7 @@ export function FileUpload() {
                                 midpoint: midParam,
                               });
                               setOptimizedTheme(tuned);
+                              try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
                             }
                           }}
                           className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
@@ -437,6 +443,17 @@ export function FileUpload() {
                       colors={optimizedTheme} 
                       title={`Optimized Theme (L tuned)`}
                     />
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+                        Kitty config
+                      </h3>
+                      <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+                        <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">
+{kittyConfig}
+                        </pre>
+                      </div>
+                    </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                       <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">

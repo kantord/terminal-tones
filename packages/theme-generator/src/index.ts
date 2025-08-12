@@ -5,6 +5,7 @@ export * from './palette';
 export * from './types';
 export * from './optimizeColorscheme';
 export * from './initialConfig';
+export * from './kitty';
 
 // Re-export types from culori that we use
 export type { Okhsl as OkhslColor } from 'culori';
