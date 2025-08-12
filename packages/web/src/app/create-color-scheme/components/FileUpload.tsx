@@ -51,7 +51,7 @@ export function FileUpload() {
         midpoint: midParam,
       });
       setOptimizedTheme(tuned);
-      try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
+      try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
     } else {
       setOptimizedTheme([]);
     }
@@ -96,7 +96,7 @@ export function FileUpload() {
           midpoint: midParam2,
         });
         setOptimizedTheme(tuned);
-        try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
+        try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
       } else {
         setOptimizedTheme([]);
       }
@@ -161,7 +161,7 @@ export function FileUpload() {
           midpoint: midParam,
         });
         setOptimizedTheme(tuned);
-        try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
+        try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
       } else {
         setOptimizedTheme([]);
       }
@@ -194,7 +194,7 @@ export function FileUpload() {
   if (isUploaded) {
     return (
       <div
-        className={`py-12 max-w-4xl mx-auto space-y-6 ${
+        className={`py-12 max-w-6xl mx-auto space-y-6 ${
           isDragOver
             ? "border-2 border-dashed border-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
             : ""
@@ -206,212 +206,220 @@ export function FileUpload() {
         <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
           Drag a new image anywhere on this page to start over.
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* LEFT: Image + Switch + Sliders */}
+          <div className="space-y-6">
+            {imageUrl && (
+              <div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">Current image</h3>
+                  <div className="flex justify-center">
+                    <img
+                      src={imageUrl}
+                      alt={`Uploaded file: ${uploadedFileName}`}
+                      className="max-w-full max-h-96 object-contain rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
-        {imageUrl && (
-          <div className="mb-6">
+            {/* Theme toggle */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">Current image</h3>
-              <div className="flex justify-center">
-                <img
-                  src={imageUrl}
-                  alt={`Uploaded file: ${uploadedFileName}`}
-                  className="max-w-full max-h-96 object-contain rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
-                />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme Style</h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Choose between dark or light</p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className={`text-sm ${!isLightTheme ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>Dark</span>
+                  <Switch checked={isLightTheme} onCheckedChange={handleThemeToggle} />
+                  <span className={`text-sm ${isLightTheme ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>Light</span>
+                </div>
               </div>
             </div>
+
+            {/* Sliders */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Adjust Lightness (Black/White points)</h3>
+              {blackPoint !== null && whitePoint !== null ? (
+                <div className="space-y-6">
+                  {/* Midpoint slider */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm text-gray-600 dark:text-gray-400">Midpoint</label>
+                      <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(((blackPoint + whitePoint) / 2)).toFixed(2)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={(blackPoint + whitePoint) / 2}
+                      onChange={(e) => {
+                        const desiredMid = Number(e.target.value);
+                        const currentRange = Math.max(0, whitePoint - blackPoint);
+                        let newBlack = desiredMid - currentRange / 2;
+                        let newWhite = desiredMid + currentRange / 2;
+                        if (newBlack < 0 && newWhite > 1) { newBlack = 0; newWhite = 1; }
+                        else if (newBlack < 0) { const shift = -newBlack; newBlack = 0; newWhite = Math.min(1, newWhite + shift); }
+                        else if (newWhite > 1) { const shift = newWhite - 1; newWhite = 1; newBlack = Math.max(0, newBlack - shift); }
+                        setBlackPoint(newBlack);
+                        setWhitePoint(newWhite);
+                        if (generatedTheme.length === 16) {
+                          const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                          const range = Math.max(1e-6, newWhite - newBlack);
+                          const midParam = (desiredMid - newBlack) / range;
+                          const tuned = customizeColorScheme(generatedTheme, reference, {
+                            blackPointLightness: newBlack,
+                            whitePointLightness: newWhite,
+                            midpoint: midParam,
+                          });
+                          setOptimizedTheme(tuned);
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                        }
+                      }}
+                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      aria-label="Midpoint"
+                    />
+                  </div>
+
+                  {/* Dynamic range slider */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm text-gray-600 dark:text-gray-400">Dynamic range</label>
+                      <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(whitePoint - blackPoint).toFixed(2)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={whitePoint - blackPoint}
+                      onChange={(e) => {
+                        const desired = Number(e.target.value);
+                        const mid = (blackPoint + whitePoint) / 2;
+                        let newBlack = mid - desired / 2;
+                        let newWhite = mid + desired / 2;
+                        if (newBlack < 0 && newWhite > 1) { newBlack = 0; newWhite = 1; }
+                        else if (newBlack < 0) { const shift = -newBlack; newBlack = 0; newWhite = Math.min(1, newWhite + shift); }
+                        else if (newWhite > 1) { const shift = newWhite - 1; newWhite = 1; newBlack = Math.max(0, newBlack - shift); }
+                        setBlackPoint(newBlack);
+                        setWhitePoint(newWhite);
+                        if (generatedTheme.length === 16) {
+                          const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                          const midParam = (mid - newBlack) / Math.max(1e-6, desired);
+                          const tuned = customizeColorScheme(generatedTheme, reference, {
+                            blackPointLightness: newBlack,
+                            whitePointLightness: newWhite,
+                            midpoint: midParam,
+                          });
+                          setOptimizedTheme(tuned);
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                        }
+                      }}
+                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      aria-label="Dynamic range"
+                    />
+                  </div>
+
+                  {/* Black/White sliders */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm text-gray-600 dark:text-gray-400">Black point</label>
+                      <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{blackPoint.toFixed(2)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={blackPoint}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setBlackPoint(v);
+                        if (generatedTheme.length === 16) {
+                          const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                          const range = Math.max(1e-6, whitePoint - v);
+                          const midParam = (((v + whitePoint) / 2) - v) / range;
+                          const tuned = customizeColorScheme(generatedTheme, reference, {
+                            blackPointLightness: v,
+                            whitePointLightness: whitePoint,
+                            midpoint: midParam,
+                          });
+                          setOptimizedTheme(tuned);
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                        }
+                      }}
+                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      aria-label="Black point"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm text-gray-600 dark:text-gray-400">White point</label>
+                      <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{whitePoint.toFixed(2)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={whitePoint}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setWhitePoint(v);
+                        if (generatedTheme.length === 16) {
+                          const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                          const range = Math.max(1e-6, v - blackPoint);
+                          const midParam = (((blackPoint + v) / 2) - blackPoint) / range;
+                          const tuned = customizeColorScheme(generatedTheme, reference, {
+                            blackPointLightness: blackPoint,
+                            whitePointLightness: v,
+                            midpoint: midParam,
+                          });
+                          setOptimizedTheme(tuned);
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                        }
+                      }}
+                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      aria-label="White point"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Generating defaults…</p>
+              )}
+            </div>
           </div>
-        )}
-        {/* Theme toggle */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme Style</h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Choose between dark or light</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className={`text-sm ${!isLightTheme ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>Dark</span>
-              <Switch checked={isLightTheme} onCheckedChange={handleThemeToggle} />
-              <span className={`text-sm ${isLightTheme ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>Light</span>
-            </div>
+
+          {/* RIGHT: Preview + Swatch + Kitty config */}
+          <div className="space-y-6">
+            {/* Syntax preview */}
+            {optimizedTheme.length === 16 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
+                <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
+              </div>
+            )}
+
+            {/* Final swatch */}
+            {optimizedTheme.length === 16 && (
+              <ColorSwatch colors={optimizedTheme} title={`Final Theme (16 colors)`} />
+            )}
+
+            {/* Kitty config */}
+            {kittyConfig && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
+                <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+                  <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Sliders */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Adjust Lightness (Black/White points)</h3>
-          {blackPoint !== null && whitePoint !== null ? (
-            <div className="space-y-6">
-              {/* Midpoint slider */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm text-gray-600 dark:text-gray-400">Midpoint</label>
-                  <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(((blackPoint + whitePoint) / 2)).toFixed(2)}</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={(blackPoint + whitePoint) / 2}
-                  onChange={(e) => {
-                    const desiredMid = Number(e.target.value);
-                    const currentRange = Math.max(0, whitePoint - blackPoint);
-                    let newBlack = desiredMid - currentRange / 2;
-                    let newWhite = desiredMid + currentRange / 2;
-                    if (newBlack < 0 && newWhite > 1) { newBlack = 0; newWhite = 1; }
-                    else if (newBlack < 0) { const shift = -newBlack; newBlack = 0; newWhite = Math.min(1, newWhite + shift); }
-                    else if (newWhite > 1) { const shift = newWhite - 1; newWhite = 1; newBlack = Math.max(0, newBlack - shift); }
-                    setBlackPoint(newBlack);
-                    setWhitePoint(newWhite);
-                    if (generatedTheme.length === 16) {
-                      const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                      const range = Math.max(1e-6, newWhite - newBlack);
-                      const midParam = (desiredMid - newBlack) / range;
-                      const tuned = customizeColorScheme(generatedTheme, reference, {
-                        blackPointLightness: newBlack,
-                        whitePointLightness: newWhite,
-                        midpoint: midParam,
-                      });
-                      setOptimizedTheme(tuned);
-                      try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
-                    }
-                  }}
-                  className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                  aria-label="Midpoint"
-                />
-              </div>
-
-              {/* Dynamic range slider */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm text-gray-600 dark:text-gray-400">Dynamic range</label>
-                  <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(whitePoint - blackPoint).toFixed(2)}</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={whitePoint - blackPoint}
-                  onChange={(e) => {
-                    const desired = Number(e.target.value);
-                    const mid = (blackPoint + whitePoint) / 2;
-                    let newBlack = mid - desired / 2;
-                    let newWhite = mid + desired / 2;
-                    if (newBlack < 0 && newWhite > 1) { newBlack = 0; newWhite = 1; }
-                    else if (newBlack < 0) { const shift = -newBlack; newBlack = 0; newWhite = Math.min(1, newWhite + shift); }
-                    else if (newWhite > 1) { const shift = newWhite - 1; newWhite = 1; newBlack = Math.max(0, newBlack - shift); }
-                    setBlackPoint(newBlack);
-                    setWhitePoint(newWhite);
-                    if (generatedTheme.length === 16) {
-                      const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                      const midParam = (mid - newBlack) / Math.max(1e-6, desired);
-                      const tuned = customizeColorScheme(generatedTheme, reference, {
-                        blackPointLightness: newBlack,
-                        whitePointLightness: newWhite,
-                        midpoint: midParam,
-                      });
-                      setOptimizedTheme(tuned);
-                      try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
-                    }
-                  }}
-                  className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                  aria-label="Dynamic range"
-                />
-              </div>
-
-              {/* Black/White sliders */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm text-gray-600 dark:text-gray-400">Black point</label>
-                  <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{blackPoint.toFixed(2)}</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={blackPoint}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    setBlackPoint(v);
-                    if (generatedTheme.length === 16) {
-                      const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                      const range = Math.max(1e-6, whitePoint - v);
-                      const midParam = (((v + whitePoint) / 2) - v) / range;
-                      const tuned = customizeColorScheme(generatedTheme, reference, {
-                        blackPointLightness: v,
-                        whitePointLightness: whitePoint,
-                        midpoint: midParam,
-                      });
-                      setOptimizedTheme(tuned);
-                      try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
-                    }
-                  }}
-                  className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                  aria-label="Black point"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm text-gray-600 dark:text-gray-400">White point</label>
-                  <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{whitePoint.toFixed(2)}</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={whitePoint}
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    setWhitePoint(v);
-                    if (generatedTheme.length === 16) {
-                      const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                      const range = Math.max(1e-6, v - blackPoint);
-                      const midParam = (((blackPoint + v) / 2) - blackPoint) / range;
-                      const tuned = customizeColorScheme(generatedTheme, reference, {
-                        blackPointLightness: blackPoint,
-                        whitePointLightness: v,
-                        midpoint: midParam,
-                      });
-                      setOptimizedTheme(tuned);
-                      try { setKittyConfig(generateKittyConfig(tuned as any)); } catch {}
-                    }
-                  }}
-                  className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                  aria-label="White point"
-                />
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Generating defaults…</p>
-          )}
-        </div>
-
-        {/* Final swatch */}
-        {optimizedTheme.length === 16 && (
-          <ColorSwatch colors={optimizedTheme} title={`Final Theme (16 colors)`} />
-        )}
-
-        {/* Kitty config */}
-        {kittyConfig && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
-            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
-              <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
-            </div>
-          </div>
-        )}
-
-        {/* Syntax preview */}
-        {optimizedTheme.length === 16 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
-            <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
-          </div>
-        )}
 
         <div className="flex justify-end">
           <button onClick={handleReset} className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Upload Another Image</button>
