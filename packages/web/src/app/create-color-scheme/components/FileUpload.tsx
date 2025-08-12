@@ -6,6 +6,7 @@ import { ColorSwatch } from "@/components/ColorSwatch";
 import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, customizeColorScheme, deriveInitialCustomization, generateKittyConfig } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -394,30 +395,41 @@ export function FileUpload() {
             </div>
           </div>
 
-          {/* RIGHT: Preview + Swatch + Kitty config */}
-          <div className="space-y-6">
-            {/* Syntax preview */}
-            {optimizedTheme.length === 16 && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
-                <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
-              </div>
-            )}
+          {/* RIGHT: Tabs for Syntax | Swatch | Kitty */}
+          <div>
+            <Tabs defaultValue="syntax">
+              <TabsList>
+                <TabsTrigger value="syntax">Syntax</TabsTrigger>
+                <TabsTrigger value="swatch">Swatch</TabsTrigger>
+                <TabsTrigger value="kitty">Kitty</TabsTrigger>
+              </TabsList>
 
-            {/* Final swatch */}
-            {optimizedTheme.length === 16 && (
-              <ColorSwatch colors={optimizedTheme} title={`Final Theme (16 colors)`} />
-            )}
+              <TabsContent value="syntax">
+                {optimizedTheme.length === 16 ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
+                    <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
+                  </div>
+                ) : null}
+              </TabsContent>
 
-            {/* Kitty config */}
-            {kittyConfig && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
-                <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
-                  <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
-                </div>
-              </div>
-            )}
+              <TabsContent value="swatch">
+                {optimizedTheme.length === 16 ? (
+                  <ColorSwatch colors={optimizedTheme} title={`Final Theme (16 colors)`} />
+                ) : null}
+              </TabsContent>
+
+              <TabsContent value="kitty">
+                {kittyConfig ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
+                    <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+                      <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
+                    </div>
+                  </div>
+                ) : null}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 
