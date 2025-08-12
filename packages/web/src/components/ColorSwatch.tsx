@@ -27,6 +27,7 @@ export function ColorSwatch({ colors, title = "Color Palette" }: ColorSwatchProp
                 style={{ backgroundColor: hexColor }}
                 title={`Color ${index + 1}: ${hexColor}\nOKHSL(${color.h?.toFixed(0) || 0}, ${(color.s * 100).toFixed(0)}%, ${(color.l * 100).toFixed(0)}%)`}
                 onClick={() => navigator.clipboard.writeText(hexColor)}
+                data-testid={`color-${index}`}
               />
               <div className="text-xs text-center mt-1 text-gray-500 dark:text-gray-400 font-mono">
                 {hexColor}

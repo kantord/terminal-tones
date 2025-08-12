@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack --port 3031",
     "build": "next build",
     "e2e": "playwright",
+    "e2e:run": "playwright test --reporter=line",
     "start": "next start",
     "lint": "next lint"
   },

@@ -204,8 +204,8 @@ export function FileUpload() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
-          Drag a new image anywhere on this page to start over.
+        <div className="text-sm text-gray-600 dark:text-gray-400 text-center" role="status">
+          Custom theme generated! Drag a new image anywhere on this page to start over.
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* LEFT: Image + Switch + Sliders */}
@@ -213,14 +213,18 @@ export function FileUpload() {
             {imageUrl && (
               <div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">Current image</h3>
+                  <h3 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">Source Image:</h3>
                   <div className="flex justify-center">
                     <img
                       src={imageUrl}
-                      alt={`Uploaded file: ${uploadedFileName}`}
+                      alt="Uploaded image"
                       className="max-w-full max-h-96 object-contain rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                      data-testid="uploaded-image"
                     />
                   </div>
+                  {uploadedFileName ? (
+                    <div className="mt-2 text-center text-xs text-gray-600 dark:text-gray-400">{uploadedFileName}</div>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -405,12 +409,27 @@ export function FileUpload() {
               </TabsList>
 
               <TabsContent value="syntax">
-                {optimizedTheme.length === 16 ? (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-6">
+                  <div>
                     <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
-                    <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
+                    {optimizedTheme.length === 16 ? (
+                      <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Generating preview…</p>
+                    )}
                   </div>
-                ) : null}
+                  {(() => {
+                    const swatchColors =
+                      optimizedTheme.length > 0
+                        ? optimizedTheme
+                        : generatedTheme.length > 0
+                          ? generatedTheme
+                          : extractedColors;
+                    return swatchColors.length > 0 ? (
+                      <ColorSwatch colors={swatchColors} title={`Enhanced Color Palette with Contrast Variants`} />
+                    ) : null;
+                  })()}
+                </div>
               </TabsContent>
 
               <TabsContent value="swatch">
@@ -434,7 +453,7 @@ export function FileUpload() {
         </div>
 
         <div className="flex justify-end">
-          <button onClick={handleReset} className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Upload Another Image</button>
+          <button onClick={handleReset} className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Create Another Theme</button>
         </div>
       </div>
     );
