@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { ColorSwatch } from "@/components/ColorSwatch";
-import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, customizeColorScheme } from "@terminal-tones/theme-generator";
+import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REFERENCE_PALETTE_LIGHT, type OkhslColor, customizeColorScheme, deriveInitialCustomization } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
 
@@ -15,17 +15,16 @@ export function FileUpload() {
   const [generatedTheme, setGeneratedTheme] = useState<OkhslColor[]>([]);
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isLightTheme, setIsLightTheme] = useState<boolean>(false);
-  const [blackPoint, setBlackPoint] = useState<number>(0.08);
-  const [whitePoint, setWhitePoint] = useState<number>(0.9);
-  const [dynamicRange, setDynamicRange] = useState<number>(0.82);
+  const [blackPoint, setBlackPoint] = useState<number | null>(null);
+  const [whitePoint, setWhitePoint] = useState<number | null>(null);
+  const [dynamicRange, setDynamicRange] = useState<number | null>(null);
   const [optimizedTheme, setOptimizedTheme] = useState<OkhslColor[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Function to generate theme based on current palette preference
+  // Function to generate theme based on selected palette
   const generateTheme = (colors: OkhslColor[], useLightPalette: boolean) => {
     const palette = useLightPalette ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-    
     if (colors.length >= palette.length) {
       return getBestColorScheme(colors, palette);
     } else {
@@ -37,6 +36,10 @@ export function FileUpload() {
   // Recompute optimized theme whenever base theme or sliders change
   const recomputeOptimized = (base: OkhslColor[]) => {
     if (base.length === 16) {
+      if (blackPoint === null || whitePoint === null) {
+        setOptimizedTheme([]);
+        return;
+      }
       const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
       const tuned = customizeColorScheme(base, reference, {
         blackPointLightness: blackPoint,
@@ -50,30 +53,13 @@ export function FileUpload() {
 
   const deriveLightnessDefaults = (base: OkhslColor[]) => {
     if (base.length < 16) {
-      return { bg: blackPoint, fg: whitePoint };
+      return { bg: null, fg: null } as { bg: number | null; fg: number | null };
     }
-    const l0 = base[0]?.l ?? 0;
-    const l15 = base[15]?.l ?? 1;
-    const isIndex0Black = l0 <= l15;
-    let bg = isIndex0Black ? l0 : l15;
-    // Foreground: derive from BRIGHT color slots average to avoid pure white (l=1)
-    const brightIndices = [9, 10, 11, 12, 13, 14];
-    const brightLs = brightIndices
-      .map((i) => base[i]?.l)
-      .filter((v): v is number => typeof v === "number");
-    const avgBright = brightLs.length
-      ? brightLs.reduce((a, b) => a + b, 0) / brightLs.length
-      : isIndex0Black ? l15 : l0;
-    // Nudge away from extremes
-    let fg = Math.max(0.02, Math.min(0.98, avgBright));
-    // Ensure usable separation; expand range if palette extremes are too close
-    if (fg - bg < 0.35) {
-      bg = Math.min(bg, 0.12);
-      fg = Math.max(fg, 0.9);
-    }
-    // Clamp final
-    bg = Math.max(0, Math.min(1, bg));
-    fg = Math.max(0, Math.min(1, fg));
+    const firstL = Math.max(0, Math.min(1, base[0]?.l ?? 0));
+    const lastL = Math.max(0, Math.min(1, base[base.length - 1]?.l ?? 1));
+    // For light themes, darkest is at the last index; invert assignment
+    const bg = isLightTheme ? lastL : firstL; // black point
+    const fg = isLightTheme ? firstL : lastL; // white point
     return { bg, fg };
   };
 
@@ -85,17 +71,21 @@ export function FileUpload() {
     if (extractedColors.length > 0) {
       const newTheme = generateTheme(extractedColors, checked);
       setGeneratedTheme(newTheme);
-      // Re-derive default black/white points from the new theme
-      const { bg, fg } = deriveLightnessDefaults(newTheme);
-      setBlackPoint(bg);
-      setWhitePoint(fg);
-      setDynamicRange(Math.max(0, Math.min(1, fg - bg)));
+      // Re-derive default black/white points from the new theme using backend logic
+      if (newTheme.length === 16) {
+        const ref = checked ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+        const init = deriveInitialCustomization(newTheme, ref);
+        setBlackPoint(init.blackPointLightness);
+        setWhitePoint(init.whitePointLightness);
+        setDynamicRange(init.dynamicRange);
+      }
       // Compute optimized theme
       if (newTheme.length === 16) {
         const reference = checked ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+        const init = deriveInitialCustomization(newTheme, reference);
         const tuned = customizeColorScheme(newTheme, reference, {
-          blackPointLightness: bg,
-          whitePointLightness: fg,
+          blackPointLightness: init.blackPointLightness,
+          whitePointLightness: init.whitePointLightness,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -144,17 +134,17 @@ export function FileUpload() {
       setExtractedColors(result.colors);
       
       // Generate theme using current palette preference
-      const theme = generateTheme(result.colors, isLightTheme);
+      // Always generate the initial theme using the dark reference palette
+      const theme = getBestColorScheme(result.colors, REFERENCE_PALETTE_DARK);
       setGeneratedTheme(theme);
       if (theme.length === 16) {
-        const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-        const { bg, fg } = deriveLightnessDefaults(theme);
-        setBlackPoint(bg);
-        setWhitePoint(fg);
-        setDynamicRange(Math.max(0, Math.min(1, fg - bg)));
-        const tuned = customizeColorScheme(theme, reference, {
-          blackPointLightness: bg,
-          whitePointLightness: fg,
+        const init = deriveInitialCustomization(theme, REFERENCE_PALETTE_DARK);
+        setBlackPoint(init.blackPointLightness);
+        setWhitePoint(init.whitePointLightness);
+        setDynamicRange(init.dynamicRange);
+        const tuned = customizeColorScheme(theme, REFERENCE_PALETTE_DARK, {
+          blackPointLightness: init.blackPointLightness,
+          whitePointLightness: init.whitePointLightness,
         });
         setOptimizedTheme(tuned);
       } else {
@@ -276,113 +266,116 @@ export function FileUpload() {
                     Optimize Lightness (Black/White points)
                   </h3>
 
-                  <div className="space-y-6">
-                    {/* Dynamic range slider */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">Dynamic range</label>
-                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{dynamicRange.toFixed(2)}</span>
+                  {blackPoint !== null && whitePoint !== null ? (
+                    <div className="space-y-6">
+                      {/* Dynamic range slider */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm text-gray-600 dark:text-gray-400">Dynamic range</label>
+                          <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{(dynamicRange ?? (whitePoint - blackPoint)).toFixed(2)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={dynamicRange ?? (whitePoint - blackPoint)}
+                          onChange={(e) => {
+                            const desired = Number(e.target.value);
+                            setDynamicRange(desired);
+                            const mid = (blackPoint + whitePoint) / 2;
+                            let newBlack = mid - desired / 2;
+                            let newWhite = mid + desired / 2;
+                            // Keep range within [0,1] while preserving distance if possible
+                            if (newBlack < 0 && newWhite > 1) {
+                              newBlack = 0;
+                              newWhite = 1;
+                            } else if (newBlack < 0) {
+                              const shift = -newBlack;
+                              newBlack = 0;
+                              newWhite = Math.min(1, newWhite + shift);
+                            } else if (newWhite > 1) {
+                              const shift = newWhite - 1;
+                              newWhite = 1;
+                              newBlack = Math.max(0, newBlack - shift);
+                            }
+                            setBlackPoint(newBlack);
+                            setWhitePoint(newWhite);
+                            if (generatedTheme.length === 16) {
+                              const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                              const tuned = customizeColorScheme(generatedTheme, reference, {
+                                blackPointLightness: newBlack,
+                                whitePointLightness: newWhite,
+                              });
+                              setOptimizedTheme(tuned);
+                            }
+                          }}
+                          className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                          aria-label="Dynamic range"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={dynamicRange}
-                        onChange={(e) => {
-                          const desired = Number(e.target.value);
-                          setDynamicRange(desired);
-                          // Adjust black/white points symmetrically around current midpoint
-                          const mid = (blackPoint + whitePoint) / 2;
-                          let newBlack = mid - desired / 2;
-                          let newWhite = mid + desired / 2;
-                          // Keep range within [0,1] while preserving distance if possible
-                          if (newBlack < 0 && newWhite > 1) {
-                            newBlack = 0;
-                            newWhite = 1;
-                          } else if (newBlack < 0) {
-                            const shift = -newBlack;
-                            newBlack = 0;
-                            newWhite = Math.min(1, newWhite + shift);
-                          } else if (newWhite > 1) {
-                            const shift = newWhite - 1;
-                            newWhite = 1;
-                            newBlack = Math.max(0, newBlack - shift);
-                          }
-                          setBlackPoint(newBlack);
-                          setWhitePoint(newWhite);
-                          if (generatedTheme.length === 16) {
-                            const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                            const tuned = customizeColorScheme(generatedTheme, reference, {
-                              blackPointLightness: newBlack,
-                              whitePointLightness: newWhite,
-                            });
-                            setOptimizedTheme(tuned);
-                          }
-                        }}
-                        className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                        aria-label="Dynamic range"
-                      />
-                    </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">Black point</label>
-                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{blackPoint.toFixed(2)}</span>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm text-gray-600 dark:text-gray-400">Black point</label>
+                          <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{blackPoint.toFixed(2)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={blackPoint}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setBlackPoint(v);
+                            if (generatedTheme.length === 16) {
+                              const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                              const tuned = customizeColorScheme(generatedTheme, reference, {
+                                blackPointLightness: v,
+                                whitePointLightness: whitePoint,
+                              });
+                              setOptimizedTheme(tuned);
+                            }
+                            setDynamicRange(Math.max(0, Math.min(1, whitePoint - v)));
+                          }}
+                          className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                          aria-label="Black point"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={blackPoint}
-                        onChange={(e) => {
-                          const v = Number(e.target.value);
-                          setBlackPoint(v);
-                          if (generatedTheme.length === 16) {
-                            const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                            const tuned = customizeColorScheme(generatedTheme, reference, {
-                              blackPointLightness: v,
-                              whitePointLightness: whitePoint,
-                            });
-                            setOptimizedTheme(tuned);
-                          }
-                          setDynamicRange(Math.max(0, Math.min(1, whitePoint - v)));
-                        }}
-                        className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                        aria-label="Black point"
-                      />
-                    </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">White point</label>
-                        <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{whitePoint.toFixed(2)}</span>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm text-gray-600 dark:text-gray-400">White point</label>
+                          <span className="text-sm tabular-nums text-gray-600 dark:text-gray-400">{whitePoint.toFixed(2)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={whitePoint}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            setWhitePoint(v);
+                            if (generatedTheme.length === 16) {
+                              const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                              const tuned = customizeColorScheme(generatedTheme, reference, {
+                                blackPointLightness: blackPoint,
+                                whitePointLightness: v,
+                              });
+                              setOptimizedTheme(tuned);
+                            }
+                            setDynamicRange(Math.max(0, Math.min(1, v - blackPoint)));
+                          }}
+                          className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                          aria-label="White point"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={whitePoint}
-                        onChange={(e) => {
-                          const v = Number(e.target.value);
-                          setWhitePoint(v);
-                          if (generatedTheme.length === 16) {
-                            const reference = isLightTheme ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                            const tuned = customizeColorScheme(generatedTheme, reference, {
-                              blackPointLightness: blackPoint,
-                              whitePointLightness: v,
-                            });
-                            setOptimizedTheme(tuned);
-                          }
-                          setDynamicRange(Math.max(0, Math.min(1, v - blackPoint)));
-                        }}
-                        className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
-                        aria-label="White point"
-                      />
                     </div>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Generate a theme to adjust lightness.</p>
+                  )}
                 </div>
 
                 {optimizedTheme.length === 16 && (

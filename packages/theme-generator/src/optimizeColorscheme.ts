@@ -13,6 +13,11 @@ function clamp01(value: number): number {
   return value;
 }
 
+function normalizeL(value: number | undefined): number {
+  const v = value ?? 0;
+  return v > 1 ? clamp01(v / 100) : clamp01(v);
+}
+
 /**
  * Adjusts lightness values of a 16-color terminal palette by referencing
  * the lightness distribution of a reference palette, instead of using
@@ -52,12 +57,12 @@ export function customizeColorScheme(
   // Use fixed anchors for assigning exact endpoints, but normalize by reference min/max
   const backgroundIndex = 0;
   const foregroundIndex = referencePalette.length - 1;
-  const refBgAnchor = clamp01(referencePalette[backgroundIndex][0].l ?? 0);
-  const refFgAnchor = clamp01(referencePalette[foregroundIndex][0].l ?? 1);
+  const refBgAnchor = normalizeL(referencePalette[backgroundIndex][0].l);
+  const refFgAnchor = normalizeL(referencePalette[foregroundIndex][0].l);
   let refMin = 1;
   let refMax = 0;
   for (const [ref] of referencePalette) {
-    const l = clamp01(ref.l ?? 0);
+    const l = normalizeL(ref.l);
     if (l < refMin) refMin = l;
     if (l > refMax) refMax = l;
   }
@@ -68,7 +73,7 @@ export function customizeColorScheme(
   const whiteL = clamp01(whitePointLightness);
 
   return colours.map((color, index) => {
-    const refL = clamp01(referencePalette[index][0].l ?? color.l ?? 0);
+    const refL = normalizeL(referencePalette[index][0].l ?? color.l ?? 0);
     let t = 0;
     if (Math.abs(denom) > 1e-6) {
       t = clamp01((refL - refMin) / denom);
