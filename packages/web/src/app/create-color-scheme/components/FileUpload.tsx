@@ -134,7 +134,10 @@ export function FileUpload() {
     console.log("Processing file:", file.name);
     setUploadedFileName(file.name);
     
-    // Create URL for displaying the image
+    // Create URL for the image, revoke previous one if exists
+    try {
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+    } catch {}
     const url = URL.createObjectURL(file);
     setImageUrl(url);
     
@@ -190,7 +193,19 @@ export function FileUpload() {
 
   if (isUploaded) {
     return (
-      <div className="py-12 max-w-4xl mx-auto space-y-6">
+      <div
+        className={`py-12 max-w-4xl mx-auto space-y-6 ${
+          isDragOver
+            ? "border-2 border-dashed border-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
+            : ""
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
+          Drag a new image anywhere on this page to start over.
+        </div>
         {/* Theme toggle */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
