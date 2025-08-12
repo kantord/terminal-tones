@@ -31,7 +31,13 @@ export function optimizeColorscheme(
 ): Okhsl[] {
   const { backgroundLightness, foregroundLightness } = options;
 
-  if (!Array.isArray(colours) || colours.length < 16) {
+  if (!Array.isArray(colours) || colours.length < 2) {
+    throw new Error(
+      "optimizeColorscheme requires at least 2 colors (background and foreground)",
+    );
+  }
+
+  if (colours.length < 16) {
     // Return a shallow copy without changes if the input doesn't look like a base16 palette
     return colours.slice();
   }
@@ -40,15 +46,10 @@ export function optimizeColorscheme(
   const fgL = clamp01(foregroundLightness);
   const midL = clamp01((bgL + fgL) / 2);
 
-  // Detect where "black" and "white" are positioned (depends on dark vs light reference palette)
-  // Reference order places extremes at indices 0 and 15.
-  // Choose the lower L as black and the other as white.
-  const idx0 = 0;
-  const idx15 = 15;
-  const l0 = colours[idx0]?.l ?? 0;
-  const l15 = colours[idx15]?.l ?? 1;
-  const blackIndex = l0 <= l15 ? idx0 : idx15;
-  const whiteIndex = blackIndex === idx0 ? idx15 : idx0;
+  // Assume black is the first color and white is the last color
+  // (the calling code must ensure palettes follow this convention)
+  const blackIndex = 0;
+  const whiteIndex = colours.length - 1;
 
   // Indices by convention (same for dark and light reference palettes)
   const darkColorIndices = [1, 2, 3, 4, 5, 6];
