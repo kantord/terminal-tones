@@ -206,6 +206,21 @@ export function FileUpload() {
         <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
           Drag a new image anywhere on this page to start over.
         </div>
+
+        {imageUrl && (
+          <div className="mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">Current image</h3>
+              <div className="flex justify-center">
+                <img
+                  src={imageUrl}
+                  alt={`Uploaded file: ${uploadedFileName}`}
+                  className="max-w-full max-h-96 object-contain rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                />
+              </div>
+            </div>
+          </div>
+        )}
         {/* Theme toggle */}
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
