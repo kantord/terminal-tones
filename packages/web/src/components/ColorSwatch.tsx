@@ -11,7 +11,7 @@ export function ColorSwatch({ colors, title = "Color Palette" }: ColorSwatchProp
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+    <div>
       <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
         {title}
       </h3>

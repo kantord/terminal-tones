@@ -400,7 +400,6 @@ export function FileUpload() {
             </div>
           </div>
 
-          {/* RIGHT: Tabs for Syntax | Swatch | Kitty */}
           <Card>
             <CardContent>
               <Tabs defaultValue="syntax">
@@ -411,14 +410,13 @@ export function FileUpload() {
                 </TabsList>
 
                 <TabsContent value="syntax">
-                  <div>
-                    <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
+                  <>
                     {optimizedTheme.length === 16 ? (
                       <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
                     ) : (
                       <p className="text-sm text-gray-500 dark:text-gray-400">Generating preview…</p>
                     )}
-                  </div>
+                  </>
                 </TabsContent>
 
                 <TabsContent value="swatch">
@@ -429,12 +427,12 @@ export function FileUpload() {
 
                 <TabsContent value="kitty">
                   {kittyConfig ? (
-                    <div className="rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                    <>
                       <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
                       <div className="rounded-lg p-4 overflow-auto">
                         <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
                       </div>
-                    </div>
+                    </>
                   ) : null}
                 </TabsContent>
               </Tabs>
