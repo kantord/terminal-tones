@@ -7,6 +7,7 @@ import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK, REF
 import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -197,7 +198,7 @@ export function FileUpload() {
       <div
         className={`py-12 max-w-6xl mx-auto space-y-6 ${
           isDragOver
-            ? "border-2 border-dashed border-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
+            ? "border-2 border-dashed border-blue-400 rounded-lg"
             : ""
         }`}
         onDragOver={handleDragOver}
@@ -212,7 +213,7 @@ export function FileUpload() {
           <div className="space-y-6">
             {imageUrl && (
               <div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <div className="dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                   <h3 className="text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">Source Image:</h3>
                   <div className="flex justify-center">
                     <img
@@ -230,7 +231,7 @@ export function FileUpload() {
             )}
 
             {/* Theme toggle */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div className="rounded-lg p-4 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme Style</h4>
@@ -245,7 +246,7 @@ export function FileUpload() {
             </div>
 
             {/* Sliders */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+            <div className="rounded-lg p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Adjust Lightness (Black/White points)</h3>
               {blackPoint !== null && whitePoint !== null ? (
                 <div className="space-y-6">
@@ -284,7 +285,7 @@ export function FileUpload() {
                           try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
                         }
                       }}
-                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      className="w-full h-2 appearance-none rounded-lg"
                       aria-label="Midpoint"
                     />
                   </div>
@@ -323,7 +324,7 @@ export function FileUpload() {
                           try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
                         }
                       }}
-                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      className="w-full h-2 appearance-none rounded-lg"
                       aria-label="Dynamic range"
                     />
                   </div>
@@ -356,7 +357,7 @@ export function FileUpload() {
                           try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
                         }
                       }}
-                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      className="w-full h-2 appearance-none rounded-lg"
                       aria-label="Black point"
                     />
                   </div>
@@ -388,7 +389,7 @@ export function FileUpload() {
                           try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
                         }
                       }}
-                      className="w-full h-2 appearance-none bg-gray-200 dark:bg-gray-700 rounded-lg"
+                      className="w-full h-2 appearance-none rounded-lg"
                       aria-label="White point"
                     />
                   </div>
@@ -409,7 +410,7 @@ export function FileUpload() {
               </TabsList>
 
               <TabsContent value="syntax">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-6">
+                <div className="rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-6">
                   <div>
                     <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
                     {optimizedTheme.length === 16 ? (
@@ -440,9 +441,9 @@ export function FileUpload() {
 
               <TabsContent value="kitty">
                 {kittyConfig ? (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <div className="rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                     <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
-                    <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+                    <div className="rounded-lg p-4 overflow-auto">
                       <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
                     </div>
                   </div>
@@ -453,7 +454,7 @@ export function FileUpload() {
         </div>
 
         <div className="flex justify-end">
-          <button onClick={handleReset} className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Create Another Theme</button>
+          <Button onClick={handleReset}>Create Another Theme</Button>
         </div>
       </div>
     );
