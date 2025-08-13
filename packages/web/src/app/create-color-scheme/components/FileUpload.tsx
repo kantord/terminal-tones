@@ -8,6 +8,7 @@ import SyntaxPreview from "@/components/SyntaxPreview";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function FileUpload() {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -53,7 +54,7 @@ export function FileUpload() {
         midpoint: midParam,
       });
       setOptimizedTheme(tuned);
-      try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+      try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
     } else {
       setOptimizedTheme([]);
     }
@@ -74,7 +75,7 @@ export function FileUpload() {
   // Handle theme toggle change
   const handleThemeToggle = (checked: boolean) => {
     setIsLightTheme(checked);
-    
+
     // Regenerate theme if we have extracted colors
     if (extractedColors.length > 0) {
       const newTheme = generateTheme(extractedColors, checked);
@@ -98,7 +99,7 @@ export function FileUpload() {
           midpoint: midParam2,
         });
         setOptimizedTheme(tuned);
-        try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+        try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
       } else {
         setOptimizedTheme([]);
       }
@@ -135,18 +136,18 @@ export function FileUpload() {
   const handleFileUpload = async (file: File) => {
     console.log("Processing file:", file.name);
     setUploadedFileName(file.name);
-    
+
     // Create URL for the image, revoke previous one if exists
     try {
       if (imageUrl) URL.revokeObjectURL(imageUrl);
-    } catch {}
+    } catch { }
     const url = URL.createObjectURL(file);
     setImageUrl(url);
-    
+
     try {
       const result = await extractColorsFromImage(file, 24);
       setExtractedColors(result.colors);
-      
+
       // Generate theme using current palette preference
       // Always generate the initial theme using the dark reference palette
       const theme = getBestColorScheme(result.colors, REFERENCE_PALETTE_DARK);
@@ -163,11 +164,11 @@ export function FileUpload() {
           midpoint: midParam,
         });
         setOptimizedTheme(tuned);
-        try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+        try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
       } else {
         setOptimizedTheme([]);
       }
-      
+
       setIsUploaded(true);
     } catch (error) {
       console.error("Error extracting colors:", error);
@@ -196,11 +197,10 @@ export function FileUpload() {
   if (isUploaded) {
     return (
       <div
-        className={`py-12 max-w-6xl mx-auto space-y-6 ${
-          isDragOver
-            ? "border-2 border-dashed border-blue-400 rounded-lg"
-            : ""
-        }`}
+        className={`py-12 max-w-6xl mx-auto space-y-6 ${isDragOver
+          ? "border-2 border-dashed border-blue-400 rounded-lg"
+          : ""
+          }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -282,7 +282,7 @@ export function FileUpload() {
                             midpoint: midParam,
                           });
                           setOptimizedTheme(tuned);
-                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
                         }
                       }}
                       className="w-full h-2 appearance-none rounded-lg"
@@ -321,7 +321,7 @@ export function FileUpload() {
                             midpoint: midParam,
                           });
                           setOptimizedTheme(tuned);
-                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
                         }
                       }}
                       className="w-full h-2 appearance-none rounded-lg"
@@ -354,7 +354,7 @@ export function FileUpload() {
                             midpoint: midParam,
                           });
                           setOptimizedTheme(tuned);
-                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
                         }
                       }}
                       className="w-full h-2 appearance-none rounded-lg"
@@ -386,7 +386,7 @@ export function FileUpload() {
                             midpoint: midParam,
                           });
                           setOptimizedTheme(tuned);
-                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch {}
+                          try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
                         }
                       }}
                       className="w-full h-2 appearance-none rounded-lg"
@@ -401,56 +401,47 @@ export function FileUpload() {
           </div>
 
           {/* RIGHT: Tabs for Syntax | Swatch | Kitty */}
-          <div>
-            <Tabs defaultValue="syntax">
-              <TabsList>
-                <TabsTrigger value="syntax">Syntax</TabsTrigger>
-                <TabsTrigger value="swatch">Swatch</TabsTrigger>
-                <TabsTrigger value="kitty">Kitty</TabsTrigger>
-              </TabsList>
+          <Card>
+            <CardContent>
+              <Tabs defaultValue="syntax">
+                <TabsList>
+                  <TabsTrigger value="syntax">Syntax</TabsTrigger>
+                  <TabsTrigger value="swatch">Swatch</TabsTrigger>
+                  <TabsTrigger value="kitty">Kitty</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="syntax">
-                <div className="rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-6">
+                <TabsContent value="syntax">
                   <div>
-                    <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
-                    {optimizedTheme.length === 16 ? (
-                      <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
-                    ) : (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Generating preview…</p>
-                    )}
-                  </div>
-                  {(() => {
-                    const swatchColors =
-                      optimizedTheme.length > 0
-                        ? optimizedTheme
-                        : generatedTheme.length > 0
-                          ? generatedTheme
-                          : extractedColors;
-                    return swatchColors.length > 0 ? (
-                      <ColorSwatch colors={swatchColors} title={`Enhanced Color Palette with Contrast Variants`} />
-                    ) : null;
-                  })()}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="swatch">
-                {optimizedTheme.length === 16 ? (
-                  <ColorSwatch colors={optimizedTheme} title={`Final Theme (16 colors)`} />
-                ) : null}
-              </TabsContent>
-
-              <TabsContent value="kitty">
-                {kittyConfig ? (
-                  <div className="rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
-                    <div className="rounded-lg p-4 overflow-auto">
-                      <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
+                    <div>
+                      <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
+                      {optimizedTheme.length === 16 ? (
+                        <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
+                      ) : (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Generating preview…</p>
+                      )}
                     </div>
                   </div>
-                ) : null}
-              </TabsContent>
-            </Tabs>
-          </div>
+                </TabsContent>
+
+                <TabsContent value="swatch">
+                  {optimizedTheme.length === 16 ? (
+                    <ColorSwatch colors={optimizedTheme} title={`Final Theme (16 colors)`} />
+                  ) : null}
+                </TabsContent>
+
+                <TabsContent value="kitty">
+                  {kittyConfig ? (
+                    <div className="rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                      <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Kitty config</h3>
+                      <div className="rounded-lg p-4 overflow-auto">
+                        <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre">{kittyConfig}</pre>
+                      </div>
+                    </div>
+                  ) : null}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex justify-end">
@@ -475,10 +466,9 @@ export function FileUpload() {
         <div
           className={`
             border-2 border-dashed rounded-lg p-16 text-center cursor-pointer transition-colors max-w-2xl mx-auto
-            ${
-              isDragOver
-                ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+            ${isDragOver
+              ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
+              : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
             }
           `}
           onDragOver={handleDragOver}
