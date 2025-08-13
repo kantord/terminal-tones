@@ -412,14 +412,12 @@ export function FileUpload() {
 
                 <TabsContent value="syntax">
                   <div>
-                    <div>
-                      <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
-                      {optimizedTheme.length === 16 ? (
-                        <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
-                      ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Generating preview…</p>
-                      )}
-                    </div>
+                    <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Syntax preview</h3>
+                    {optimizedTheme.length === 16 ? (
+                      <SyntaxPreview okhslBase16={optimizedTheme} language="typescript" />
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Generating preview…</p>
+                    )}
                   </div>
                 </TabsContent>
 
