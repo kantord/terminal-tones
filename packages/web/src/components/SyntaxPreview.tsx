@@ -278,23 +278,24 @@ impl Theme {
 function getEffectiveColorsFromOkhsl(base16Okhsl?: OkhslColor[] | null) {
   if (base16Okhsl && base16Okhsl.length === 16) {
     const base16Hex = base16Okhsl.map(okhslToHex);
+    // Map syntax colors to bright ANSI slots for higher contrast text
     return {
-      base00: base16Hex[0], // background
+      base00: base16Hex[0],   // background
       base01: base16Hex[8],
       base02: base16Hex[1],
       base03: base16Hex[2],
       base04: base16Hex[3],
-      base05: base16Hex[7], // foreground
+      base05: base16Hex[15],  // foreground -> bright white (or black in light palette)
       base06: base16Hex[6],
       base07: base16Hex[15],
-      base08: base16Hex[1],
-      base09: base16Hex[3],
-      base0A: base16Hex[3],
-      base0B: base16Hex[2],
-      base0C: base16Hex[6],
-      base0D: base16Hex[4],
-      base0E: base16Hex[5],
-      base0F: base16Hex[9],
+      base08: base16Hex[9],   // bright red
+      base09: base16Hex[11],  // bright yellow (used for numbers/literals)
+      base0A: base16Hex[11],  // bright yellow (no separate orange slot)
+      base0B: base16Hex[10],  // bright green
+      base0C: base16Hex[14],  // bright cyan
+      base0D: base16Hex[12],  // bright blue
+      base0E: base16Hex[13],  // bright magenta
+      base0F: base16Hex[9],   // bright red (fallback)
     } as const;
   }
 
