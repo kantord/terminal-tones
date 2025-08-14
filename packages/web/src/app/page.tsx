@@ -1,4 +1,6 @@
 import Image from "@/components/image";
+import SyntaxPreview from "@/components/SyntaxPreview";
+import { REFERENCE_PALETTE_DARK } from "@terminal-tones/theme-generator";
 
 type UnsplashPhoto = {
   id: string;
@@ -51,6 +53,7 @@ async function getUnsplashWallpapers(count: number = 12): Promise<UnsplashPhoto[
 
 export default async function Home() {
   const photos = await getUnsplashWallpapers(12);
+  const referenceOkhsl = REFERENCE_PALETTE_DARK.map(([c]) => c);
 
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
@@ -105,23 +108,38 @@ export default async function Home() {
         {photos.length > 0 && (
           <section className="w-full">
             <h2 className="mb-3 text-xl font-semibold tracking-tight">Wallpapers from Unsplash</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {photos.map((photo) => {
                 const photoAlt = photo.alt_description ?? `Photo by ${photo.user.name}`;
                 const photoLink = `${photo.links.html}?utm_source=terminal-tones&utm_medium=referral`;
                 const userLink = `${photo.user.links.html}?utm_source=terminal-tones&utm_medium=referral`;
                 return (
-                  <div key={photo.id} className="group rounded-lg overflow-hidden border border-black/10 dark:border-white/10">
-                    <a href={photoLink} target="_blank" rel="noopener noreferrer" className="block">
-                      <Image
-                        src={photo.urls.small}
-                        alt={photoAlt}
-                        width={400}
-                        height={300}
-                        className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                      />
-                    </a>
-                    <div className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                  <div
+                    key={photo.id}
+                    className="rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm"
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-2">
+                      <a
+                        href={photoLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group"
+                      >
+                        <Image
+                          src={photo.urls.regular || photo.urls.small}
+                          alt={photoAlt}
+                          width={1200}
+                          height={800}
+                          className="w-full h-full object-cover max-h-72 lg:max-h-full transition-transform duration-300 group-hover:scale-[1.02]"
+                        />
+                      </a>
+
+                      <div className="p-4">
+                        <SyntaxPreview okhslBase16={referenceOkhsl} language="typescript" />
+                      </div>
+                    </div>
+
+                    <div className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1 border-t border-black/5 dark:border-white/5">
                       <span>Photo by</span>
                       <a href={userLink} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                         {photo.user.name}
