@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useId } from "react";
 import hljs from "highlight.js";
 import type { OkhslColor } from "@terminal-tones/theme-generator";
 import { okhslToHex } from "@terminal-tones/theme-generator";
@@ -9,6 +9,7 @@ interface SyntaxPreviewProps {
   okhslBase16?: OkhslColor[] | null;
   language?: string;
   code?: string;
+  idSeed?: string;
 }
 
 // Sample code for different languages
@@ -404,11 +405,15 @@ export function SyntaxPreview({
   okhslBase16,
   language = "javascript",
   code,
+  idSeed,
 }: SyntaxPreviewProps) {
   const codeRef = useRef<HTMLElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const uniqueId = useRef(`preview-${Math.random().toString(36).substr(2, 9)}`);
+  // Prefer stable seed from parent (e.g., photo.id); fallback to React useId
+  const reactId = useId();
+  const baseId = idSeed && idSeed.length > 0 ? idSeed : reactId;
+  const uniqueId = `preview-${baseId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const sampleCode =
     code ||
@@ -437,8 +442,8 @@ export function SyntaxPreview({
 
     // Create and inject new style
     styleRef.current = document.createElement("style");
-    styleRef.current.setAttribute("data-syntax-preview", uniqueId.current);
-    const css = generateBase16CSS(okhslBase16 || null, uniqueId.current);
+    styleRef.current.setAttribute("data-syntax-preview", uniqueId);
+    const css = generateBase16CSS(okhslBase16 || null, uniqueId);
     styleRef.current.textContent = css;
     document.head.appendChild(styleRef.current);
 
@@ -462,7 +467,7 @@ export function SyntaxPreview({
         styleRef.current = null;
       }
     };
-  }, [okhslBase16, language, sampleCode]);
+  }, [okhslBase16, language, sampleCode, uniqueId]);
 
   // Use effective colors for inline styles
   const safeColors = {
@@ -471,10 +476,7 @@ export function SyntaxPreview({
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`syntax-preview syntax-preview-${uniqueId.current}`}
-    >
+    <div ref={containerRef} className={`syntax-preview syntax-preview-${uniqueId}`}>
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         <pre
           className="m-0"

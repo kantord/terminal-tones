@@ -1,5 +1,5 @@
 import Image from "@/components/image";
-import SyntaxPreview from "@/components/SyntaxPreview";
+import ClientSyntaxPreview from "@/components/ClientSyntaxPreview";
 import { REFERENCE_PALETTE_DARK } from "@terminal-tones/theme-generator";
 
 type UnsplashPhoto = {
@@ -135,7 +135,11 @@ export default async function Home() {
                       </a>
 
                       <div className="p-4">
-                        <SyntaxPreview okhslBase16={referenceOkhsl} language="typescript" />
+                        <ClientSyntaxPreview
+                          okhslBase16={referenceOkhsl}
+                          language="typescript"
+                          idSeed={photo.id}
+                        />
                       </div>
                     </div>
 
