@@ -1,6 +1,57 @@
 import Image from "@/components/image";
 
-export default function Home() {
+type UnsplashPhoto = {
+  id: string;
+  width?: number;
+  height?: number;
+  alt_description: string | null;
+  urls: {
+    small: string;
+    regular: string;
+    thumb: string;
+  };
+  links: {
+    html: string;
+  };
+  user: {
+    name: string;
+    links: {
+      html: string;
+    };
+  };
+};
+
+async function getUnsplashWallpapers(count: number = 12): Promise<UnsplashPhoto[]> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (!accessKey) {
+    return [];
+  }
+
+  const url = new URL("https://api.unsplash.com/topics/wallpapers/photos");
+  url.searchParams.set("per_page", String(count));
+  url.searchParams.set("order_by", "latest");
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Client-ID ${accessKey}`,
+      "Accept-Version": "v1",
+    },
+    // Cache on the server to avoid rate limits; for static export this
+    // is evaluated at build time.
+    next: { revalidate: 60 * 60 },
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = (await response.json()) as UnsplashPhoto[];
+  return Array.isArray(data) ? data : [];
+}
+
+export default async function Home() {
+  const photos = await getUnsplashWallpapers(12);
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -50,6 +101,42 @@ export default function Home() {
             Read our docs
           </a>
         </div>
+
+        {photos.length > 0 && (
+          <section className="w-full">
+            <h2 className="mb-3 text-xl font-semibold tracking-tight">Wallpapers from Unsplash</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {photos.map((photo) => {
+                const photoAlt = photo.alt_description ?? `Photo by ${photo.user.name}`;
+                const photoLink = `${photo.links.html}?utm_source=terminal-tones&utm_medium=referral`;
+                const userLink = `${photo.user.links.html}?utm_source=terminal-tones&utm_medium=referral`;
+                return (
+                  <div key={photo.id} className="group rounded-lg overflow-hidden border border-black/10 dark:border-white/10">
+                    <a href={photoLink} target="_blank" rel="noopener noreferrer" className="block">
+                      <Image
+                        src={photo.urls.small}
+                        alt={photoAlt}
+                        width={400}
+                        height={300}
+                        className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                    </a>
+                    <div className="px-3 py-2 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                      <span>Photo by</span>
+                      <a href={userLink} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                        {photo.user.name}
+                      </a>
+                      <span>on</span>
+                      <a href={photoLink} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                        Unsplash
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a

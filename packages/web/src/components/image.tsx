@@ -5,7 +5,7 @@ import OriginalImage, {
   type StaticImageData,
 } from "next/image";
 import { forwardRef } from "react";
-import { BASE_PATH } from "../../next.config";
+import { BASE_PATH } from "@/config";
 
 export type BasePathImageProps = Omit<ImageProps, "src"> & {
   src: string | StaticImageData;
