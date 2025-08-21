@@ -9,7 +9,7 @@ export function convertRgbToOkhsl([r, g, b]: RGBColor) {
 }
 
 export function extractColorsFromImage(
-  source: HTMLImageElement | File, 
+  source: HTMLImageElement | File | string,
   colorCount: number = 10
 ): Promise<{ colors: ReturnType<typeof convertRgbToOkhsl>[] }> {
   return new Promise((resolve, reject) => {
@@ -31,7 +31,7 @@ export function extractColorsFromImage(
         source.onload = () => processImage(source);
         source.onerror = () => reject(new Error('Failed to load image'));
       }
-    } else {
+    } else if (typeof File !== 'undefined' && source instanceof File) {
       // If it's a File, convert it to HTMLImageElement first
       const img = new Image();
       const url = URL.createObjectURL(source);
@@ -47,8 +47,20 @@ export function extractColorsFromImage(
       };
       
       img.src = url;
+    } else if (typeof source === 'string') {
+      // If it's a URL, load it into an Image and process. Note: requires CORS-enabled images.
+      const img = new Image();
+      // Attempt to enable CORS for canvas usage when possible
+      img.crossOrigin = 'anonymous';
+      img.onload = () => processImage(img);
+      img.onerror = () => reject(new Error('Failed to load image from URL'));
+      img.src = source;
     }
   });
+}
+
+export function extractColorsFromUrl(url: string, colorCount: number = 10) {
+  return extractColorsFromImage(url, colorCount);
 }
 
 /**

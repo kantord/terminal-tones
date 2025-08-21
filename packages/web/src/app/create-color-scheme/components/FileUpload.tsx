@@ -123,6 +123,18 @@ export function FileUpload() {
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleFileUpload(files[0]);
+      return;
+    }
+
+    // Support dragging a URL (e.g., from address bar or link)
+    const uri = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
+    try {
+      const parsed = uri ? new URL(uri.trim()) : null;
+      if (parsed && (parsed.protocol === "http:" || parsed.protocol === "https:")) {
+        handleUrlUpload(parsed.toString());
+      }
+    } catch {
+      // ignore non-URL text drops
     }
   };
 
@@ -131,6 +143,29 @@ export function FileUpload() {
     if (files && files.length > 0) {
       handleFileUpload(files[0]);
     }
+  };
+
+  const processExtractedColors = (colors: OkhslColor[]) => {
+    setExtractedColors(colors);
+    const theme = getBestColorScheme(colors, REFERENCE_PALETTE_DARK);
+    setGeneratedTheme(theme);
+    if (theme.length === 16) {
+      const init = deriveInitialCustomization(theme, REFERENCE_PALETTE_DARK);
+      setBlackPoint(init.blackPointLightness);
+      setWhitePoint(init.whitePointLightness);
+      const range = Math.max(1e-6, init.whitePointLightness - init.blackPointLightness);
+      const midParam = (((init.blackPointLightness + init.whitePointLightness) / 2) - init.blackPointLightness) / range;
+      const tuned = customizeColorScheme(theme, REFERENCE_PALETTE_DARK, {
+        blackPointLightness: init.blackPointLightness,
+        whitePointLightness: init.whitePointLightness,
+        midpoint: midParam,
+      });
+      setOptimizedTheme(tuned);
+      try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
+    } else {
+      setOptimizedTheme([]);
+    }
+    setIsUploaded(true);
   };
 
   const handleFileUpload = async (file: File) => {
@@ -146,33 +181,37 @@ export function FileUpload() {
 
     try {
       const result = await extractColorsFromImage(file, 24);
-      setExtractedColors(result.colors);
-
-      // Generate theme using current palette preference
-      // Always generate the initial theme using the dark reference palette
-      const theme = getBestColorScheme(result.colors, REFERENCE_PALETTE_DARK);
-      setGeneratedTheme(theme);
-      if (theme.length === 16) {
-        const init = deriveInitialCustomization(theme, REFERENCE_PALETTE_DARK);
-        setBlackPoint(init.blackPointLightness);
-        setWhitePoint(init.whitePointLightness);
-        const range = Math.max(1e-6, init.whitePointLightness - init.blackPointLightness);
-        const midParam = (((init.blackPointLightness + init.whitePointLightness) / 2) - init.blackPointLightness) / range;
-        const tuned = customizeColorScheme(theme, REFERENCE_PALETTE_DARK, {
-          blackPointLightness: init.blackPointLightness,
-          whitePointLightness: init.whitePointLightness,
-          midpoint: midParam,
-        });
-        setOptimizedTheme(tuned);
-        try { setKittyConfig(generateKittyConfig(tuned as OkhslColor[])); } catch { }
-      } else {
-        setOptimizedTheme([]);
-      }
-
-      setIsUploaded(true);
+      processExtractedColors(result.colors ?? []);
     } catch (error) {
       console.error("Error extracting colors:", error);
-      // Still show uploaded state even if color extraction fails
+      setIsUploaded(true);
+    }
+  };
+
+  const handleUrlUpload = async (url: string) => {
+    try {
+      setUploadedFileName(url);
+      // First try to fetch as blob to avoid CORS-tainted canvas when possible
+      try {
+        const resp = await fetch(url, { mode: 'cors' });
+        if (resp.ok) {
+          const blob = await resp.blob();
+          const file = new File([blob], url.split('/').pop() || 'image', { type: blob.type || 'application/octet-stream' });
+          const objectUrl = URL.createObjectURL(blob);
+          setImageUrl(objectUrl);
+          const result = await extractColorsFromImage(file, 24);
+          processExtractedColors(result.colors ?? []);
+          return;
+        }
+      } catch {
+        // fall through to direct URL attempt
+      }
+      // Fallback: try processing directly from URL (requires CORS-enabled source)
+      setImageUrl(url);
+      const result = await extractColorsFromImage(url, 24);
+      processExtractedColors(result.colors ?? []);
+    } catch (error) {
+      console.error("Error extracting colors from URL:", error);
       setIsUploaded(true);
     }
   };
@@ -189,7 +228,11 @@ export function FileUpload() {
     setOptimizedTheme([]);
     // Clean up the image URL to prevent memory leaks
     if (imageUrl) {
-      URL.revokeObjectURL(imageUrl);
+      try {
+        if (imageUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(imageUrl);
+        }
+      } catch {}
       setImageUrl("");
     }
   };
@@ -484,10 +527,10 @@ export function FileUpload() {
 
           <Upload className="w-16 h-16 mx-auto mb-6 text-gray-400 dark:text-gray-500" />
           <p className="text-xl font-medium mb-3 text-gray-700 dark:text-gray-300">
-            Drop an image here or click to browse
+            Drop an image or image URL here, or click to browse
           </p>
           <p className="text-base text-gray-500 dark:text-gray-400">
-            Supports PNG, JPG, and other image formats
+            Supports PNG, JPG and cross-origin images that allow CORS
           </p>
         </div>
       </div>

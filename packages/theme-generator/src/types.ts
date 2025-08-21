@@ -13,3 +13,7 @@ export function ref(
 ): ReferenceColor {
   return [color, weights];
 }
+
+export type ExtractedColors = {
+  colors: Okhsl[];
+};

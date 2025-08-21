@@ -1,5 +1,5 @@
 import Image from "@/components/image";
-import ClientSyntaxPreview from "@/components/ClientSyntaxPreview";
+import ImageThemePreview from "@/components/ImageThemePreview";
 import { REFERENCE_PALETTE_DARK } from "@terminal-tones/theme-generator";
 
 type UnsplashPhoto = {
@@ -53,6 +53,7 @@ async function getUnsplashWallpapers(count: number = 12): Promise<UnsplashPhoto[
 
 export default async function Home() {
   const photos = await getUnsplashWallpapers(12);
+  // Keep a reference palette handy for fallback or future comparisons
   const referenceOkhsl = REFERENCE_PALETTE_DARK.map(([c]) => c);
 
   return (
@@ -135,8 +136,8 @@ export default async function Home() {
                       </a>
 
                       <div className="p-4">
-                        <ClientSyntaxPreview
-                          okhslBase16={referenceOkhsl}
+                        <ImageThemePreview
+                          imageUrl={photo.urls.small || photo.urls.regular}
                           language="typescript"
                           idSeed={photo.id}
                         />
