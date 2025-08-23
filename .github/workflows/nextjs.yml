@@ -80,6 +80,8 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Build with Next.js
+        env:
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
         run: ${{ steps.detect-package-manager.outputs.runner }} --filter web build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
