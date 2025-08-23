@@ -2,11 +2,16 @@
   "name": "@terminal-tones/theme-generator",
   "version": "0.1.0",
   "description": "Core theme generation logic for Terminal Tones",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./src/index.ts",
       "require": "./src/index.ts",
       "types": "./src/index.ts"
+    },
+    "./extractColorsServer": {
+      "import": "./dist/extractColorsServer.js",
+      "types": "./src/extractColorsServer.ts"
     }
   },
   "files": [

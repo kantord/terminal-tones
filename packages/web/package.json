@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --port 3031",
+    "prebuild": "node ./scripts/generate-home-themes.mjs",
     "build": "next build",
     "e2e": "playwright",
     "e2e:run": "playwright test --reporter=line",

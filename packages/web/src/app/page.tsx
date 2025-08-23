@@ -1,6 +1,8 @@
 import Image from "@/components/image";
+import ClientSyntaxPreview from "@/components/ClientSyntaxPreview";
 import ImageThemePreview from "@/components/ImageThemePreview";
-import { REFERENCE_PALETTE_DARK } from "@terminal-tones/theme-generator";
+import { REFERENCE_PALETTE_DARK, type OkhslColor } from "@terminal-tones/theme-generator";
+import precomputed from "@/data/home-themes.json" assert { type: "json" };
 
 type UnsplashPhoto = {
   id: string;
@@ -53,8 +55,12 @@ async function getUnsplashWallpapers(count: number = 12): Promise<UnsplashPhoto[
 
 export default async function Home() {
   const photos = await getUnsplashWallpapers(12);
-  // Keep a reference palette handy for fallback or future comparisons
   const referenceOkhsl = REFERENCE_PALETTE_DARK.map(([c]) => c);
+
+  // Use precomputed palettes if available; else mark as null to compute client-side per image
+  const themes: Record<string, OkhslColor[] | null> = Object.fromEntries(
+    photos.map((p) => [p.id, (precomputed as Record<string, OkhslColor[] | undefined>)[p.id] ?? null]),
+  );
 
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
@@ -136,11 +142,19 @@ export default async function Home() {
                       </a>
 
                       <div className="p-4">
-                        <ImageThemePreview
-                          imageUrl={photo.urls.small || photo.urls.regular}
-                          language="typescript"
-                          idSeed={photo.id}
-                        />
+                        {themes[photo.id] ? (
+                          <ClientSyntaxPreview
+                            okhslBase16={themes[photo.id]}
+                            language="typescript"
+                            idSeed={photo.id}
+                          />
+                        ) : (
+                          <ImageThemePreview
+                            imageUrl={photo.urls.regular || photo.urls.small}
+                            language="typescript"
+                            idSeed={photo.id}
+                          />
+                        )}
                       </div>
                     </div>
 

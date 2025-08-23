@@ -9,6 +9,7 @@ import {
 } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 
+// NOTE: no longer used on the home page; kept for the create-color-scheme tool UI if needed
 export default function ImageThemePreview({
   imageUrl,
   idSeed,
