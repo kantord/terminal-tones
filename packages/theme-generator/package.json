@@ -8,6 +8,10 @@
       "import": "./src/index.ts",
       "require": "./src/index.ts",
       "types": "./src/index.ts"
+    },
+    "./preconfigured": {
+      "import": "./src/preconfigured.ts",
+      "types": "./src/preconfigured.ts"
     }
   },
   "files": [
