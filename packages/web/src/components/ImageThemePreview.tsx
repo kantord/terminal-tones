@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  extractColorsFromImage,
-  getBestColorScheme,
-  REFERENCE_PALETTE_DARK,
-  REFERENCE_PALETTE_LIGHT,
-  type OkhslColor,
-} from "@terminal-tones/theme-generator";
+import type { OkhslColor } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 
 // NOTE: no longer used on the home page; kept for the create-color-scheme tool UI if needed
@@ -27,48 +21,16 @@ export default function ImageThemePreview({
 
     async function run() {
       try {
-        // Prefer fetching as blob to avoid CORS-tainted canvas
-        try {
-          const resp = await fetch(imageUrl, { mode: "cors" });
-          if (resp.ok) {
-            const blob = await resp.blob();
-            const file = new File([blob], "image", { type: blob.type || "application/octet-stream" });
-            const result = await extractColorsFromImage(file, 24);
-            if (!cancelled) {
-              const colors = result.colors ?? [];
-              if (colors.length >= REFERENCE_PALETTE_DARK.length) {
-                const medianL = colors
-                  .map((c) => (c.l > 1 ? c.l / 100 : c.l))
-                  .sort((a, b) => a - b)
-                  .reduce((acc, _, idx, arr) => (arr.length % 2 ? arr[(arr.length - 1) / 2] : (arr[arr.length / 2 - 1] + arr[arr.length / 2]) / 2), 0 as number);
-                const ref = medianL >= 0.6 ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-                const theme = getBestColorScheme(colors, ref);
-                setBase16(theme);
-              } else {
-                setBase16(null);
-              }
-              return;
-            }
-          }
-        } catch {
-          // fall through to direct URL attempt
-        }
-
-        // Fallback: try processing directly from URL (requires CORS-enabled source)
-        const result2 = await extractColorsFromImage(imageUrl, 24);
+        const resp = await fetch("/api/generate-theme", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: imageUrl, colorCount: 24 }),
+        });
+        if (!resp.ok) throw new Error("server extraction failed");
+        const data = await resp.json();
         if (!cancelled) {
-          const colors = result2.colors ?? [];
-          if (colors.length >= REFERENCE_PALETTE_DARK.length) {
-            const medianL = colors
-              .map((c) => (c.l > 1 ? c.l / 100 : c.l))
-              .sort((a, b) => a - b)
-              .reduce((acc, _, idx, arr) => (arr.length % 2 ? arr[(arr.length - 1) / 2] : (arr[arr.length / 2 - 1] + arr[arr.length / 2]) / 2), 0 as number);
-            const ref = medianL >= 0.6 ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
-            const theme = getBestColorScheme(colors, ref);
-            setBase16(theme);
-          } else {
-            setBase16(null);
-          }
+          const base16 = Array.isArray(data?.base16Okhsl) ? (data.base16Okhsl as OkhslColor[]) : null;
+          setBase16(base16);
         }
       } catch (err) {
         console.warn("ImageThemePreview: failed to extract colors for", imageUrl, err);
