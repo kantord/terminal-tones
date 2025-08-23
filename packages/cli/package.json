@@ -1,0 +1,26 @@
+{
+  "name": "@terminal-tones/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "terminal-tones": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "colorthief": "2.6.0",
+    "culori": "^4.0.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/yargs": "^17",
+    "typescript": "^5"
+  }
+}

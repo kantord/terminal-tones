@@ -1,4 +1,8 @@
 {
   "files": [],
-  "references": [{ "path": "packages/web" }]
+  "references": [
+    { "path": "packages/theme-generator" },
+    { "path": "packages/web" },
+    { "path": "packages/cli" }
+  ]
 }
