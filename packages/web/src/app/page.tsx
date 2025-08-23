@@ -1,8 +1,12 @@
 import Image from "@/components/image";
 import ClientSyntaxPreview from "@/components/ClientSyntaxPreview";
 import ImageThemePreview from "@/components/ImageThemePreview";
-import { REFERENCE_PALETTE_DARK, type OkhslColor } from "@terminal-tones/theme-generator";
-import precomputed from "@/data/home-themes.json" assert { type: "json" };
+import {
+  REFERENCE_PALETTE_DARK,
+  getBestColorScheme,
+  convertRgbToOkhsl,
+  type OkhslColor,
+} from "@terminal-tones/theme-generator";
 
 type UnsplashPhoto = {
   id: string;
@@ -57,9 +61,61 @@ export default async function Home() {
   const photos = await getUnsplashWallpapers(12);
   const referenceOkhsl = REFERENCE_PALETTE_DARK.map(([c]) => c);
 
-  // Use precomputed palettes if available; else mark as null to compute client-side per image
+  async function extractBase16FromRemoteImage(
+    imageUrl: string,
+    colorCount: number = 24,
+  ): Promise<OkhslColor[] | null> {
+    try {
+      // Dynamically import colorthief (no types). In Node, pass a Buffer.
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error - colorthief has no TS types for Node API
+      const { getPalette } = await import("colorthief");
+
+      // Fetch image and save to a temp file; colorthief Node works reliably with file paths
+      const resp = await fetch(imageUrl, { cache: "force-cache" });
+      if (!resp.ok) return null;
+      const arrayBuf = await resp.arrayBuffer();
+      const buffer = Buffer.from(arrayBuf);
+
+      const [{ mkdtemp, writeFile, unlink }, { tmpdir }, path] = await Promise.all([
+        import("node:fs/promises"),
+        import("node:os"),
+        import("node:path"),
+      ]);
+
+      const dir = await mkdtemp(path.join(tmpdir(), "tt-"));
+      const filePath = path.join(dir, `${Math.random().toString(36).slice(2)}.jpg`);
+      await writeFile(filePath, buffer);
+
+      let palette: [number, number, number][] | null = null;
+      try {
+        palette = (await getPalette(filePath, colorCount)) as [number, number, number][];
+      } finally {
+        // Best-effort cleanup
+        try { await unlink(filePath); } catch {}
+      }
+      if (!palette) return null;
+      const okhslCandidates = palette.map(convertRgbToOkhsl);
+      if (okhslCandidates.length < REFERENCE_PALETTE_DARK.length) {
+        return null;
+      }
+      const base16 = getBestColorScheme(okhslCandidates, REFERENCE_PALETTE_DARK);
+      return base16 as OkhslColor[];
+    } catch {
+      return null;
+    }
+  }
+
+  // Compute base16 palettes on the server during build time
   const themes: Record<string, OkhslColor[] | null> = Object.fromEntries(
-    photos.map((p) => [p.id, (precomputed as Record<string, OkhslColor[] | undefined>)[p.id] ?? null]),
+    await Promise.all(
+      photos.map(async (p) => {
+        const url = p?.urls?.regular || p?.urls?.small;
+        if (!url) return [p.id, null] as const;
+        const base16 = await extractBase16FromRemoteImage(url, 24);
+        return [p.id, base16] as const;
+      }),
+    ),
   );
 
   return (
