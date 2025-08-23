@@ -5,6 +5,7 @@ import {
   extractColorsFromImage,
   getBestColorScheme,
   REFERENCE_PALETTE_DARK,
+  REFERENCE_PALETTE_LIGHT,
   type OkhslColor,
 } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
@@ -36,7 +37,12 @@ export default function ImageThemePreview({
             if (!cancelled) {
               const colors = result.colors ?? [];
               if (colors.length >= REFERENCE_PALETTE_DARK.length) {
-                const theme = getBestColorScheme(colors, REFERENCE_PALETTE_DARK);
+                const medianL = colors
+                  .map((c) => (c.l > 1 ? c.l / 100 : c.l))
+                  .sort((a, b) => a - b)
+                  .reduce((acc, _, idx, arr) => (arr.length % 2 ? arr[(arr.length - 1) / 2] : (arr[arr.length / 2 - 1] + arr[arr.length / 2]) / 2), 0 as number);
+                const ref = medianL >= 0.6 ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+                const theme = getBestColorScheme(colors, ref);
                 setBase16(theme);
               } else {
                 setBase16(null);
@@ -53,7 +59,12 @@ export default function ImageThemePreview({
         if (!cancelled) {
           const colors = result2.colors ?? [];
           if (colors.length >= REFERENCE_PALETTE_DARK.length) {
-            const theme = getBestColorScheme(colors, REFERENCE_PALETTE_DARK);
+            const medianL = colors
+              .map((c) => (c.l > 1 ? c.l / 100 : c.l))
+              .sort((a, b) => a - b)
+              .reduce((acc, _, idx, arr) => (arr.length % 2 ? arr[(arr.length - 1) / 2] : (arr[arr.length / 2 - 1] + arr[arr.length / 2]) / 2), 0 as number);
+            const ref = medianL >= 0.6 ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+            const theme = getBestColorScheme(colors, ref);
             setBase16(theme);
           } else {
             setBase16(null);

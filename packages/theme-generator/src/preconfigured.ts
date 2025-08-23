@@ -26,17 +26,32 @@ export async function generateInitialThemeFromSource(
   options?: { colorCount?: number; mode?: 'dark' | 'light' }
 ): Promise<InitialThemeResult> {
   const colorCount = options?.colorCount ?? 24;
-  const mode = options?.mode ?? 'dark';
 
   const { colors } = await extractOkhslCandidates(source, colorCount);
-  const reference = mode === 'light' ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+
+  // Auto-pick mode by median lightness unless explicit mode provided
+  const pickedMode: 'dark' | 'light' = (() => {
+    if (options?.mode) return options.mode;
+    if (!colors || colors.length === 0) return 'dark';
+    const ls = colors
+      .map((c) => {
+        const l = c?.l ?? 0;
+        return l > 1 ? Math.max(0, Math.min(1, l / 100)) : Math.max(0, Math.min(1, l));
+      })
+      .sort((a, b) => a - b);
+    const mid = ls.length % 2 === 1 ? ls[(ls.length - 1) / 2] : 0.5 * (ls[ls.length / 2 - 1] + ls[ls.length / 2]);
+    return mid >= 0.6 ? 'light' : 'dark';
+  })();
+
+  const reference = pickedMode === 'light' ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
+
   if (!colors || colors.length < reference.length) {
     // Fallback: take reference palette colors directly
     const base16Okhsl = reference.map(([c]) => c);
     const defaults = deriveInitialCustomization(base16Okhsl, reference);
     return {
       base16Okhsl,
-      defaults: { ...defaults, mode },
+      defaults: { ...defaults, mode: pickedMode },
       meta: { extractedCount: colors?.length ?? 0, colorCountRequested: colorCount, sourceType: detectSourceType(source) },
     };
   }
@@ -45,7 +60,7 @@ export async function generateInitialThemeFromSource(
   const defaults = deriveInitialCustomization(base16Okhsl, reference);
   return {
     base16Okhsl,
-    defaults: { ...defaults, mode },
+    defaults: { ...defaults, mode: pickedMode },
     meta: { extractedCount: colors.length, colorCountRequested: colorCount, sourceType: detectSourceType(source) },
   };
 }
