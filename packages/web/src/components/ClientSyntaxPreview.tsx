@@ -18,13 +18,14 @@ export default function ClientSyntaxPreview({
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null;
+  if (!mounted) return null;
+  if (!okhslBase16 || okhslBase16.length !== 16) {
+    throw new Error("ClientSyntaxPreview requires a 16-color palette");
   }
 
   return (
     <SyntaxPreview
-      okhslBase16={okhslBase16 ?? null}
+      okhslBase16={okhslBase16}
       language={language}
       idSeed={idSeed}
     />

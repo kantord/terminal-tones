@@ -281,44 +281,26 @@ function getEffectiveColorsFromOkhsl(base16Okhsl?: OkhslColor[] | null) {
     const base16Hex = base16Okhsl.map(okhslToHex);
     // Map syntax colors to bright ANSI slots for higher contrast text
     return {
-      base00: base16Hex[0],   // background
+      base00: base16Hex[0],
       base01: base16Hex[8],
       base02: base16Hex[1],
       base03: base16Hex[2],
       base04: base16Hex[3],
-      base05: base16Hex[15],  // foreground -> bright white (or black in light palette)
+      base05: base16Hex[15],
       base06: base16Hex[6],
       base07: base16Hex[15],
-      base08: base16Hex[9],   // bright red
-      base09: base16Hex[11],  // bright yellow (used for numbers/literals)
-      base0A: base16Hex[11],  // bright yellow (no separate orange slot)
-      base0B: base16Hex[10],  // bright green
-      base0C: base16Hex[14],  // bright cyan
-      base0D: base16Hex[12],  // bright blue
-      base0E: base16Hex[13],  // bright magenta
-      base0F: base16Hex[9],   // bright red (fallback)
+      base08: base16Hex[9],
+      base09: base16Hex[11],
+      base0A: base16Hex[11],
+      base0B: base16Hex[10],
+      base0C: base16Hex[14],
+      base0D: base16Hex[12],
+      base0E: base16Hex[13],
+      base0F: base16Hex[9],
     } as const;
   }
 
-  // Neutral defaults if colors not provided
-  return {
-    base00: "#1e1e1e",
-    base01: "#2d2d2d",
-    base02: "#3c3c3c",
-    base03: "#5a5a5a",
-    base04: "#b0b0b0",
-    base05: "#d4d4d4",
-    base06: "#e0e0e0",
-    base07: "#ffffff",
-    base08: "#f44747",
-    base09: "#d19a66",
-    base0A: "#e5c07b",
-    base0B: "#98c379",
-    base0C: "#56b6c2",
-    base0D: "#61afef",
-    base0E: "#c678dd",
-    base0F: "#be5046",
-  } as const;
+  throw new Error("SyntaxPreview requires a 16-color OKHSL palette");
 }
 
 // Generate CSS for base16 theme with unique ID

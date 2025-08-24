@@ -63,11 +63,14 @@ export default async function Home() {
       photos.map(async (p) => {
         const url = p?.urls?.regular || p?.urls?.small;
         if (!url) return [p.id, null] as const;
-        const result = await generateInitialThemeFromSource(url, { colorCount: 24 });
-        const base16 = (result.meta.extractedCount >= REFERENCE_PALETTE_DARK.length)
-          ? (result.base16Okhsl as OkhslColor[])
-          : null; // let client extract if server failed
-        return [p.id, base16] as const;
+        try {
+          const result = await generateInitialThemeFromSource(url, { colorCount: 24 });
+          const base16 = result.base16Okhsl as OkhslColor[];
+          return [p.id, base16] as const;
+        } catch (e) {
+          // Explicitly surface failure by returning null; client component will now throw instead of defaulting
+          return [p.id, null] as const;
+        }
       }),
     ),
   );

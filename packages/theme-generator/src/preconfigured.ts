@@ -46,14 +46,11 @@ export async function generateInitialThemeFromSource(
   const reference = pickedMode === 'light' ? REFERENCE_PALETTE_LIGHT : REFERENCE_PALETTE_DARK;
 
   if (!colors || colors.length < reference.length) {
-    // Fallback: take reference palette colors directly
-    const base16Okhsl = reference.map(([c]) => c);
-    const defaults = deriveInitialCustomization(base16Okhsl, reference);
-    return {
-      base16Okhsl,
-      defaults: { ...defaults, mode: pickedMode },
-      meta: { extractedCount: colors?.length ?? 0, colorCountRequested: colorCount, sourceType: detectSourceType(source) },
-    };
+    // Explicitly fail when insufficient colors are available to prevent silent fallbacks
+    const extracted = colors?.length ?? 0;
+    throw new Error(
+      `Insufficient colors extracted: expected at least ${reference.length}, got ${extracted}`,
+    );
   }
 
   const base16Okhsl = getBestColorScheme(colors, reference);

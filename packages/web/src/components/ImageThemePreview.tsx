@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { OkhslColor } from "@terminal-tones/theme-generator";
+import { extractColorsFromImage, getBestColorScheme, REFERENCE_PALETTE_DARK } from "@terminal-tones/theme-generator";
 import SyntaxPreview from "@/components/SyntaxPreview";
 
-// NOTE: no longer used on the home page; kept for the create-color-scheme tool UI if needed
 export default function ImageThemePreview({
   imageUrl,
   idSeed,
@@ -15,26 +15,25 @@ export default function ImageThemePreview({
   language?: string;
 }) {
   const [base16, setBase16] = useState<OkhslColor[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
       try {
-        const resp = await fetch("/api/generate-theme", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: imageUrl, colorCount: 24 }),
-        });
-        if (!resp.ok) throw new Error("server extraction failed");
-        const data = await resp.json();
-        if (!cancelled) {
-          const base16 = Array.isArray(data?.base16Okhsl) ? (data.base16Okhsl as OkhslColor[]) : null;
-          setBase16(base16);
+        setError(null);
+        setBase16(null);
+        const result = await extractColorsFromImage(imageUrl, 24);
+        const colors = result.colors ?? [];
+        if (colors.length < REFERENCE_PALETTE_DARK.length) {
+          throw new Error(`Insufficient colors extracted: expected at least ${REFERENCE_PALETTE_DARK.length}, got ${colors.length}`);
         }
+        const theme = getBestColorScheme(colors as OkhslColor[], REFERENCE_PALETTE_DARK);
+        if (!cancelled) setBase16(theme as OkhslColor[]);
       } catch (err) {
         console.warn("ImageThemePreview: failed to extract colors for", imageUrl, err);
-        if (!cancelled) setBase16(null);
+        if (!cancelled) setError((err as Error)?.message || "Failed to generate theme");
       }
     }
 
@@ -44,7 +43,19 @@ export default function ImageThemePreview({
     };
   }, [imageUrl]);
 
-  return (
-    <SyntaxPreview okhslBase16={base16 ?? undefined} language={language} idSeed={idSeed} />
-  );
+  if (error) {
+    return (
+      <div className="text-sm text-gray-600 dark:text-gray-300">
+        Failed to extract 16 colors for preview.
+      </div>
+    );
+  }
+
+  if (!base16) {
+    return (
+      <div className="text-sm text-gray-600 dark:text-gray-300">Generating preview…</div>
+    );
+  }
+
+  return <SyntaxPreview okhslBase16={base16} language={language} idSeed={idSeed} />;
 }
