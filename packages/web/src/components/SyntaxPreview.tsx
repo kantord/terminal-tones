@@ -11,6 +11,7 @@ interface SyntaxPreviewProps {
   code?: string;
   idSeed?: string;
   fontSizePx?: number;
+  backgroundOpacity?: number; // 0..1, only affects background fill
 }
 
 // Sample code for different languages
@@ -305,22 +306,36 @@ function getEffectiveColorsFromOkhsl(base16Okhsl?: OkhslColor[] | null) {
 }
 
 // Generate CSS for base16 theme with unique ID
+function hexToRgba(hex: string, alpha: number): string {
+  const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+  if (!m) return hex;
+  const r = parseInt(m[1], 16);
+  const g = parseInt(m[2], 16);
+  const b = parseInt(m[3], 16);
+  const a = Math.max(0, Math.min(1, alpha));
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
 function generateBase16CSS(
   base16Okhsl: OkhslColor[] | null | undefined,
   uniqueId: string,
   fontSizePx: number,
+  backgroundOpacity: number,
 ): string {
   const colors = getEffectiveColorsFromOkhsl(base16Okhsl);
+  const bg = backgroundOpacity < 1 ? hexToRgba(colors.base00, backgroundOpacity) : colors.base00;
+  const backdrop = backgroundOpacity < 1 ? 'backdrop-filter: blur(12px);' : '';
 
   return `
     .syntax-preview-${uniqueId} .hljs {
       display: block !important;
       overflow-x: auto !important;
       padding: 1rem !important;
-      background: ${colors.base00} !important;
+      background: ${bg} !important;
       color: ${colors.base05} !important;
       border-radius: 6px !important;
       border: none !important;
+      ${backdrop}
       font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
       font-size: ${fontSizePx}px !important;
       line-height: 1.5 !important;
@@ -329,6 +344,9 @@ function generateBase16CSS(
 
     .syntax-preview-${uniqueId} pre {
       border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      background: transparent !important;
     }
 
     .syntax-preview-${uniqueId} .hljs-comment,
@@ -396,6 +414,7 @@ export function SyntaxPreview({
   code,
   idSeed,
   fontSizePx = 14,
+  backgroundOpacity = 1,
 }: SyntaxPreviewProps) {
   const codeRef = useRef<HTMLElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
@@ -433,7 +452,7 @@ export function SyntaxPreview({
     // Create and inject new style
     styleRef.current = document.createElement("style");
     styleRef.current.setAttribute("data-syntax-preview", uniqueId);
-    const css = generateBase16CSS(okhslBase16 || null, uniqueId, fontSizePx);
+    const css = generateBase16CSS(okhslBase16 || null, uniqueId, fontSizePx, backgroundOpacity);
     styleRef.current.textContent = css;
     document.head.appendChild(styleRef.current);
 
@@ -457,7 +476,7 @@ export function SyntaxPreview({
         styleRef.current = null;
       }
     };
-  }, [okhslBase16, language, sampleCode, uniqueId, fontSizePx]);
+  }, [okhslBase16, language, sampleCode, uniqueId, fontSizePx, backgroundOpacity]);
 
   // Use effective colors for inline styles
   const safeColors = {
@@ -468,25 +487,20 @@ export function SyntaxPreview({
   return (
     <div ref={containerRef} className={`syntax-preview syntax-preview-${uniqueId}`}>
       <div className="rounded-lg overflow-hidden">
-        <pre
-          className="m-0"
-          style={{
-            background: safeColors.background,
-            color: safeColors.color,
-            padding: "1rem",
-            margin: 0,
-            fontSize: `${fontSizePx}px`,
-            lineHeight: "1.5",
-            fontFamily:
-              "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
-          }}
-        >
+        <pre className="m-0 p-0 bg-transparent">
           <code
             ref={codeRef}
             className={`language-${language}`}
             style={{
-              background: "transparent",
-              color: "inherit",
+              display: 'block',
+              background: 'transparent',
+              color: safeColors.color,
+              padding: '1rem',
+              margin: 0,
+              fontSize: `${fontSizePx}px`,
+              lineHeight: '1.5',
+              fontFamily:
+                "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
             }}
           >
             {sampleCode}

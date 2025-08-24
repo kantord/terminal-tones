@@ -111,7 +111,7 @@ export default async function Home() {
 
                     {/* Center overlay preview */}
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-0">
-                      <div className="w-[45%] aspect-square overflow-hidden rounded-lg shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-20">
+                      <div className="w-[45%] aspect-square overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] z-20">
                         <div className="w-full h-full">
                         {themes[photo.id] ? (
                           <ClientSyntaxPreview
@@ -119,6 +119,7 @@ export default async function Home() {
                             language="typescript"
                             idSeed={photo.id}
                             fontSizePx={10}
+                            backgroundOpacity={0.85}
                           />
                         ) : (
                           <ImageThemePreview
@@ -126,6 +127,7 @@ export default async function Home() {
                             language="typescript"
                             idSeed={photo.id}
                             fontSizePx={10}
+                            backgroundOpacity={0.85}
                           />
                         )}
                         </div>
