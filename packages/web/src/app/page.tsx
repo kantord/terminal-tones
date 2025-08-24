@@ -31,30 +31,35 @@ async function getUnsplashWallpapers(count: number = 12): Promise<UnsplashPhoto[
     return [];
   }
 
-  const url = new URL("https://api.unsplash.com/topics/wallpapers/photos");
-  url.searchParams.set("per_page", String(count));
-  url.searchParams.set("order_by", "latest");
+  const perPage = Math.min(30, Math.max(1, count));
+  const pages = Math.ceil(count / perPage);
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Client-ID ${accessKey}`,
-      "Accept-Version": "v1",
-    },
-    // Cache on the server to avoid rate limits; for static export this
-    // is evaluated at build time.
-    next: { revalidate: 60 * 60 },
+  const requests = Array.from({ length: pages }, (_, i) => {
+    const url = new URL("https://api.unsplash.com/topics/wallpapers/photos");
+    url.searchParams.set("per_page", String(perPage));
+    url.searchParams.set("order_by", "latest");
+    url.searchParams.set("page", String(i + 1));
+
+    return fetch(url.toString(), {
+      headers: {
+        Authorization: `Client-ID ${accessKey}`,
+        "Accept-Version": "v1",
+      },
+      next: { revalidate: 60 * 60 },
+    });
   });
 
-  if (!response.ok) {
-    return [];
-  }
+  const responses = await Promise.all(requests);
+  const okResponses = responses.filter((r) => r.ok);
+  if (okResponses.length === 0) return [];
 
-  const data = (await response.json()) as UnsplashPhoto[];
-  return Array.isArray(data) ? data : [];
+  const pagesData = await Promise.all(okResponses.map((r) => r.json())) as UnsplashPhoto[][];
+  const all = pagesData.flat().slice(0, count);
+  return Array.isArray(all) ? all : [];
 }
 
 export default async function Home() {
-  const photos = await getUnsplashWallpapers(12);
+  const photos = await getUnsplashWallpapers(48);
   // const referenceOkhsl = REFERENCE_PALETTE_DARK.map(([c]) => c);
 
   // Compute base16 palettes on the server during build time
