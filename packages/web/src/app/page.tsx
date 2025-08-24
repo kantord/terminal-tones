@@ -84,7 +84,7 @@ export default async function Home() {
         {photos.length > 0 && (
           <section className="w-full">
             <h2 className="mb-3 text-xl font-semibold tracking-tight">Wallpapers from Unsplash</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="columns-2 gap-6 [column-fill:_balance]">
               {photos.map((photo) => {
                 const photoAlt = photo.alt_description ?? `Photo by ${photo.user.name}`;
                 const photoLink = `${photo.links.html}?utm_source=terminal-tones&utm_medium=referral`;
@@ -92,42 +92,47 @@ export default async function Home() {
                 return (
                   <div
                     key={photo.id}
-                    className="rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm"
+                    className="relative inline-block w-full mb-6 [break-inside:avoid]"
                   >
-                    <div className="grid grid-cols-1 lg:grid-cols-2">
-                      <a
-                        href={photoLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block group"
-                      >
-                        <Image
-                          src={photo.urls.regular || photo.urls.small}
-                          alt={photoAlt}
-                          width={1200}
-                          height={800}
-                          className="w-full h-full object-cover max-h-72 lg:max-h-full transition-transform duration-300 group-hover:scale-[1.02]"
-                        />
-                      </a>
+                    <a
+                      href={photoLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Image
+                        src={photo.urls.regular || photo.urls.small}
+                        alt={photoAlt}
+                        width={1200}
+                        height={800}
+                        className="w-full h-auto object-contain"
+                      />
+                    </a>
 
-                      <div className="p-4">
+                    {/* Center overlay preview */}
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-2">
+                      <div className="w-[45%] aspect-square drop-shadow-2xl overflow-hidden rounded-lg">
+                        <div className="w-full h-full">
                         {themes[photo.id] ? (
                           <ClientSyntaxPreview
                             okhslBase16={themes[photo.id]}
                             language="typescript"
                             idSeed={photo.id}
+                            fontSizePx={10}
                           />
                         ) : (
                           <ImageThemePreview
                             imageUrl={photo.urls.regular || photo.urls.small}
                             language="typescript"
                             idSeed={photo.id}
+                            fontSizePx={10}
                           />
                         )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1 border-t border-black/5 dark:border-white/5">
+                    <div className="py-2 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
                       <span>Photo by</span>
                       <a href={userLink} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                         {photo.user.name}

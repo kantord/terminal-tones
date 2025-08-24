@@ -10,6 +10,7 @@ interface SyntaxPreviewProps {
   language?: string;
   code?: string;
   idSeed?: string;
+  fontSizePx?: number;
 }
 
 // Sample code for different languages
@@ -307,6 +308,7 @@ function getEffectiveColorsFromOkhsl(base16Okhsl?: OkhslColor[] | null) {
 function generateBase16CSS(
   base16Okhsl: OkhslColor[] | null | undefined,
   uniqueId: string,
+  fontSizePx: number,
 ): string {
   const colors = getEffectiveColorsFromOkhsl(base16Okhsl);
 
@@ -319,7 +321,7 @@ function generateBase16CSS(
       color: ${colors.base05} !important;
       border-radius: 6px !important;
       font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
-      font-size: 14px !important;
+      font-size: ${fontSizePx}px !important;
       line-height: 1.5 !important;
       margin: 0 !important;
     }
@@ -388,6 +390,7 @@ export function SyntaxPreview({
   language = "javascript",
   code,
   idSeed,
+  fontSizePx = 14,
 }: SyntaxPreviewProps) {
   const codeRef = useRef<HTMLElement>(null);
   const styleRef = useRef<HTMLStyleElement | null>(null);
@@ -425,7 +428,7 @@ export function SyntaxPreview({
     // Create and inject new style
     styleRef.current = document.createElement("style");
     styleRef.current.setAttribute("data-syntax-preview", uniqueId);
-    const css = generateBase16CSS(okhslBase16 || null, uniqueId);
+    const css = generateBase16CSS(okhslBase16 || null, uniqueId, fontSizePx);
     styleRef.current.textContent = css;
     document.head.appendChild(styleRef.current);
 
@@ -449,7 +452,7 @@ export function SyntaxPreview({
         styleRef.current = null;
       }
     };
-  }, [okhslBase16, language, sampleCode, uniqueId]);
+  }, [okhslBase16, language, sampleCode, uniqueId, fontSizePx]);
 
   // Use effective colors for inline styles
   const safeColors = {
@@ -467,7 +470,7 @@ export function SyntaxPreview({
             color: safeColors.color,
             padding: "1rem",
             margin: 0,
-            fontSize: "14px",
+            fontSize: `${fontSizePx}px`,
             lineHeight: "1.5",
             fontFamily:
               "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",

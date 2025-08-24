@@ -9,10 +9,12 @@ export default function ImageThemePreview({
   imageUrl,
   idSeed,
   language = "typescript",
+  fontSizePx = 8,
 }: {
   imageUrl: string;
   idSeed?: string;
   language?: string;
+  fontSizePx?: number;
 }) {
   const [base16, setBase16] = useState<OkhslColor[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,5 +59,5 @@ export default function ImageThemePreview({
     );
   }
 
-  return <SyntaxPreview okhslBase16={base16} language={language} idSeed={idSeed} />;
+  return <SyntaxPreview okhslBase16={base16} language={language} idSeed={idSeed} fontSizePx={fontSizePx} />;
 }

@@ -8,10 +8,12 @@ export default function ClientSyntaxPreview({
   okhslBase16,
   language,
   idSeed,
+  fontSizePx,
 }: {
   okhslBase16?: OkhslColor[] | null;
   language?: string;
   idSeed?: string;
+  fontSizePx?: number;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -28,6 +30,7 @@ export default function ClientSyntaxPreview({
       okhslBase16={okhslBase16}
       language={language}
       idSeed={idSeed}
+      fontSizePx={fontSizePx}
     />
   );
 }
