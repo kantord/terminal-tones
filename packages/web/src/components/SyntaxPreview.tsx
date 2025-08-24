@@ -320,10 +320,15 @@ function generateBase16CSS(
       background: ${colors.base00} !important;
       color: ${colors.base05} !important;
       border-radius: 6px !important;
+      border: none !important;
       font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
       font-size: ${fontSizePx}px !important;
       line-height: 1.5 !important;
       margin: 0 !important;
+    }
+
+    .syntax-preview-${uniqueId} pre {
+      border: none !important;
     }
 
     .syntax-preview-${uniqueId} .hljs-comment,
@@ -462,7 +467,7 @@ export function SyntaxPreview({
 
   return (
     <div ref={containerRef} className={`syntax-preview syntax-preview-${uniqueId}`}>
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="rounded-lg overflow-hidden">
         <pre
           className="m-0"
           style={{

@@ -110,8 +110,8 @@ export default async function Home() {
                     </a>
 
                     {/* Center overlay preview */}
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-2">
-                      <div className="w-[45%] aspect-square drop-shadow-2xl overflow-hidden rounded-lg">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-0">
+                      <div className="w-[45%] aspect-square overflow-hidden rounded-lg shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-20">
                         <div className="w-full h-full">
                         {themes[photo.id] ? (
                           <ClientSyntaxPreview
