@@ -18,6 +18,7 @@ export async function findLowestEntropyPosition(
   overlayWidthPercent: number = 45,
   overlayAspectRatio: number = 1,
   downscaleTargetWidth: number = 320,
+  edgePaddingPercent: number = 5,
 ): Promise<EntropyPositionResult> {
   const response = await fetch(imageUrl);
   if (!response.ok) {
@@ -53,15 +54,21 @@ export async function findLowestEntropyPosition(
     overlayHeightPx = Math.max(1, Math.floor(overlayHeightPx * scale));
   }
 
-  const maxLeft = Math.max(0, width - overlayWidthPx);
-  const maxTop = Math.max(0, height - overlayHeightPx);
+  const padPxX = Math.max(0, Math.round((edgePaddingPercent / 100) * width));
+  const padPxY = Math.max(0, Math.round((edgePaddingPercent / 100) * height));
 
+  const minLeft = padPxX;
+  const minTop = padPxY;
+  const maxLeft = Math.max(minLeft, width - overlayWidthPx - padPxX);
+  const maxTop = Math.max(minTop, height - overlayHeightPx - padPxY);
+
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   const candidates: Array<{ key: OverlayPositionKey; left: number; top: number }> = [
-    { key: "top-left", left: 0, top: 0 },
-    { key: "top-right", left: maxLeft, top: 0 },
-    { key: "bottom-left", left: 0, top: maxTop },
+    { key: "top-left", left: minLeft, top: minTop },
+    { key: "top-right", left: maxLeft, top: minTop },
+    { key: "bottom-left", left: minLeft, top: maxTop },
     { key: "bottom-right", left: maxLeft, top: maxTop },
-    { key: "center", left: Math.round(maxLeft / 2), top: Math.round(maxTop / 2) },
+    { key: "center", left: clamp(Math.round((minLeft + maxLeft) / 2), minLeft, maxLeft), top: clamp(Math.round((minTop + maxTop) / 2), minTop, maxTop) },
   ];
 
   let best = { key: "center" as OverlayPositionKey, left: Math.round(maxLeft / 2), top: Math.round(maxTop / 2), entropy: Number.POSITIVE_INFINITY };

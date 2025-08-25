@@ -88,7 +88,7 @@ export default async function Home() {
         const url = p?.urls?.regular || p?.urls?.small;
         if (!url) return [p.id, { leftPercent: 27.5, topPercent: 27.5 }] as const; // ~center for 45% width
         try {
-          const { leftPercent, topPercent } = await findLowestEntropyPosition(url, 45, 1, 320);
+          const { leftPercent, topPercent } = await findLowestEntropyPosition(url, 45, 1, 320, 5);
           return [p.id, { leftPercent, topPercent }] as const;
         } catch {
           // Fallback to center-like default
