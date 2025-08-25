@@ -1,6 +1,7 @@
 import Image from "@/components/image";
 import ClientSyntaxPreview from "@/components/ClientSyntaxPreview";
 import ImageThemePreview from "@/components/ImageThemePreview";
+import { findLowestEntropyPosition } from "@/lib/entropy";
 import { REFERENCE_PALETTE_DARK, type OkhslColor } from "@terminal-tones/theme-generator";
 import { generateInitialThemeFromSource } from "@terminal-tones/theme-generator/preconfigured";
 
@@ -80,6 +81,23 @@ export default async function Home() {
     ),
   );
 
+  // Compute suggested overlay positions via server-side entropy on downscaled images
+  const overlayPositions: Record<string, { leftPercent: number; topPercent: number }> = Object.fromEntries(
+    await Promise.all(
+      photos.map(async (p) => {
+        const url = p?.urls?.regular || p?.urls?.small;
+        if (!url) return [p.id, { leftPercent: 27.5, topPercent: 27.5 }] as const; // ~center for 45% width
+        try {
+          const { leftPercent, topPercent } = await findLowestEntropyPosition(url, 45, 1, 320);
+          return [p.id, { leftPercent, topPercent }] as const;
+        } catch {
+          // Fallback to center-like default
+          return [p.id, { leftPercent: 27.5, topPercent: 27.5 }] as const;
+        }
+      }),
+    ),
+  );
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -114,9 +132,18 @@ export default async function Home() {
                       />
                     </a>
 
-                    {/* Center overlay preview */}
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-0">
-                      <div className="w-[45%] aspect-square overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] z-20">
+                    {/* Entropy‑based overlay preview positioning */}
+                    <div className="pointer-events-none absolute inset-0 p-0">
+                      <div
+                        className="absolute overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] z-20"
+                        style={{
+                          // Use percentage-based placement for responsiveness
+                          left: `${overlayPositions[photo.id]?.leftPercent ?? 27.5}%`,
+                          top: `${overlayPositions[photo.id]?.topPercent ?? 27.5}%`,
+                          width: `45%`,
+                          aspectRatio: '1 / 1',
+                        }}
+                      >
                         <div className="w-full h-full">
                         {themes[photo.id] ? (
                           <ClientSyntaxPreview
