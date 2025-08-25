@@ -1,6 +1,6 @@
 import sharp from "sharp";
 
-export type OverlayPositionKey = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+export type OverlayPositionKey = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center" | "grid";
 
 export interface EntropyPositionResult {
   key: OverlayPositionKey;
@@ -19,6 +19,7 @@ export async function findLowestEntropyPosition(
   overlayAspectRatio: number = 1,
   downscaleTargetWidth: number = 320,
   edgePaddingPercent: number = 5,
+  gridSteps: number = 5,
 ): Promise<EntropyPositionResult> {
   const response = await fetch(imageUrl);
   if (!response.ok) {
@@ -62,16 +63,18 @@ export async function findLowestEntropyPosition(
   const maxLeft = Math.max(minLeft, width - overlayWidthPx - padPxX);
   const maxTop = Math.max(minTop, height - overlayHeightPx - padPxY);
 
-  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-  const candidates: Array<{ key: OverlayPositionKey; left: number; top: number }> = [
-    { key: "top-left", left: minLeft, top: minTop },
-    { key: "top-right", left: maxLeft, top: minTop },
-    { key: "bottom-left", left: minLeft, top: maxTop },
-    { key: "bottom-right", left: maxLeft, top: maxTop },
-    { key: "center", left: clamp(Math.round((minLeft + maxLeft) / 2), minLeft, maxLeft), top: clamp(Math.round((minTop + maxTop) / 2), minTop, maxTop) },
-  ];
+  const candidates: Array<{ key: OverlayPositionKey; left: number; top: number }> = [];
+  const steps = Math.max(1, Math.floor(gridSteps));
+  const denom = Math.max(1, steps - 1);
+  for (let yi = 0; yi < steps; yi++) {
+    for (let xi = 0; xi < steps; xi++) {
+      const left = Math.round(minLeft + ((maxLeft - minLeft) * xi) / denom);
+      const top = Math.round(minTop + ((maxTop - minTop) * yi) / denom);
+      candidates.push({ key: "grid", left, top });
+    }
+  }
 
-  let best = { key: "center" as OverlayPositionKey, left: Math.round(maxLeft / 2), top: Math.round(maxTop / 2), entropy: Number.POSITIVE_INFINITY };
+  let best = { key: "grid" as OverlayPositionKey, left: Math.round((minLeft + maxLeft) / 2), top: Math.round((minTop + maxTop) / 2), entropy: Number.POSITIVE_INFINITY };
 
   for (const c of candidates) {
     const e = entropyForRegion(gray, width, height, c.left, c.top, overlayWidthPx, overlayHeightPx);
