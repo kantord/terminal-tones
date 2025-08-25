@@ -58,6 +58,15 @@ export async function findLowestEntropyPosition(
   const padPxX = Math.max(0, Math.round((edgePaddingPercent / 100) * width));
   const padPxY = Math.max(0, Math.round((edgePaddingPercent / 100) * height));
 
+  // If overlay does not fit within padded bounds, shrink it proportionally
+  const usableWidth = Math.max(1, width - 2 * padPxX);
+  const usableHeight = Math.max(1, height - 2 * padPxY);
+  if (overlayWidthPx > usableWidth || overlayHeightPx > usableHeight) {
+    const scale = Math.min(usableWidth / overlayWidthPx, usableHeight / overlayHeightPx);
+    overlayWidthPx = Math.max(1, Math.floor(overlayWidthPx * scale));
+    overlayHeightPx = Math.max(1, Math.floor(overlayHeightPx * scale));
+  }
+
   const minLeft = padPxX;
   const minTop = padPxY;
   const maxLeft = Math.max(minLeft, width - overlayWidthPx - padPxX);
@@ -74,12 +83,15 @@ export async function findLowestEntropyPosition(
     }
   }
 
-  let best = { key: "grid" as OverlayPositionKey, left: Math.round((minLeft + maxLeft) / 2), top: Math.round((minTop + maxTop) / 2), entropy: Number.POSITIVE_INFINITY };
+  // Compute gradient magnitude image once (Sobel)
+  const { grad, gradMax } = computeSobelGradient(gray, width, height);
+
+  let best = { key: "grid" as OverlayPositionKey, left: Math.round((minLeft + maxLeft) / 2), top: Math.round((minTop + maxTop) / 2), score: Number.POSITIVE_INFINITY };
 
   for (const c of candidates) {
-    const e = entropyForRegion(gray, width, height, c.left, c.top, overlayWidthPx, overlayHeightPx);
-    if (e < best.entropy) {
-      best = { ...c, entropy: e };
+    const s = scoreForRegion(gray, grad, width, height, c.left, c.top, overlayWidthPx, overlayHeightPx, gradMax);
+    if (s < best.score) {
+      best = { ...c, score: s };
     }
   }
 
@@ -124,6 +136,83 @@ function entropyForRegion(
     entropy -= p * Math.log2(p);
   }
   return entropy;
+}
+
+function computeSobelGradient(gray: Uint8Array, width: number, height: number): { grad: Float32Array; gradMax: number } {
+  const grad = new Float32Array(width * height);
+  let maxVal = 0;
+  // Skip borders to avoid bounds checks; treat borders as zero gradient
+  for (let y = 1; y < height - 1; y++) {
+    const ym1 = y - 1;
+    const yp1 = y + 1;
+    const rowOff = y * width;
+    const rowOffM1 = ym1 * width;
+    const rowOffP1 = yp1 * width;
+    for (let x = 1; x < width - 1; x++) {
+      const xm1 = x - 1;
+      const xp1 = x + 1;
+      const p00 = gray[rowOffM1 + xm1];
+      const p01 = gray[rowOffM1 + x];
+      const p02 = gray[rowOffM1 + xp1];
+      const p10 = gray[rowOff + xm1];
+      const p11 = gray[rowOff + x];
+      const p12 = gray[rowOff + xp1];
+      const p20 = gray[rowOffP1 + xm1];
+      const p21 = gray[rowOffP1 + x];
+      const p22 = gray[rowOffP1 + xp1];
+
+      const gx = -p00 + p02 - 2 * p10 + 2 * p12 - p20 + p22;
+      const gy = -p00 - 2 * p01 - p02 + p20 + 2 * p21 + p22;
+      const mag = Math.hypot(gx, gy);
+      grad[rowOff + x] = mag;
+      if (mag > maxVal) maxVal = mag;
+    }
+  }
+  return { grad, gradMax: maxVal > 0 ? maxVal : 1 };
+}
+
+function scoreForRegion(
+  gray: Uint8Array,
+  grad: Float32Array,
+  width: number,
+  height: number,
+  left: number,
+  top: number,
+  regionWidth: number,
+  regionHeight: number,
+  gradMax: number,
+): number {
+  const clampedLeft = Math.max(0, Math.min(left, Math.max(0, width - regionWidth)));
+  const clampedTop = Math.max(0, Math.min(top, Math.max(0, height - regionHeight)));
+
+  let sumGrad = 0;
+  let sum = 0;
+  let sumSq = 0;
+  const n = regionWidth * regionHeight;
+  if (n <= 0) return Number.POSITIVE_INFINITY;
+
+  for (let y = 0; y < regionHeight; y++) {
+    const idxRow = (clampedTop + y) * width + clampedLeft;
+    for (let x = 0; x < regionWidth; x++) {
+      const g = grad[idxRow + x];
+      sumGrad += g;
+      const v = gray[idxRow + x];
+      sum += v;
+      sumSq += v * v;
+    }
+  }
+
+  const meanGrad = sumGrad / n;
+  const mean = sum / n;
+  const variance = Math.max(0, sumSq / n - mean * mean);
+  const stdDev = Math.sqrt(variance);
+
+  // Normalize
+  const meanGradNorm = meanGrad / gradMax;
+  const stdDevNorm = stdDev / 128; // std dev roughly <= ~127.5
+
+  const score = 0.8 * meanGradNorm + 0.2 * stdDevNorm;
+  return score;
 }
 
 function centerFallback(overlayWidthPercent: number): EntropyPositionResult {
