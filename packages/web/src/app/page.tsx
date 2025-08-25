@@ -121,7 +121,7 @@ export default async function Home() {
                       href={photoLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block"
+                      className="block relative"
                     >
                       <Image
                         src={photo.urls.regular || photo.urls.small}
@@ -130,41 +130,40 @@ export default async function Home() {
                         height={800}
                         className="w-full h-auto object-contain"
                       />
-                    </a>
-
-                    {/* Entropy‑based overlay preview positioning */}
-                    <div className="pointer-events-none absolute inset-0 p-0">
-                      <div
-                        className="absolute overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] z-20"
-                        style={{
-                          // Use percentage-based placement for responsiveness
-                          left: `${overlayPositions[photo.id]?.leftPercent ?? 27.5}%`,
-                          top: `${overlayPositions[photo.id]?.topPercent ?? 27.5}%`,
-                          width: `45%`,
-                          aspectRatio: '1 / 1',
-                        }}
-                      >
-                        <div className="w-full h-full">
-                        {themes[photo.id] ? (
-                          <ClientSyntaxPreview
-                            okhslBase16={themes[photo.id]}
-                            language="typescript"
-                            idSeed={photo.id}
-                            fontSizePx={10}
-                            backgroundOpacity={0.85}
-                          />
-                        ) : (
-                          <ImageThemePreview
-                            imageUrl={photo.urls.regular || photo.urls.small}
-                            language="typescript"
-                            idSeed={photo.id}
-                            fontSizePx={10}
-                            backgroundOpacity={0.85}
-                          />
-                        )}
+                      {/* Entropy‑based overlay preview positioning (relative to the image only) */}
+                      <div className="pointer-events-none absolute inset-0 p-0">
+                        <div
+                          className="absolute overflow-hidden rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] z-20"
+                          style={{
+                            // Use percentage-based placement for responsiveness
+                            left: `${overlayPositions[photo.id]?.leftPercent ?? 27.5}%`,
+                            top: `${overlayPositions[photo.id]?.topPercent ?? 27.5}%`,
+                            width: `45%`,
+                            aspectRatio: '1 / 1',
+                          }}
+                        >
+                          <div className="w-full h-full">
+                          {themes[photo.id] ? (
+                            <ClientSyntaxPreview
+                              okhslBase16={themes[photo.id]}
+                              language="typescript"
+                              idSeed={photo.id}
+                              fontSizePx={10}
+                              backgroundOpacity={0.85}
+                            />
+                          ) : (
+                            <ImageThemePreview
+                              imageUrl={photo.urls.regular || photo.urls.small}
+                              language="typescript"
+                              idSeed={photo.id}
+                              fontSizePx={10}
+                              backgroundOpacity={0.85}
+                            />
+                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </a>
 
                     <div className="py-2 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
                       <span>Photo by</span>
