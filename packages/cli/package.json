@@ -18,5 +18,9 @@
   },
   "dependencies": {
     "commander": "^14.0.0"
+  },
+  "devDependencies": {
+    "execa": "^9.6.0",
+    "strip-ansi": "^7.1.0"
   }
 }

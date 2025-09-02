@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`terminal-tones --help > prints help and exits 0 1`] = `
+"Usage: terminal-tones [options] [command]
+
+A command line tool for generating terminal color schemes
+
+Options:
+  -h, --help         display help for command
+
+Commands:
+  from-image <path>  Generate a color scheme from an image
+  help [command]     display help for command"
+`;

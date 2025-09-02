@@ -6,7 +6,8 @@
   "scripts": {
     "cli": "pnpm --filter cli",
     "format": "prettier . --write",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +28,7 @@
     "prettier": "^3.6.2",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.41.0"
+    "typescript-eslint": "^8.41.0",
+    "vitest": "^3.2.4"
   }
 }

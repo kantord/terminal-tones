@@ -11,4 +11,4 @@ program
   .description("Generate a color scheme from an image")
   .argument("<path>", "path to image file");
 
-program.parse();
+await program.parseAsync();
