@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "cli": "pnpm --filter cli",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "lint": "eslint . --fix"
   },
   "keywords": [],
   "author": "",
