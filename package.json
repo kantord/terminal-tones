@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "cli": "pnpm --filter cli"
+    "cli": "pnpm --filter cli",
+    "format": "prettier . --write"
   },
   "keywords": [],
   "author": "",
