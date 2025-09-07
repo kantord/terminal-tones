@@ -3,11 +3,10 @@
 exports[`generateColorScheme() > returns the correct values 1`] = `
 {
   "terminal": [
-    "#d3d9d0",
     "#85794e",
+    "#d3d9d0",
     "#8eb4a8",
     "#5f7c39",
-    "#121909",
     "#c39b45",
     "#5e552e",
     "#3f5d22",
@@ -17,8 +16,9 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
     "#2a421e",
     "#423e22",
     "#c2492e",
+    "#090f06",
     "#243231",
-    "#872111",
+    "#1c2f0d",
   ],
 }
 `;
@@ -26,22 +26,22 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
 exports[`generateColorScheme() > returns the correct values 2`] = `
 {
   "terminal": [
-    "#c5cac1",
     "#8f8b74",
+    "#c5ccc1",
     "#747562",
     "#a3b4a3",
     "#695337",
-    "#141108",
     "#8f9f9f",
     "#4a4c38",
     "#432d18",
     "#5c615e",
+    "#0b0c05",
     "#2e301d",
     "#c43644",
     "#8e1e25",
-    "#2d3935",
-    "#c07942",
-    "#a6ac74",
+    "#1f1a0b",
+    "#2e1e0b",
+    "#c2777c",
   ],
 }
 `;
