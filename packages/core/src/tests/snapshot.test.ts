@@ -7,8 +7,8 @@ function isValidHexColor(str) {
 }
 
 describe('generateColorScheme()', () => {
-  it('returns the correct values', async () => {
-    const imagePath = path.join(__dirname, "images", "image1.jpg")
+  it.each([1, 2])('returns the correct values', async (number) => {
+    const imagePath = path.join(__dirname, "images", `image${number}.jpg`)
 
     const results = await generateColorScheme(imagePath)
 

@@ -22,3 +22,26 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
   ],
 }
 `;
+
+exports[`generateColorScheme() > returns the correct values 2`] = `
+{
+  "terminal": [
+    "#c5cac1",
+    "#8f8b74",
+    "#747562",
+    "#a3b4a3",
+    "#695337",
+    "#141108",
+    "#8f9f9f",
+    "#4a4c38",
+    "#432d18",
+    "#5c615e",
+    "#2e301d",
+    "#c43644",
+    "#8e1e25",
+    "#2d3935",
+    "#c07942",
+    "#a6ac74",
+  ],
+}
+`;
