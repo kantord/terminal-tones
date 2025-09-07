@@ -8,6 +8,7 @@
     "core": "pnpm --filter core",
     "format": "prettier . --write",
     "lint": "eslint . --fix",
+    "type-check": "pnpm -r --filter @terminal-tones/* run type-check",
     "test": "vitest"
   },
   "keywords": [],

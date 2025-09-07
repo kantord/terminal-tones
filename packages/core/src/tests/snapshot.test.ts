@@ -2,13 +2,13 @@ import path from "path";
 import { it, expect, describe } from 'vitest';
 import { generateColorScheme } from "..";
 
-function isValidHexColor(str) {
+function isValidHexColor(str: string) {
   return /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(str);
 }
 
 describe('generateColorScheme()', () => {
-  it.each([1, 2])('returns the correct values', async (number) => {
-    const imagePath = path.join(__dirname, "images", `image${number}.jpg`)
+  it.each([1, 2])('returns the correct values', async (n: number) => {
+    const imagePath = path.join(__dirname, "images", `image${n}.jpg`)
 
     const results = await generateColorScheme(imagePath)
 

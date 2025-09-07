@@ -16,9 +16,12 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsup src/index.ts --dts --format esm,cjs --sourcemap --clean",
-    "dev": "tsx watch src/index.ts --no-warnings"
+    "dev": "tsx watch src/index.ts --no-warnings",
+    "type-check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "colorthief": "^2.6.0"
+    "colorthief": "^2.6.0",
+    "culori": "^4.0.2",
+    "munkres-algorithm": "^1.0.2"
   }
 }
