@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateColorScheme() > returns the correct values 1`] = `
+{
+  "terminal": [
+    "#d3d9d0",
+    "#85794e",
+    "#8eb4a8",
+    "#5f7c39",
+    "#121909",
+    "#c39b45",
+    "#5e552e",
+    "#3f5d22",
+    "#52625d",
+    "#8299a5",
+    "#c3b07a",
+    "#2a421e",
+    "#423e22",
+    "#c2492e",
+    "#243231",
+    "#872111",
+  ],
+}
+`;

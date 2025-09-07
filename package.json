@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "cli": "pnpm --filter cli",
+    "core": "pnpm --filter core",
     "format": "prettier . --write",
     "lint": "eslint . --fix",
     "test": "vitest"

@@ -17,5 +17,8 @@
   "scripts": {
     "build": "tsup src/index.ts --dts --format esm,cjs --sourcemap --clean",
     "dev": "tsx watch src/index.ts --no-warnings"
+  },
+  "dependencies": {
+    "colorthief": "^2.6.0"
   }
 }
