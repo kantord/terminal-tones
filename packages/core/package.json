@@ -15,9 +15,12 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --sourcemap --clean",
+    "build": "tsc -p tsconfig.build.json",
     "dev": "tsx watch src/index.ts --no-warnings",
     "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0"
   },
   "dependencies": {
     "colorthief": "^2.6.0",
