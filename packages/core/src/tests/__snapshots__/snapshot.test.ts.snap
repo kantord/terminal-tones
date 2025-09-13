@@ -4,7 +4,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
 {
   "contrastColors": [
     {
-      "background": "#15230a",
+      "background": "#212011",
     },
     {
       "name": "neutral",
@@ -27,12 +27,12 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 4,
           "name": "neutral400",
-          "value": "#857d5a",
+          "value": "#857e5c",
         },
         {
           "contrast": 5,
           "name": "neutral500",
-          "value": "#83908e",
+          "value": "#83918f",
         },
         {
           "contrast": 6,
@@ -42,7 +42,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 7,
           "name": "neutral700",
-          "value": "#99acb6",
+          "value": "#9aacb6",
         },
         {
           "contrast": 8,
@@ -52,7 +52,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 9,
           "name": "neutral900",
-          "value": "#b4c2c9",
+          "value": "#b5c2c9",
         },
       ],
     },
@@ -67,12 +67,12 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 2,
           "name": "red200",
-          "value": "#574e36",
+          "value": "#574f36",
         },
         {
           "contrast": 3,
           "name": "red300",
-          "value": "#746848",
+          "value": "#746948",
         },
         {
           "contrast": 4,
@@ -92,17 +92,17 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 7,
           "name": "red700",
-          "value": "#baa874",
+          "value": "#bba875",
         },
         {
           "contrast": 8,
           "name": "red800",
-          "value": "#c5b482",
+          "value": "#c5b483",
         },
         {
           "contrast": 9,
           "name": "red900",
-          "value": "#c9c09b",
+          "value": "#c9c09d",
         },
       ],
     },
@@ -117,7 +117,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 2,
           "name": "green200",
-          "value": "#3b5636",
+          "value": "#3c5636",
         },
         {
           "contrast": 3,
@@ -127,7 +127,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 4,
           "name": "green400",
-          "value": "#64846e",
+          "value": "#64856f",
         },
         {
           "contrast": 5,
@@ -137,22 +137,22 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 6,
           "name": "green600",
-          "value": "#80a494",
+          "value": "#80a495",
         },
         {
           "contrast": 7,
           "name": "green700",
-          "value": "#8cb1a5",
+          "value": "#8cb2a5",
         },
         {
           "contrast": 8,
           "name": "green800",
-          "value": "#9abcb2",
+          "value": "#9bbcb2",
         },
         {
           "contrast": 9,
           "name": "green900",
-          "value": "#a9c6bd",
+          "value": "#aac6bd",
         },
       ],
     },
@@ -177,7 +177,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 4,
           "name": "yellow400",
-          "value": "#6b8547",
+          "value": "#6b8648",
         },
         {
           "contrast": 5,
@@ -187,7 +187,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 6,
           "name": "yellow600",
-          "value": "#8fa374",
+          "value": "#8fa375",
         },
         {
           "contrast": 7,
@@ -217,17 +217,17 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 2,
           "name": "blue200",
-          "value": "#893320",
+          "value": "#893421",
         },
         {
           "contrast": 3,
           "name": "blue300",
-          "value": "#b5442b",
+          "value": "#b6442b",
         },
         {
           "contrast": 4,
           "name": "blue400",
-          "value": "#c26235",
+          "value": "#c26335",
         },
         {
           "contrast": 5,
@@ -252,7 +252,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 9,
           "name": "blue900",
-          "value": "#d7bd83",
+          "value": "#d7bd85",
         },
       ],
     },
@@ -267,12 +267,12 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 2,
           "name": "magenta200",
-          "value": "#564f2a",
+          "value": "#574f2b",
         },
         {
           "contrast": 3,
           "name": "magenta300",
-          "value": "#716947",
+          "value": "#716a47",
         },
         {
           "contrast": 4,
@@ -282,7 +282,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 5,
           "name": "magenta500",
-          "value": "#948e74",
+          "value": "#948e75",
         },
         {
           "contrast": 6,
@@ -297,12 +297,12 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 8,
           "name": "magenta800",
-          "value": "#b9b5a4",
+          "value": "#b9b5a5",
         },
         {
           "contrast": 9,
           "name": "magenta900",
-          "value": "#c3c0b1",
+          "value": "#c4c0b2",
         },
       ],
     },
@@ -312,7 +312,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 1,
           "name": "cyan100",
-          "value": "#182121",
+          "value": "#192221",
         },
         {
           "contrast": 2,
@@ -322,12 +322,12 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 3,
           "name": "cyan300",
-          "value": "#56713d",
+          "value": "#57713d",
         },
         {
           "contrast": 4,
           "name": "cyan400",
-          "value": "#6e8458",
+          "value": "#6e8558",
         },
         {
           "contrast": 5,
@@ -337,12 +337,12 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         {
           "contrast": 6,
           "name": "cyan600",
-          "value": "#90a280",
+          "value": "#91a281",
         },
         {
           "contrast": 7,
           "name": "cyan700",
-          "value": "#9fae91",
+          "value": "#a0ae91",
         },
         {
           "contrast": 8,
@@ -382,7 +382,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
 {
   "contrastColors": [
     {
-      "background": "#191109",
+      "background": "#12130c",
     },
     {
       "name": "neutral",
@@ -395,7 +395,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 2,
           "name": "neutral200",
-          "value": "#4f4639",
+          "value": "#4f4539",
         },
         {
           "contrast": 3,
@@ -410,7 +410,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 5,
           "name": "neutral500",
-          "value": "#888571",
+          "value": "#878571",
         },
         {
           "contrast": 6,
@@ -420,7 +420,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 7,
           "name": "neutral700",
-          "value": "#cd8e93",
+          "value": "#cc8e93",
         },
         {
           "contrast": 8,
@@ -440,7 +440,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 1,
           "name": "red100",
-          "value": "#13140d",
+          "value": "#12130c",
         },
         {
           "contrast": 2,
@@ -450,17 +450,17 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 3,
           "name": "red300",
-          "value": "#5f625a",
+          "value": "#5e6259",
         },
         {
           "contrast": 4,
           "name": "red400",
-          "value": "#71766d",
+          "value": "#71766c",
         },
         {
           "contrast": 5,
           "name": "red500",
-          "value": "#81867d",
+          "value": "#81867c",
         },
         {
           "contrast": 6,
@@ -530,7 +530,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 9,
           "name": "green900",
-          "value": "#b4b5ab",
+          "value": "#b4b5aa",
         },
       ],
     },
@@ -540,7 +540,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 1,
           "name": "yellow100",
-          "value": "#260b0d",
+          "value": "#240a0d",
         },
         {
           "contrast": 2,
@@ -555,7 +555,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 4,
           "name": "yellow400",
-          "value": "#bd5259",
+          "value": "#bd5159",
         },
         {
           "contrast": 5,
@@ -565,7 +565,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 6,
           "name": "yellow600",
-          "value": "#ae8a83",
+          "value": "#ae8983",
         },
         {
           "contrast": 7,
@@ -610,17 +610,17 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 5,
           "name": "blue500",
-          "value": "#92826e",
+          "value": "#92826d",
         },
         {
           "contrast": 6,
           "name": "blue600",
-          "value": "#9f907e",
+          "value": "#9e907e",
         },
         {
           "contrast": 7,
           "name": "blue700",
-          "value": "#a99d8d",
+          "value": "#a99c8c",
         },
         {
           "contrast": 8,
@@ -630,7 +630,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 9,
           "name": "blue900",
-          "value": "#bcb3a6",
+          "value": "#bcb2a6",
         },
       ],
     },
@@ -660,7 +660,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 5,
           "name": "magenta500",
-          "value": "#7b8784",
+          "value": "#7a8784",
         },
         {
           "contrast": 6,
@@ -695,7 +695,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 2,
           "name": "cyan200",
-          "value": "#484834",
+          "value": "#474834",
         },
         {
           "contrast": 3,
@@ -715,7 +715,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         {
           "contrast": 6,
           "name": "cyan600",
-          "value": "#929487",
+          "value": "#929387",
         },
         {
           "contrast": 7,
