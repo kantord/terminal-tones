@@ -8,6 +8,9 @@ describe("leonardo import", () => {
     expect(typeof Leonardo).toBe("object");
     expect(Object.keys(Leonardo).length).toBeGreaterThan(0);
     expect("createScale" in Leonardo).toBe(true);
-    expect(typeof (Leonardo as any).createScale).toBe("function");
+    if ("createScale" in Leonardo) {
+      const l = Leonardo as Record<string, unknown>;
+      expect(typeof l.createScale).toBe("function");
+    }
   });
 });

@@ -7,5 +7,5 @@ declare module "colorthief" {
 }
 
 declare module "culori" {
-  export function converter(space: string): (c: unknown) => any;
+  export function converter(space: string): (c: unknown) => unknown;
 }

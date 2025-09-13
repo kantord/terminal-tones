@@ -59,7 +59,7 @@ program
         // computed specifier prevents TS from trying to resolve types here
         "@terminal-tones/" + "core"
       )) as Core);
-    } catch (err) {
+    } catch {
       // Fallback for dev without workspace linking: import source directly
       ({ generateColorScheme } = (await import(
         // Avoid TS resolving the path by computing the specifier
