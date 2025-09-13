@@ -21,7 +21,9 @@ program
   .name("terminal-tones")
   .description("A command line tool for generating terminal color schemes");
 
-type Core = { generateColorScheme(image: string): Promise<{ terminal: string[] }> };
+type ContrastColorValue = { name: string; contrast: number; value: string };
+type ContrastColorGroup = { background: string } | { name: string; values: ContrastColorValue[] };
+type Core = { generateColorScheme(image: string): Promise<{ terminal: string[]; contrastColors: ContrastColorGroup[] }> };
 
 program
   .command("from-image")
@@ -53,13 +55,32 @@ program
       )) as Core);
     }
 
-    const { terminal } = await generateColorScheme(resolvedPath);
+    const { terminal, contrastColors } = await generateColorScheme(resolvedPath);
+
+    // Print terminal 16 colors
+    process.stdout.write("Terminal 16 colors:\n");
     terminal.forEach((hex, i) => {
       const block = colorPreviewBlock(hex);
-      // index padded to 2 chars
       const idx = String(i).padStart(2, " ");
       process.stdout.write(`${idx}  ${hex}  ${block}\n`);
     });
+
+    // Print full contrast color swatches
+    process.stdout.write("\nContrast color swatches:\n");
+    for (const group of contrastColors) {
+      if ("background" in group) {
+        const hex = String(group.background);
+        const block = colorPreviewBlock(hex);
+        process.stdout.write(`bg  ${hex}  ${block}\n`);
+      } else {
+        process.stdout.write(`\n${group.name}:\n`);
+        for (const v of group.values) {
+          const hex = String(v.value);
+          const block = colorPreviewBlock(hex);
+          process.stdout.write(`  ${v.name.padEnd(16)} ${String(v.contrast).padStart(4)}  ${hex}  ${block}\n`);
+        }
+      }
+    }
   });
 
 await program.parseAsync();
