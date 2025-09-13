@@ -7,6 +7,31 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
       "background": "#000000",
     },
     {
+      "name": "neutral",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "neutral100",
+          "value": "#32442e",
+        },
+        {
+          "contrast": 3,
+          "name": "neutral200",
+          "value": "#4c5d54",
+        },
+        {
+          "contrast": 4.5,
+          "name": "neutral300",
+          "value": "#7b7551",
+        },
+        {
+          "contrast": 7,
+          "name": "neutral400",
+          "value": "#8298a4",
+        },
+      ],
+    },
+    {
       "name": "red",
       "values": [
         {
@@ -183,6 +208,31 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
   "contrastColors": [
     {
       "background": "#000000",
+    },
+    {
+      "name": "neutral",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "neutral100",
+          "value": "#4b3d2d",
+        },
+        {
+          "contrast": 3,
+          "name": "neutral200",
+          "value": "#585a54",
+        },
+        {
+          "contrast": 4.5,
+          "name": "neutral300",
+          "value": "#757569",
+        },
+        {
+          "contrast": 7,
+          "name": "neutral400",
+          "value": "#c78287",
+        },
+      ],
     },
     {
       "name": "red",

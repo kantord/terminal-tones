@@ -181,8 +181,8 @@ async function stealPalette(image: InputImage) {
 
 function getContrastPalette(rawColors: CssColor[], baseContrast: number) {
   const ratios = [2, 3, 4.5, 7]
-  const baseBackground = new BackgroundColor({
-    name: "baseBackground",
+  const neutral = new BackgroundColor({
+    name: "neutral",
     colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
     ratios
   });
@@ -196,13 +196,13 @@ function getContrastPalette(rawColors: CssColor[], baseContrast: number) {
     [[6, 14], 'cyan'],
   ];
 
-  const colors = colorPairs.map(([[color1Index, color2Index], name]) => new Color({
+  const colors = [neutral, ...colorPairs.map(([[color1Index, color2Index], name]) => new Color({
     name,
     colorKeys: [rawColors[color1Index], rawColors[color2Index]],
     ratios,
-  }))
+  }))]
 
-  const theme = new Theme({ colors, backgroundColor: baseBackground, lightness: 0 })
+  const theme = new Theme({ colors, backgroundColor: neutral, lightness: 0 })
 
   return theme.contrastColors
 }
