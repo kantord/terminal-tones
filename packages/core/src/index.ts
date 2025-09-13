@@ -13,6 +13,7 @@ type TerminalColors = [
 ];
 type ColorScheme = {
   terminal: TerminalColors;
+  contrastColors: Theme['contrastColors'];
 };
 
 export type DiffWeightOverrides = { wL?: number; wS?: number; wH?: number };
@@ -186,16 +187,16 @@ function getContrastPalette(rawColors: CssColor[], baseContrast: number) {
     ratios
   });
 
-  const colorPairs = [
-    [[1, 9], "red"],
-    [[2, 10], "green"],
-    [[3, 11], "yellow"],
-    [[4, 12], "blue"],
-    [[5, 13], "magenta"],
-    [[6, 14], "cyan"],
-  ]
+  const colorPairs: Array<[[number, number], string]> = [
+    [[1, 9], 'red'],
+    [[2, 10], 'green'],
+    [[3, 11], 'yellow'],
+    [[4, 12], 'blue'],
+    [[5, 13], 'magenta'],
+    [[6, 14], 'cyan'],
+  ];
 
-  const colors = colorPairs.map(([[color1Index, color2Index], name]: [[number, number], string]) => new Color({
+  const colors = colorPairs.map(([[color1Index, color2Index], name]) => new Color({
     name,
     colorKeys: [rawColors[color1Index], rawColors[color2Index]],
     ratios,
