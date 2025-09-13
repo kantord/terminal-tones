@@ -2,6 +2,7 @@ import { Command } from "commander";
 import fs from "fs";
 import path from "path";
 import { renderCodePreview } from "./preview";
+import type { ColorScheme, GenerateOptions } from "@terminal-tones/core";
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const s = hex.replace(/^#/, "");
@@ -31,15 +32,11 @@ program
   .name("terminal-tones")
   .description("A command line tool for generating terminal color schemes");
 
-type ContrastColorValue = { name: string; contrast: number; value: string };
-type ContrastColorGroup =
-  | { background: string }
-  | { name: string; values: ContrastColorValue[] };
 type Core = {
   generateColorScheme(
     image: string,
-    options?: { lightnessMultiplier?: number },
-  ): Promise<{ terminal: string[]; contrastColors: ContrastColorGroup[] }>;
+    options?: GenerateOptions,
+  ): Promise<ColorScheme>;
 };
 
 program

@@ -92,7 +92,7 @@ export async function renderCodePreview(
     return;
   }
 
-  const highlighted = highlightFn(sample, {
+  const highlighted = highlightFn!(sample, {
     language: "ts",
     theme,
     ignoreIllegals: true,
@@ -109,4 +109,3 @@ export async function renderCodePreview(
     process.stdout.write(startBg + line + " ".repeat(pad) + reset + "\n");
   }
 }
-

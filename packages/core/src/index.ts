@@ -1,40 +1,22 @@
-import {
-  BackgroundColor,
-  Color,
-  Theme,
-  type CssColor,
-} from "@adobe/leonardo-contrast-colors";
+import { BackgroundColor, Color, Theme, type CssColor } from "@adobe/leonardo-contrast-colors";
+import type {
+  ImageFilePath,
+  InputImage,
+  TerminalColors,
+  ColorScheme,
+  DiffWeightOverrides,
+  RefEntry,
+  OKHSL,
+  LHSWeights,
+  AssignmentDetail,
+  AssignmentResult,
+  GenerateOptions,
+} from "./types";
 import { getPalette } from "colorthief";
 import { converter } from "culori";
 import { minWeightAssign } from "munkres-algorithm";
 
-type ImageFilePath = string;
-type InputImage = HTMLImageElement | ImageFilePath;
-type TerminalColors = [
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-  CssColor,
-];
-type ColorScheme = {
-  terminal: TerminalColors;
-  contrastColors: Theme["contrastColors"];
-};
-
-export type DiffWeightOverrides = { wL?: number; wS?: number; wH?: number };
-export type RefEntry = [hex: string, weights?: DiffWeightOverrides];
+export * from "./types";
 
 export const REFERENCE_COLORS: RefEntry[] = [
   ["#000000", { wL: 8, wH: 0, wS: 0 }], // 0 black
@@ -56,13 +38,6 @@ export const REFERENCE_COLORS: RefEntry[] = [
   ["#ffa500", { wL: 5, wS: 3, wH: 5 }], // 16 orange
 ];
 
-type OKHSL = {
-  mode: "okhsl";
-  h?: number;
-  s?: number;
-  l?: number;
-  alpha?: number;
-};
 const toOkhsl = converter("okhsl") as (c: string | { mode?: string }) => OKHSL;
 
 function isHexColor(s: string): boolean {
@@ -86,13 +61,6 @@ export function okhslDiff(aHex: string, bHex: string) {
   };
 }
 
-export type LHSWeights = {
-  wL?: number;
-  wS?: number;
-  wH?: number;
-  normalizeHue?: boolean;
-};
-
 const DEFAULT_WEIGHTS: Required<LHSWeights> = {
   wL: 1,
   wS: 1,
@@ -108,21 +76,6 @@ function lhsCost(
   const hTerm = normalizeHue ? d.dH / 180 : d.dH;
   return wL * d.dL + wS * d.dS + wH * hTerm;
 }
-
-export type AssignmentDetail = {
-  terminalIndex: number;
-  inputIndex: number;
-  dL: number;
-  dS: number;
-  dH: number;
-  cost: number;
-};
-
-export type AssignmentResult = {
-  mapping: number[];
-  totalCost: number;
-  details: AssignmentDetail[];
-};
 
 function buildCostMatrix(inputs: string[], weights: LHSWeights): number[][] {
   const refs = REFERENCE_COLORS.map(([hex]) => toOkhsl(hex));
@@ -297,11 +250,6 @@ function getContrastPalette(
 
   return theme.contrastColors;
 }
-
-export type GenerateOptions = {
-  lightnessMultiplier?: number;
-  contrastMultiplier?: number;
-};
 
 export async function generateColorScheme(
   image: InputImage,
