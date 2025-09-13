@@ -1,3 +1,4 @@
+import { BackgroundColor, Color, Theme, type CssColor } from '@adobe/leonardo-contrast-colors';
 import { getPalette } from 'colorthief';
 import { converter } from 'culori';
 import { minWeightAssign } from 'munkres-algorithm';
@@ -5,10 +6,10 @@ import { minWeightAssign } from 'munkres-algorithm';
 type ImageFilePath = string;
 type InputImage = HTMLImageElement | ImageFilePath;
 type TerminalColors = [
-  string, string, string, string,
-  string, string, string, string,
-  string, string, string, string,
-  string, string, string, string
+  CssColor, CssColor, CssColor, CssColor,
+  CssColor, CssColor, CssColor, CssColor,
+  CssColor, CssColor, CssColor, CssColor,
+  CssColor, CssColor, CssColor, CssColor
 ];
 type ColorScheme = {
   terminal: TerminalColors;
@@ -177,6 +178,34 @@ async function stealPalette(image: InputImage) {
   );
 }
 
+function getContrastPalette(rawColors: CssColor[], baseContrast: number) {
+  const ratios = [2, 3, 4.5, 7]
+  const baseBackground = new BackgroundColor({
+    name: "baseBackground",
+    colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
+    ratios
+  });
+
+  const colorPairs = [
+    [[1, 9], "red"],
+    [[2, 10], "green"],
+    [[3, 11], "yellow"],
+    [[4, 12], "blue"],
+    [[5, 13], "magenta"],
+    [[6, 14], "cyan"],
+  ]
+
+  const colors = colorPairs.map(([[color1Index, color2Index], name]: [[number, number], string]) => new Color({
+    name,
+    colorKeys: [rawColors[color1Index], rawColors[color2Index]],
+    ratios,
+  }))
+
+  const theme = new Theme({ colors, backgroundColor: baseBackground, lightness: 0 })
+
+  return theme.contrastColors
+}
+
 export async function generateColorScheme(image: InputImage): Promise<ColorScheme> {
   const stolenPalette = await stealPalette(image);
   if (stolenPalette.length < 16) {
@@ -186,6 +215,7 @@ export async function generateColorScheme(image: InputImage): Promise<ColorSchem
   const { mapping } = assignTerminalColorsOKHSL(stolenPalette);
 
   const terminal = mapping.map(idx => normalizeHex(stolenPalette[idx])) as TerminalColors;
+  const contrastColors = getContrastPalette(stolenPalette as CssColor[], 1)
 
-  return { terminal };
+  return { terminal, contrastColors };
 }

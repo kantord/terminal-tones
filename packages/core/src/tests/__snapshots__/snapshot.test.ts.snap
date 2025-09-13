@@ -2,6 +2,161 @@
 
 exports[`generateColorScheme() > returns the correct values 1`] = `
 {
+  "contrastColors": [
+    {
+      "background": "#000000",
+    },
+    {
+      "name": "red",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "red100",
+          "value": "#463f2c",
+        },
+        {
+          "contrast": 3,
+          "name": "red200",
+          "value": "#62583d",
+        },
+        {
+          "contrast": 4.5,
+          "name": "red300",
+          "value": "#807350",
+        },
+        {
+          "contrast": 7,
+          "name": "red400",
+          "value": "#a49467",
+        },
+      ],
+    },
+    {
+      "name": "green",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "green100",
+          "value": "#2d4622",
+        },
+        {
+          "contrast": 3,
+          "name": "green200",
+          "value": "#456043",
+        },
+        {
+          "contrast": 4.5,
+          "name": "green300",
+          "value": "#5c7b64",
+        },
+        {
+          "contrast": 7,
+          "name": "green400",
+          "value": "#799d8c",
+        },
+      ],
+    },
+    {
+      "name": "yellow",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "yellow100",
+          "value": "#434023",
+        },
+        {
+          "contrast": 3,
+          "name": "yellow200",
+          "value": "#515e2e",
+        },
+        {
+          "contrast": 4.5,
+          "name": "yellow300",
+          "value": "#617d3b",
+        },
+        {
+          "contrast": 7,
+          "name": "yellow400",
+          "value": "#879c6a",
+        },
+      ],
+    },
+    {
+      "name": "blue",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "blue100",
+          "value": "#6e291a",
+        },
+        {
+          "contrast": 3,
+          "name": "blue200",
+          "value": "#9a3a24",
+        },
+        {
+          "contrast": 4.5,
+          "name": "blue300",
+          "value": "#c25130",
+        },
+        {
+          "contrast": 7,
+          "name": "blue400",
+          "value": "#c38a40",
+        },
+      ],
+    },
+    {
+      "name": "magenta",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "magenta100",
+          "value": "#454022",
+        },
+        {
+          "contrast": 3,
+          "name": "magenta200",
+          "value": "#625934",
+        },
+        {
+          "contrast": 4.5,
+          "name": "magenta300",
+          "value": "#7c7455",
+        },
+        {
+          "contrast": 7,
+          "name": "magenta400",
+          "value": "#9b957d",
+        },
+      ],
+    },
+    {
+      "name": "cyan",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "cyan100",
+          "value": "#30452a",
+        },
+        {
+          "contrast": 3,
+          "name": "cyan200",
+          "value": "#446128",
+        },
+        {
+          "contrast": 4.5,
+          "name": "cyan300",
+          "value": "#637b4c",
+        },
+        {
+          "contrast": 7,
+          "name": "cyan400",
+          "value": "#889b76",
+        },
+      ],
+    },
+  ],
   "terminal": [
     "#1e1d0e",
     "#872111",
@@ -25,6 +180,161 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
 
 exports[`generateColorScheme() > returns the correct values 2`] = `
 {
+  "contrastColors": [
+    {
+      "background": "#000000",
+    },
+    {
+      "name": "red",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "red100",
+          "value": "#3e4038",
+        },
+        {
+          "contrast": 3,
+          "name": "red200",
+          "value": "#575a52",
+        },
+        {
+          "contrast": 4.5,
+          "name": "red300",
+          "value": "#71766d",
+        },
+        {
+          "contrast": 7,
+          "name": "red400",
+          "value": "#91968d",
+        },
+      ],
+    },
+    {
+      "name": "green",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "green100",
+          "value": "#3f412e",
+        },
+        {
+          "contrast": 3,
+          "name": "green200",
+          "value": "#595b48",
+        },
+        {
+          "contrast": 4.5,
+          "name": "green300",
+          "value": "#747563",
+        },
+        {
+          "contrast": 7,
+          "name": "green400",
+          "value": "#959688",
+        },
+      ],
+    },
+    {
+      "name": "yellow",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "yellow100",
+          "value": "#752029",
+        },
+        {
+          "contrast": 3,
+          "name": "yellow200",
+          "value": "#a42d39",
+        },
+        {
+          "contrast": 4.5,
+          "name": "yellow300",
+          "value": "#bd5259",
+        },
+        {
+          "contrast": 7,
+          "name": "yellow400",
+          "value": "#ad8e87",
+        },
+      ],
+    },
+    {
+      "name": "blue",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "blue100",
+          "value": "#7b1a20",
+        },
+        {
+          "contrast": 3,
+          "name": "blue200",
+          "value": "#6b553a",
+        },
+        {
+          "contrast": 4.5,
+          "name": "blue300",
+          "value": "#84715a",
+        },
+        {
+          "contrast": 7,
+          "name": "blue400",
+          "value": "#a19381",
+        },
+      ],
+    },
+    {
+      "name": "magenta",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "magenta100",
+          "value": "#3f4036",
+        },
+        {
+          "contrast": 3,
+          "name": "magenta200",
+          "value": "#555b53",
+        },
+        {
+          "contrast": 4.5,
+          "name": "magenta300",
+          "value": "#6d7672",
+        },
+        {
+          "contrast": 7,
+          "name": "magenta400",
+          "value": "#899897",
+        },
+      ],
+    },
+    {
+      "name": "cyan",
+      "values": [
+        {
+          "contrast": 2,
+          "name": "cyan100",
+          "value": "#43402c",
+        },
+        {
+          "contrast": 3,
+          "name": "cyan200",
+          "value": "#595b48",
+        },
+        {
+          "contrast": 4.5,
+          "name": "cyan300",
+          "value": "#747566",
+        },
+        {
+          "contrast": 7,
+          "name": "cyan400",
+          "value": "#95968a",
+        },
+      ],
+    },
+  ],
   "terminal": [
     "#0b0c05",
     "#432d18",
