@@ -289,12 +289,14 @@ export async function generateColorScheme(
     );
   }
 
+  // Compute assignment mapping from terminal indices -> input palette indices
   const { mapping } = assignTerminalColorsOKHSL(stolenPalette);
 
-  const contrastColors = getContrastPalette(
-    stolenPalette as CssColor[],
-    1,
-  );
+  // Reorder the input palette to match terminal 0..15 indices
+  const ordered16 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
+
+  // Build contrast palette using the ordered terminal colors as anchors
+  const contrastColors = getContrastPalette(ordered16 as CssColor[], 1);
 
   const terminal: TerminalColors = [
     contrastColors[0].background,
