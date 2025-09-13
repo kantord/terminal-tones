@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "pnpm -w --filter @terminal-tones/core build && tsx src/index.ts",
+    "dev": "pnpm -w --filter @terminal-tones/core build && tsx src/index.ts --",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit -p tsconfig.json",
     "postbuild": "chmod +x dist/index.js || true",
@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "commander": "^14.0.0",
-    "@terminal-tones/core": "workspace:*"
+    "@terminal-tones/core": "workspace:*",
+    "chalk": "^5.3.0",
+    "cli-highlight": "^2.1.11"
   },
   "devDependencies": {
     "execa": "^9.6.0",
