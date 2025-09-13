@@ -1,6 +1,7 @@
 import path from "path";
 import { it, expect, describe } from "vitest";
 import { generateColorScheme } from "..";
+import { converter } from "culori";
 
 function isValidHexColor(str: string) {
   return /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(str);
@@ -18,5 +19,24 @@ describe("generateColorScheme()", () => {
     for (const color of results.terminal) {
       expect(isValidHexColor(color)).toBe(true);
     }
+  });
+
+  it("applies lightness multiplier to background", async () => {
+    const imagePath = path.join(__dirname, "images", `image1.jpg`);
+    const toOkhsl = converter("okhsl") as (c: string) => { l?: number };
+
+    const a = await generateColorScheme(imagePath, { lightnessMultiplier: 1 });
+    const b = await generateColorScheme(imagePath, { lightnessMultiplier: 2 });
+
+    const la = toOkhsl(a.contrastColors[0].background).l ?? 0;
+    const lb = toOkhsl(b.contrastColors[0].background).l ?? 0;
+
+    // Increasing multiplier should not decrease background lightness
+    expect(lb).toBeGreaterThanOrEqual(la - 1e-6);
+    // And should never exceed 1
+    expect(lb).toBeLessThanOrEqual(1);
+
+    // Snapshot ensures the structure stays consistent
+    expect({ a: a.contrastColors[0].background, b: b.contrastColors[0].background }).toMatchSnapshot();
   });
 });

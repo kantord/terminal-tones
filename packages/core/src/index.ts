@@ -226,7 +226,7 @@ async function stealPalette(image: InputImage) {
 
 function getContrastPalette(
   rawColors: CssColor[],
-  baseContrast: number,
+  lightnessMultiplier: number,
 ) {
   const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -245,9 +245,10 @@ function getContrastPalette(
     );
   if (l0 < -1e-6 || l0 > 1 + 1e-6)
     throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
-  // Cap lightness so it never exceeds 0.1 (i.e., 10%)
+  // Cap base lightness, then apply multiplier, and clamp to [0,1]
   const lCapped = Math.min(l0, 0.1);
-  const lightness = Math.round(lCapped * 100);
+  const lTarget = Math.min(Math.max(lCapped * (lightnessMultiplier || 1), 0), 1);
+  const lightness = Math.round(lTarget * 100);
 
   const colorPairs: Array<[[number, number], string]> = [
     [[1, 9], "red"],
@@ -295,8 +296,13 @@ function getContrastPalette(
   return theme.contrastColors;
 }
 
+export type GenerateOptions = {
+  lightnessMultiplier?: number;
+};
+
 export async function generateColorScheme(
   image: InputImage,
+  options: GenerateOptions = {},
 ): Promise<ColorScheme> {
   const stolenPalette = await stealPalette(image);
   if (stolenPalette.length < 17) {
@@ -312,7 +318,10 @@ export async function generateColorScheme(
   const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
 
   // Build contrast palette using the ordered terminal colors as anchors
-  const contrastColors = getContrastPalette(ordered17 as CssColor[], 1);
+  const contrastColors = getContrastPalette(
+    ordered17 as CssColor[],
+    options.lightnessMultiplier ?? 1,
+  );
 
   const terminal: TerminalColors = [
     contrastColors[0].background,

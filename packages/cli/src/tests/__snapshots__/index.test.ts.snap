@@ -6,9 +6,9 @@ exports[`terminal-tones --help > prints help and exits 0 1`] = `
 A command line tool for generating terminal color schemes
 
 Options:
-  -h, --help         display help for command
+  -h, --help                   display help for command
 
 Commands:
-  from-image <path>  Generate a color scheme from an image
-  help [command]     display help for command"
+  from-image [options] <path>  Generate a color scheme from an image
+  help [command]               display help for command"
 `;

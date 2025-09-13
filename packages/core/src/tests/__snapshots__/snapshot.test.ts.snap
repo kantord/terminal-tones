@@ -1,5 +1,12 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`generateColorScheme() > applies lightness multiplier to background 1`] = `
+{
+  "a": "#11160e",
+  "b": "#1d231a",
+}
+`;
+
 exports[`generateColorScheme() > returns the correct values 1`] = `
 {
   "contrastColors": [

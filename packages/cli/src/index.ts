@@ -38,6 +38,7 @@ type ContrastColorGroup =
 type Core = {
   generateColorScheme(
     image: string,
+    options?: { lightnessMultiplier?: number },
   ): Promise<{ terminal: string[]; contrastColors: ContrastColorGroup[] }>;
 };
 
@@ -45,7 +46,13 @@ program
   .command("from-image")
   .description("Generate a color scheme from an image")
   .argument("<path>", "path to image file")
-  .action(async (imagePath: string) => {
+  .option(
+    "--lightness-multiplier <number>",
+    "multiply target background lightness (e.g. 1.5)",
+    (v) => Number(v),
+    1,
+  )
+  .action(async (imagePath: string, opts: { lightnessMultiplier: number }) => {
     // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
     const baseCwd = process.env.INIT_CWD || process.cwd();
     const resolvedPath = path.isAbsolute(imagePath)
@@ -71,8 +78,10 @@ program
       )) as Core);
     }
 
-    const { terminal, contrastColors } =
-      await generateColorScheme(resolvedPath);
+    const { terminal, contrastColors } = await generateColorScheme(
+      resolvedPath,
+      { lightnessMultiplier: opts.lightnessMultiplier },
+    );
 
     // Print terminal 16 colors
     process.stdout.write("Terminal 16 colors:\n");
@@ -104,4 +113,9 @@ program
     await renderCodePreview(terminal);
   });
 
-await program.parseAsync();
+// Commander + pnpm: pnpm inserts a standalone "--" before script args.
+// Strip it so options after it are still parsed by Commander.
+const argv = process.argv.slice();
+const sepIndex = argv.indexOf("--");
+if (sepIndex !== -1) argv.splice(sepIndex, 1);
+await program.parseAsync(argv);
