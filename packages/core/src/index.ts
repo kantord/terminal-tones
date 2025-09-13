@@ -210,9 +210,9 @@ function normalizeHex(hex: string): string {
   const six =
     s.length === 3
       ? s
-          .split("")
-          .map((ch) => ch + ch)
-          .join("")
+        .split("")
+        .map((ch) => ch + ch)
+        .join("")
       : s;
   return ("#" + six.toLowerCase()).slice(0, 7);
 }
@@ -226,19 +226,18 @@ async function stealPalette(image: InputImage) {
 function getContrastPalette(
   rawColors: CssColor[],
   baseContrast: number,
-  terminal: TerminalColors,
 ) {
   const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
   // Background is exactly terminal color 0
   const background = new BackgroundColor({
     name: "background",
-    colorKeys: [terminal[0]],
+    colorKeys: [rawColors[0]],
     ratios,
   });
 
   // Lightness derived from terminal[0] ensures Theme matches displayed background
-  const l0 = toOkhsl(terminal[0]).l;
+  const l0 = toOkhsl(rawColors[0]).l;
   if (l0 == null)
     throw new Error(
       "Failed to derive OKHSL lightness from terminal background",
@@ -290,15 +289,29 @@ export async function generateColorScheme(
 
   const { mapping } = assignTerminalColorsOKHSL(stolenPalette);
 
-  const terminal = mapping.map((idx) =>
-    normalizeHex(stolenPalette[idx]),
-  ) as TerminalColors;
-
   const contrastColors = getContrastPalette(
     stolenPalette as CssColor[],
     1,
-    terminal,
   );
+
+  const terminal: TerminalColors = [
+    contrastColors[0].background,
+    contrastColors[2].values[1].value,
+    contrastColors[3].values[1].value,
+    contrastColors[4].values[1].value,
+    contrastColors[5].values[1].value,
+    contrastColors[6].values[1].value,
+    contrastColors[7].values[1].value,
+    contrastColors[1].values[2].value,
+    contrastColors[1].values[1].value,
+    contrastColors[2].values[4].value,
+    contrastColors[3].values[4].value,
+    contrastColors[4].values[4].value,
+    contrastColors[5].values[4].value,
+    contrastColors[6].values[4].value,
+    contrastColors[7].values[4].value,
+    contrastColors[1].values[5].value,
+  ]
 
   return { terminal, contrastColors };
 }
