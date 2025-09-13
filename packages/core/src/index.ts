@@ -172,7 +172,7 @@ function normalizeHex(hex: string): string {
 }
 
 async function stealPalette(image: InputImage) {
-  return (await getPalette(image, 20)).map(
+  return (await getPalette(image, 30, 100)).map(
     ([r, g, b]: [number, number, number]) => rgbToHex(r, g, b),
   );
 }
