@@ -226,6 +226,7 @@ function getContrastPalette(
     new Color({
       name: "neutral",
       colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
+      colorspace: "CAM02",
       ratios,
     }),
     ...colorPairs.map(
@@ -233,6 +234,7 @@ function getContrastPalette(
         new Color({
           name,
           colorKeys: [rawColors[color1Index], rawColors[color2Index]],
+          colorspace: "CAM02",
           ratios,
         }),
     ),
@@ -241,6 +243,7 @@ function getContrastPalette(
         new Color({
           name,
           colorKeys: [rawColors[colorIndex]],
+          colorspace: "CAM02",
           ratios,
         }),
     ),
