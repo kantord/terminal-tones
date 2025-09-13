@@ -244,7 +244,9 @@ function getContrastPalette(
     );
   if (l0 < -1e-6 || l0 > 1 + 1e-6)
     throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
-  const lightness = Math.round(l0 * 100);
+  // Cap lightness so it never exceeds 0.1 (i.e., 10%)
+  const lCapped = Math.min(l0, 0.1);
+  const lightness = Math.round(lCapped * 100);
 
   const colorPairs: Array<[[number, number], string]> = [
     [[1, 9], "red"],
@@ -304,12 +306,12 @@ export async function generateColorScheme(
     contrastColors[7].values[1].value,
     contrastColors[1].values[2].value,
     contrastColors[1].values[1].value,
-    contrastColors[2].values[4].value,
-    contrastColors[3].values[4].value,
-    contrastColors[4].values[4].value,
-    contrastColors[5].values[4].value,
-    contrastColors[6].values[4].value,
-    contrastColors[7].values[4].value,
+    contrastColors[2].values[5].value,
+    contrastColors[3].values[5].value,
+    contrastColors[4].values[5].value,
+    contrastColors[5].values[5].value,
+    contrastColors[6].values[5].value,
+    contrastColors[7].values[5].value,
     contrastColors[1].values[5].value,
   ]
 
