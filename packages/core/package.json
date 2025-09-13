@@ -16,8 +16,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/index.ts --no-warnings",
-    "type-check": "tsc --noEmit -p tsconfig.json",
-    "demo:leonardo": "tsx src/examples/leonardo-import.ts"
+    "type-check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "colorthief": "^2.6.0",
