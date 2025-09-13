@@ -293,11 +293,6 @@ export async function generateColorScheme(
   const terminal = mapping.map((idx) =>
     normalizeHex(stolenPalette[idx]),
   ) as TerminalColors;
-  // Derive lightness from terminal background (slot 0) using OKHSL.l (0..1 -> 0..100)
-  const l0 = toOkhsl(terminal[0]).l;
-  if (l0 == null) throw new Error('Failed to derive OKHSL lightness from terminal background');
-  if (l0 < -1e-6 || l0 > 1 + 1e-6) throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
-  const lightness = Math.round(l0 * 100);
 
   const contrastColors = getContrastPalette(
     stolenPalette as CssColor[],
