@@ -8,8 +8,5 @@
     "lib": ["ES2022", "DOM"]
   },
   "include": ["src/**/*"],
-  "exclude": [
-    "src/tests/**",
-    "src/examples/**"
-  ]
+  "exclude": ["src/tests/**", "src/examples/**"]
 }

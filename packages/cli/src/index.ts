@@ -4,7 +4,13 @@ import path from "path";
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const s = hex.replace(/^#/, "");
-  const six = s.length === 3 ? s.split("").map(ch => ch + ch).join("") : s;
+  const six =
+    s.length === 3
+      ? s
+          .split("")
+          .map((ch) => ch + ch)
+          .join("")
+      : s;
   const n = parseInt(six, 16);
   return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
 }
@@ -22,8 +28,14 @@ program
   .description("A command line tool for generating terminal color schemes");
 
 type ContrastColorValue = { name: string; contrast: number; value: string };
-type ContrastColorGroup = { background: string } | { name: string; values: ContrastColorValue[] };
-type Core = { generateColorScheme(image: string): Promise<{ terminal: string[]; contrastColors: ContrastColorGroup[] }> };
+type ContrastColorGroup =
+  | { background: string }
+  | { name: string; values: ContrastColorValue[] };
+type Core = {
+  generateColorScheme(
+    image: string,
+  ): Promise<{ terminal: string[]; contrastColors: ContrastColorGroup[] }>;
+};
 
 program
   .command("from-image")
@@ -45,17 +57,18 @@ program
     try {
       ({ generateColorScheme } = (await import(
         // computed specifier prevents TS from trying to resolve types here
-        '@terminal-tones/' + 'core'
+        "@terminal-tones/" + "core"
       )) as Core);
     } catch (err) {
       // Fallback for dev without workspace linking: import source directly
       ({ generateColorScheme } = (await import(
         // Avoid TS resolving the path by computing the specifier
-        '../../core/src/' + 'index.ts'
+        "../../core/src/" + "index.ts"
       )) as Core);
     }
 
-    const { terminal, contrastColors } = await generateColorScheme(resolvedPath);
+    const { terminal, contrastColors } =
+      await generateColorScheme(resolvedPath);
 
     // Print terminal 16 colors
     process.stdout.write("Terminal 16 colors:\n");
@@ -77,7 +90,9 @@ program
         for (const v of group.values) {
           const hex = String(v.value);
           const block = colorPreviewBlock(hex);
-          process.stdout.write(`  ${v.name.padEnd(16)} ${String(v.contrast).padStart(4)}  ${hex}  ${block}\n`);
+          process.stdout.write(
+            `  ${v.name.padEnd(16)} ${String(v.contrast).padStart(4)}  ${hex}  ${block}\n`,
+          );
         }
       }
     }

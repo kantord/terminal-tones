@@ -1,53 +1,76 @@
-import { BackgroundColor, Color, Theme, type CssColor } from '@adobe/leonardo-contrast-colors';
-import { getPalette } from 'colorthief';
-import { converter } from 'culori';
-import { minWeightAssign } from 'munkres-algorithm';
+import {
+  BackgroundColor,
+  Color,
+  Theme,
+  type CssColor,
+} from "@adobe/leonardo-contrast-colors";
+import { getPalette } from "colorthief";
+import { converter } from "culori";
+import { minWeightAssign } from "munkres-algorithm";
 
 type ImageFilePath = string;
 type InputImage = HTMLImageElement | ImageFilePath;
 type TerminalColors = [
-  CssColor, CssColor, CssColor, CssColor,
-  CssColor, CssColor, CssColor, CssColor,
-  CssColor, CssColor, CssColor, CssColor,
-  CssColor, CssColor, CssColor, CssColor
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
+  CssColor,
 ];
 type ColorScheme = {
   terminal: TerminalColors;
-  contrastColors: Theme['contrastColors'];
+  contrastColors: Theme["contrastColors"];
 };
 
 export type DiffWeightOverrides = { wL?: number; wS?: number; wH?: number };
 export type RefEntry = [hex: string, weights?: DiffWeightOverrides];
 
 export const TERMINAL_16_REF: RefEntry[] = [
-  ['#000000', { wL: 1.5 }], // 0 black
-  ['#800000', { wH: 1.2 }], // 1 red
-  ['#008000', { wH: 1.2 }], // 2 green
-  ['#808000', { wL: 1.1 }], // 3 yellow
-  ['#000080', { wH: 1.2 }], // 4 blue
-  ['#800080', { wH: 1.2 }], // 5 magenta
-  ['#008080', { wH: 1.2 }], // 6 cyan
-  ['#c0c0c0', { wL: 1.3 }], // 7 white (light gray)
-  ['#808080', { wL: 1.3 }], // 8 bright black (dark gray)
-  ['#ff0000'], // 9 bright red
-  ['#00ff00'], // 10 bright green
-  ['#ffff00', { wS: 1.1 }], // 11 bright yellow
-  ['#0000ff'], // 12 bright blue
-  ['#ff00ff'], // 13 bright magenta
-  ['#00ffff'], // 14 bright cyan
-  ['#ffffff', { wL: 1.6 }], // 15 bright white
+  ["#000000", { wL: 1.5 }], // 0 black
+  ["#800000", { wH: 1.2 }], // 1 red
+  ["#008000", { wH: 1.2 }], // 2 green
+  ["#808000", { wL: 1.1 }], // 3 yellow
+  ["#000080", { wH: 1.2 }], // 4 blue
+  ["#800080", { wH: 1.2 }], // 5 magenta
+  ["#008080", { wH: 1.2 }], // 6 cyan
+  ["#c0c0c0", { wL: 1.3 }], // 7 white (light gray)
+  ["#808080", { wL: 1.3 }], // 8 bright black (dark gray)
+  ["#ff0000"], // 9 bright red
+  ["#00ff00"], // 10 bright green
+  ["#ffff00", { wS: 1.1 }], // 11 bright yellow
+  ["#0000ff"], // 12 bright blue
+  ["#ff00ff"], // 13 bright magenta
+  ["#00ffff"], // 14 bright cyan
+  ["#ffffff", { wL: 1.6 }], // 15 bright white
 ];
 
-type OKHSL = { mode: 'okhsl'; h?: number; s?: number; l?: number; alpha?: number };
-const toOkhsl = converter('okhsl') as (c: string | { mode?: string }) => OKHSL;
+type OKHSL = {
+  mode: "okhsl";
+  h?: number;
+  s?: number;
+  l?: number;
+  alpha?: number;
+};
+const toOkhsl = converter("okhsl") as (c: string | { mode?: string }) => OKHSL;
 
 function isHexColor(s: string): boolean {
   return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(s.trim());
 }
 
 function hueDeltaDeg(h1?: number, h2?: number): number {
-  const a = ((h1 ?? 0) % 360 + 360) % 360;
-  const b = ((h2 ?? 0) % 360 + 360) % 360;
+  const a = (((h1 ?? 0) % 360) + 360) % 360;
+  const b = (((h2 ?? 0) % 360) + 360) % 360;
   const d = Math.abs(a - b) % 360;
   return d > 180 ? 360 - d : d;
 }
@@ -76,7 +99,10 @@ const DEFAULT_WEIGHTS: Required<LHSWeights> = {
   normalizeHue: true,
 };
 
-function lhsCost(d: { dL: number; dS: number; dH: number }, w: LHSWeights = {}): number {
+function lhsCost(
+  d: { dL: number; dS: number; dH: number },
+  w: LHSWeights = {},
+): number {
   const { wL, wS, wH, normalizeHue } = { ...DEFAULT_WEIGHTS, ...w };
   const hTerm = normalizeHue ? d.dH / 180 : d.dH;
   return wL * d.dL + wS * d.dS + wH * hTerm;
@@ -103,7 +129,9 @@ function buildCostMatrix(inputs: string[], weights: LHSWeights): number[][] {
 
   const rows = 16;
   const cols = inputs.length;
-  const cost: number[][] = Array.from({ length: rows }, () => Array(cols).fill(0));
+  const cost: number[][] = Array.from({ length: rows }, () =>
+    Array(cols).fill(0),
+  );
 
   const normalizeHue = weights.normalizeHue ?? DEFAULT_WEIGHTS.normalizeHue;
 
@@ -125,13 +153,14 @@ function buildCostMatrix(inputs: string[], weights: LHSWeights): number[][] {
 
 export function assignTerminalColorsOKHSL(
   inputHexColors: string[],
-  weights: LHSWeights = {}
+  weights: LHSWeights = {},
 ): AssignmentResult {
   if (!Array.isArray(inputHexColors) || inputHexColors.length < 16) {
-    throw new Error('Provide an array of at least 16 hex colors.');
+    throw new Error("Provide an array of at least 16 hex colors.");
   }
   inputHexColors.forEach((hex, i) => {
-    if (!isHexColor(hex)) throw new Error(`Invalid hex at index ${i}: "${hex}"`);
+    if (!isHexColor(hex))
+      throw new Error(`Invalid hex at index ${i}: "${hex}"`);
   });
 
   const cost = buildCostMatrix(inputHexColors, weights);
@@ -148,75 +177,134 @@ export function assignTerminalColorsOKHSL(
 
     const d = okhslDiff(TERMINAL_16_REF[r][0], inputHexColors[c]);
     const costVal = lhsCost(d, weights);
-    details.push({ terminalIndex: r, inputIndex: c, dL: d.dL, dS: d.dS, dH: d.dH, cost: costVal });
+    details.push({
+      terminalIndex: r,
+      inputIndex: c,
+      dL: d.dL,
+      dS: d.dS,
+      dH: d.dH,
+      cost: costVal,
+    });
     sum += costVal;
   }
 
-  const totalCost = Number.isFinite(assignmentsWeight) ? assignmentsWeight : sum;
+  const totalCost = Number.isFinite(assignmentsWeight)
+    ? assignmentsWeight
+    : sum;
 
   return { mapping, totalCost, details };
 }
 
 const rgbToHex = (r: number, g: number, b: number) =>
-  '#' +
+  "#" +
   [r, g, b]
-    .map(x => {
+    .map((x) => {
       const hex = x.toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
+      return hex.length === 1 ? "0" + hex : hex;
     })
-    .join('');
+    .join("");
 
 // normalize to lowercase #rrggbb
 function normalizeHex(hex: string): string {
-  const s = hex.trim().replace(/^#/, '');
-  const six = s.length === 3 ? s.split('').map(ch => ch + ch).join('') : s;
-  return ('#' + six.toLowerCase()).slice(0, 7);
+  const s = hex.trim().replace(/^#/, "");
+  const six =
+    s.length === 3
+      ? s
+          .split("")
+          .map((ch) => ch + ch)
+          .join("")
+      : s;
+  return ("#" + six.toLowerCase()).slice(0, 7);
 }
 
 async function stealPalette(image: InputImage) {
-  return (await getPalette(image, 32)).map(([r, g, b]: [number, number, number]) =>
-    rgbToHex(r, g, b)
+  return (await getPalette(image, 32)).map(
+    ([r, g, b]: [number, number, number]) => rgbToHex(r, g, b),
   );
 }
 
-function getContrastPalette(rawColors: CssColor[], baseContrast: number) {
-  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+function getContrastPalette(
+  rawColors: CssColor[],
+  baseContrast: number,
+  lightnessOverride?: number,
+) {
+  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
   const neutral = new BackgroundColor({
     name: "neutral",
     colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
-    ratios
+    ratios,
   });
 
+  // Derive Theme lightness (0-100). Prefer explicit override from terminal bg (color 0) if provided.
+  const lSource =
+    lightnessOverride ??
+    (() => {
+      const l = toOkhsl(String(rawColors[0])).l;
+      if (l == null)
+        throw new Error(
+          "Failed to derive OKHSL lightness from background color",
+        );
+      if (l < -1e-6 || l > 1 + 1e-6)
+        throw new Error(`OKHSL lightness out of [0,1]: ${l}`);
+      return Math.round(l * 100);
+    })();
+  const lightness = lSource;
+
   const colorPairs: Array<[[number, number], string]> = [
-    [[1, 9], 'red'],
-    [[2, 10], 'green'],
-    [[3, 11], 'yellow'],
-    [[4, 12], 'blue'],
-    [[5, 13], 'magenta'],
-    [[6, 14], 'cyan'],
+    [[1, 9], "red"],
+    [[2, 10], "green"],
+    [[3, 11], "yellow"],
+    [[4, 12], "blue"],
+    [[5, 13], "magenta"],
+    [[6, 14], "cyan"],
   ];
 
-  const colors = [neutral, ...colorPairs.map(([[color1Index, color2Index], name]) => new Color({
-    name,
-    colorKeys: [rawColors[color1Index], rawColors[color2Index]],
-    ratios,
-  }))]
+  const colors = [
+    neutral,
+    ...colorPairs.map(
+      ([[color1Index, color2Index], name]) =>
+        new Color({
+          name,
+          colorKeys: [rawColors[color1Index], rawColors[color2Index]],
+          ratios,
+        }),
+    ),
+  ];
 
-  const theme = new Theme({ colors, backgroundColor: neutral, lightness: 0 })
+  const theme = new Theme({ colors, backgroundColor: neutral, lightness });
 
-  return theme.contrastColors
+  return theme.contrastColors;
 }
 
-export async function generateColorScheme(image: InputImage): Promise<ColorScheme> {
+export async function generateColorScheme(
+  image: InputImage,
+): Promise<ColorScheme> {
   const stolenPalette = await stealPalette(image);
   if (stolenPalette.length < 16) {
-    throw new Error(`Palette too small: got ${stolenPalette.length}, need ≥ 16`);
+    throw new Error(
+      `Palette too small: got ${stolenPalette.length}, need ≥ 16`,
+    );
   }
 
   const { mapping } = assignTerminalColorsOKHSL(stolenPalette);
 
-  const terminal = mapping.map(idx => normalizeHex(stolenPalette[idx])) as TerminalColors;
-  const contrastColors = getContrastPalette(stolenPalette as CssColor[], 1)
+  const terminal = mapping.map((idx) =>
+    normalizeHex(stolenPalette[idx]),
+  ) as TerminalColors;
+  const l0 = toOkhsl(terminal[0]).l;
+  if (l0 == null)
+    throw new Error(
+      "Failed to derive OKHSL lightness from terminal background",
+    );
+  if (l0 < -1e-6 || l0 > 1 + 1e-6)
+    throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
+  const lightnessOverride = Math.round(l0 * 100);
+  const contrastColors = getContrastPalette(
+    stolenPalette as CssColor[],
+    1,
+    lightnessOverride,
+  );
 
   return { terminal, contrastColors };
 }
