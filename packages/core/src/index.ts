@@ -36,7 +36,7 @@ type ColorScheme = {
 export type DiffWeightOverrides = { wL?: number; wS?: number; wH?: number };
 export type RefEntry = [hex: string, weights?: DiffWeightOverrides];
 
-export const TERMINAL_16_REF: RefEntry[] = [
+export const REFERENCE_COLORS: RefEntry[] = [
   ["#000000", { wL: 5, wH: 0, wS: 0 }], // 0 black
   ["#800000", { wH: 5 }], // 1 red
   ["#008000", { wH: 5 }], // 2 green
@@ -53,6 +53,7 @@ export const TERMINAL_16_REF: RefEntry[] = [
   ["#ff00ff"], // 13 bright magenta
   ["#00ffff"], // 14 bright cyan
   ["#ffffff", { wL: 5, wH: 0, wS: 0 }], // 15 bright white
+  ["#ffa500"], // 16 orange
 ];
 
 type OKHSL = {
@@ -124,10 +125,10 @@ export type AssignmentResult = {
 };
 
 function buildCostMatrix(inputs: string[], weights: LHSWeights): number[][] {
-  const refs = TERMINAL_16_REF.map(([hex]) => toOkhsl(hex));
+  const refs = REFERENCE_COLORS.map(([hex]) => toOkhsl(hex));
   const ins = inputs.map(toOkhsl);
 
-  const rows = 16;
+  const rows = 17;
   const cols = inputs.length;
   const cost: number[][] = Array.from({ length: rows }, () =>
     Array(cols).fill(0),
@@ -136,7 +137,7 @@ function buildCostMatrix(inputs: string[], weights: LHSWeights): number[][] {
   const normalizeHue = weights.normalizeHue ?? DEFAULT_WEIGHTS.normalizeHue;
 
   for (let r = 0; r < rows; r++) {
-    const [, overrides] = TERMINAL_16_REF[r];
+    const [, overrides] = REFERENCE_COLORS[r];
     const wL = overrides?.wL ?? 1;
     const wS = overrides?.wS ?? 1;
     const wH = overrides?.wH ?? 1;
@@ -155,8 +156,8 @@ export function assignTerminalColorsOKHSL(
   inputHexColors: string[],
   weights: LHSWeights = {},
 ): AssignmentResult {
-  if (!Array.isArray(inputHexColors) || inputHexColors.length < 16) {
-    throw new Error("Provide an array of at least 16 hex colors.");
+  if (!Array.isArray(inputHexColors) || inputHexColors.length < 17) {
+    throw new Error("Provide an array of at least 17 hex colors.");
   }
   inputHexColors.forEach((hex, i) => {
     if (!isHexColor(hex))
@@ -167,15 +168,15 @@ export function assignTerminalColorsOKHSL(
 
   const { assignments, assignmentsWeight } = minWeightAssign(cost);
 
-  const mapping: number[] = new Array(16);
+  const mapping: number[] = new Array(17);
   const details: AssignmentDetail[] = [];
   let sum = 0;
 
-  for (let r = 0; r < 16; r++) {
+  for (let r = 0; r < 17; r++) {
     const c = assignments[r] as number; // expect full assignment
     mapping[r] = c;
 
-    const d = okhslDiff(TERMINAL_16_REF[r][0], inputHexColors[c]);
+    const d = okhslDiff(REFERENCE_COLORS[r][0], inputHexColors[c]);
     const costVal = lhsCost(d, weights);
     details.push({
       terminalIndex: r,
@@ -257,6 +258,13 @@ function getContrastPalette(
     [[6, 14], "cyan"],
   ];
 
+
+  const simpleColors: Array<[number, string]> = [
+    [16, "orange"],
+  ];
+
+
+
   const colors = [
     // Neutral ramp separate from background
     new Color({
@@ -272,6 +280,14 @@ function getContrastPalette(
           ratios,
         }),
     ),
+    ...simpleColors.map(
+      ([colorIndex, name]) =>
+        new Color({
+          name,
+          colorKeys: [rawColors[colorIndex]],
+          ratios,
+        }),
+    ),
   ];
 
   const theme = new Theme({ colors, backgroundColor: background, lightness });
@@ -283,9 +299,9 @@ export async function generateColorScheme(
   image: InputImage,
 ): Promise<ColorScheme> {
   const stolenPalette = await stealPalette(image);
-  if (stolenPalette.length < 16) {
+  if (stolenPalette.length < 17) {
     throw new Error(
-      `Palette too small: got ${stolenPalette.length}, need ≥ 16`,
+      `Palette too small: got ${stolenPalette.length}, need ≥ 17`,
     );
   }
 
@@ -293,10 +309,10 @@ export async function generateColorScheme(
   const { mapping } = assignTerminalColorsOKHSL(stolenPalette);
 
   // Reorder the input palette to match terminal 0..15 indices
-  const ordered16 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
+  const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
 
   // Build contrast palette using the ordered terminal colors as anchors
-  const contrastColors = getContrastPalette(ordered16 as CssColor[], 1);
+  const contrastColors = getContrastPalette(ordered17 as CssColor[], 1);
 
   const terminal: TerminalColors = [
     contrastColors[0].background,
