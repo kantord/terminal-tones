@@ -226,30 +226,26 @@ async function stealPalette(image: InputImage) {
 function getContrastPalette(
   rawColors: CssColor[],
   baseContrast: number,
-  lightnessOverride?: number,
+  terminal: TerminalColors,
 ) {
   const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-  const neutral = new BackgroundColor({
-    name: "neutral",
-    colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
+  // Background is exactly terminal color 0
+  const background = new BackgroundColor({
+    name: "background",
+    colorKeys: [terminal[0]],
     ratios,
   });
 
-  // Derive Theme lightness (0-100). Prefer explicit override from terminal bg (color 0) if provided.
-  const lSource =
-    lightnessOverride ??
-    (() => {
-      const l = toOkhsl(String(rawColors[0])).l;
-      if (l == null)
-        throw new Error(
-          "Failed to derive OKHSL lightness from background color",
-        );
-      if (l < -1e-6 || l > 1 + 1e-6)
-        throw new Error(`OKHSL lightness out of [0,1]: ${l}`);
-      return Math.round(l * 100);
-    })();
-  const lightness = lSource;
+  // Lightness derived from terminal[0] ensures Theme matches displayed background
+  const l0 = toOkhsl(terminal[0]).l;
+  if (l0 == null)
+    throw new Error(
+      "Failed to derive OKHSL lightness from terminal background",
+    );
+  if (l0 < -1e-6 || l0 > 1 + 1e-6)
+    throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
+  const lightness = Math.round(l0 * 100);
 
   const colorPairs: Array<[[number, number], string]> = [
     [[1, 9], "red"],
@@ -261,7 +257,12 @@ function getContrastPalette(
   ];
 
   const colors = [
-    neutral,
+    // Neutral ramp separate from background
+    new Color({
+      name: "neutral",
+      colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
+      ratios,
+    }),
     ...colorPairs.map(
       ([[color1Index, color2Index], name]) =>
         new Color({
@@ -272,7 +273,7 @@ function getContrastPalette(
     ),
   ];
 
-  const theme = new Theme({ colors, backgroundColor: neutral, lightness });
+  const theme = new Theme({ colors, backgroundColor: background, lightness });
 
   return theme.contrastColors;
 }
@@ -292,18 +293,16 @@ export async function generateColorScheme(
   const terminal = mapping.map((idx) =>
     normalizeHex(stolenPalette[idx]),
   ) as TerminalColors;
+  // Derive lightness from terminal background (slot 0) using OKHSL.l (0..1 -> 0..100)
   const l0 = toOkhsl(terminal[0]).l;
-  if (l0 == null)
-    throw new Error(
-      "Failed to derive OKHSL lightness from terminal background",
-    );
-  if (l0 < -1e-6 || l0 > 1 + 1e-6)
-    throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
-  const lightnessOverride = Math.round(l0 * 100);
+  if (l0 == null) throw new Error('Failed to derive OKHSL lightness from terminal background');
+  if (l0 < -1e-6 || l0 > 1 + 1e-6) throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
+  const lightness = Math.round(l0 * 100);
+
   const contrastColors = getContrastPalette(
     stolenPalette as CssColor[],
     1,
-    lightnessOverride,
+    terminal,
   );
 
   return { terminal, contrastColors };
