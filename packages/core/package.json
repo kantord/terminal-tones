@@ -6,8 +6,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -15,13 +14,10 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/index.ts --no-warnings",
     "type-check": "tsc --noEmit -p tsconfig.json",
     "demo:leonardo": "tsx src/examples/leonardo-import.ts"
-  },
-  "devDependencies": {
-    "tsup": "^8.3.0"
   },
   "dependencies": {
     "colorthief": "^2.6.0",

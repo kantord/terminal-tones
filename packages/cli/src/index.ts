@@ -48,8 +48,8 @@ program
     } catch (err) {
       // Fallback for dev without workspace linking: import source directly
       ({ generateColorScheme } = (await import(
-        // relative to this file: ../../core/src/index.ts -> from cli/src
-        '../../core/src/index.ts'
+        // Avoid TS resolving the path by computing the specifier
+        '../../core/src/' + 'index.ts'
       )) as Core);
     }
 
