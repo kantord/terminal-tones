@@ -39,4 +39,23 @@ describe("generateColorScheme()", () => {
     // Snapshot ensures the structure stays consistent
     expect({ a: a.contrastColors[0].background, b: b.contrastColors[0].background }).toMatchSnapshot();
   });
+
+  it("applies contrast multiplier to ratios", async () => {
+    const imagePath = path.join(__dirname, "images", `image1.jpg`);
+
+    const a = await generateColorScheme(imagePath, { contrastMultiplier: 1 });
+    const b = await generateColorScheme(imagePath, { contrastMultiplier: 2 });
+
+    const getGroup = (name: string, x: any) =>
+      x.contrastColors.find((g: any) => "name" in g && g.name === name);
+
+    const redA = getGroup("red", a)!;
+    const redB = getGroup("red", b)!;
+
+    const ratiosA = redA.values.map((v: any) => v.contrast);
+    const ratiosB = redB.values.map((v: any) => v.contrast);
+
+    expect(ratiosA).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(ratiosB).toEqual([2, 4, 6, 8, 10, 12, 14, 16, 18]);
+  });
 });

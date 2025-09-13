@@ -227,8 +227,10 @@ async function stealPalette(image: InputImage) {
 function getContrastPalette(
   rawColors: CssColor[],
   lightnessMultiplier: number,
+  contrastMultiplier: number,
 ) {
-  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const baseRatios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const ratios = baseRatios.map((r) => r * (contrastMultiplier || 1));
 
   // Background is exactly terminal color 0
   const background = new BackgroundColor({
@@ -298,6 +300,7 @@ function getContrastPalette(
 
 export type GenerateOptions = {
   lightnessMultiplier?: number;
+  contrastMultiplier?: number;
 };
 
 export async function generateColorScheme(
@@ -321,6 +324,7 @@ export async function generateColorScheme(
   const contrastColors = getContrastPalette(
     ordered17 as CssColor[],
     options.lightnessMultiplier ?? 1,
+    options.contrastMultiplier ?? 1,
   );
 
   const terminal: TerminalColors = [

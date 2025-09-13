@@ -52,7 +52,13 @@ program
     (v) => Number(v),
     1,
   )
-  .action(async (imagePath: string, opts: { lightnessMultiplier: number }) => {
+  .option(
+    "--contrast-multiplier <number>",
+    "multiply contrast ratios 1..9 (e.g. 1.5)",
+    (v) => Number(v),
+    1,
+  )
+  .action(async (imagePath: string, opts: { lightnessMultiplier: number; contrastMultiplier: number }) => {
     // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
     const baseCwd = process.env.INIT_CWD || process.cwd();
     const resolvedPath = path.isAbsolute(imagePath)
@@ -80,7 +86,10 @@ program
 
     const { terminal, contrastColors } = await generateColorScheme(
       resolvedPath,
-      { lightnessMultiplier: opts.lightnessMultiplier },
+      {
+        lightnessMultiplier: opts.lightnessMultiplier,
+        contrastMultiplier: opts.contrastMultiplier,
+      },
     );
 
     // Print terminal 16 colors
