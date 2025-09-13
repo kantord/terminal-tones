@@ -180,7 +180,7 @@ async function stealPalette(image: InputImage) {
 }
 
 function getContrastPalette(rawColors: CssColor[], baseContrast: number) {
-  const ratios = [2, 3, 4.5, 7]
+  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9]
   const neutral = new BackgroundColor({
     name: "neutral",
     colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
