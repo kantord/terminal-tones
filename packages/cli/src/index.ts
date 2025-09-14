@@ -37,6 +37,13 @@ type Core = {
     image: string,
     options: GenerateOptions,
   ): Promise<ColorScheme>;
+  extractAccents(
+    image: string,
+    options: GenerateOptions,
+  ): Promise<{
+    primary: { name: string; hex: string };
+    secondary: { name: string; hex: string };
+  }>;
 };
 
 program
@@ -82,14 +89,15 @@ program
         return;
       }
       let generateColorScheme: Core["generateColorScheme"];
+      let extractAccents: Core["extractAccents"];
       try {
-        ({ generateColorScheme } = (await import(
+        ({ generateColorScheme, extractAccents } = (await import(
           // computed specifier prevents TS from trying to resolve types here
           "@terminal-tones/" + "core"
         )) as Core);
       } catch {
         // Fallback for dev without workspace linking: import source directly
-        ({ generateColorScheme } = (await import(
+        ({ generateColorScheme, extractAccents } = (await import(
           // Avoid TS resolving the path by computing the specifier
           "../../core/src/" + "index.ts"
         )) as Core);
@@ -103,6 +111,12 @@ program
           contrastMultiplier: opts.contrastMultiplier,
         },
       );
+
+      const accents = await extractAccents(resolvedPath, {
+        mode: opts.mode,
+        lightnessMultiplier: opts.lightnessMultiplier,
+        contrastMultiplier: opts.contrastMultiplier,
+      });
 
       // Print terminal 16 colors
       process.stdout.write("Terminal 16 colors:\n");
@@ -130,6 +144,17 @@ program
           }
         }
       }
+
+      // Print primary/secondary accents
+      process.stdout.write("\nAccents:\n");
+      const pBlock = colorPreviewBlock(accents.primary.hex);
+      const sBlock = colorPreviewBlock(accents.secondary.hex);
+      process.stdout.write(
+        `Primary   (${accents.primary.name}): ${accents.primary.hex}  ${pBlock}\n`,
+      );
+      process.stdout.write(
+        `Secondary (${accents.secondary.name}): ${accents.secondary.hex}  ${sBlock}\n`,
+      );
 
       await renderCodePreview(terminal);
     },

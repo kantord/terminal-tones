@@ -11,6 +11,8 @@ import { assignTerminalColorsOKHSL } from "./cost-matrix";
 import { stealPalette } from "./palette";
 
 export * from "./types";
+export { fuzzyPaletteWeightsOKLab } from "./weights";
+export { extractAccents } from "./accents";
 
 export { assignTerminalColorsOKHSL };
 
