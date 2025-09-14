@@ -22,23 +22,29 @@ export function getContrastPalette(
     ratios,
   });
 
-  const l0 = toOkhsl(rawColors[0]).l;
-  if (l0 == null)
+  const rawBackgroundLightness = toOkhsl(rawColors[0]).l;
+  if (rawBackgroundLightness == null)
     throw new Error(
       "Failed to derive OKHSL lightness from terminal background",
     );
-  if (l0 < -1e-6 || l0 > 1 + 1e-6)
-    throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
+  if (rawBackgroundLightness < -1e-6 || rawBackgroundLightness > 1 + 1e-6)
+    throw new Error(`OKHSL lightness out of [0,1]: ${rawBackgroundLightness}`);
 
-  let lTarget: number;
+  let backgroundLightness: number;
   if (mode === "dark") {
-    const lCapped = Math.min(l0, 0.1);
-    lTarget = Math.min(Math.max(lCapped * (lightnessMultiplier || 1), 0), 1);
+    const lCapped = Math.min(rawBackgroundLightness, 0.1);
+    backgroundLightness = Math.min(
+      Math.max(lCapped * (lightnessMultiplier || 1), 0),
+      1,
+    );
   } else {
-    const delta = Math.min(1 - l0, 0.1);
-    lTarget = Math.min(Math.max(l0 + delta * (lightnessMultiplier || 1), 0), 1);
+    const delta = Math.min(1 - rawBackgroundLightness, 0.1);
+    backgroundLightness = Math.min(
+      Math.max(rawBackgroundLightness + delta * (lightnessMultiplier || 1), 0),
+      1,
+    );
   }
-  const lightness = Math.round(lTarget * 100);
+  const themeLightness = Math.round(backgroundLightness * 100);
 
   const colorPairs: Array<[[number, number], string]> = [
     [[1, 9], "red"],
@@ -78,6 +84,11 @@ export function getContrastPalette(
     ),
   ];
 
-  const theme = new Theme({ colors, backgroundColor: background, lightness });
-  return theme.contrastColors;
+  const { contrastColors } = new Theme({
+    colors,
+    backgroundColor: background,
+    lightness: themeLightness,
+  });
+
+  return contrastColors;
 }
