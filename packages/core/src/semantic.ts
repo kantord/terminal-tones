@@ -104,19 +104,19 @@ export function fuzzyPaletteWeightsOKLab(
 // ---------- Accent extraction ----------
 // Eligible accent groups and their indices in the 17-ordered raw colors
 // 0: bg, 1: neutral, 2: red, 3: green, 4: yellow, 5: blue, 6: magenta, 7: cyan, 8: orange
-const GROUPS = [
-  { name: "yellow", idx: [3, 11] as const },
+const ACCENT_GROUPS = [
   { name: "blue", idx: [4, 12] as const },
   { name: "magenta", idx: [5, 13] as const },
   { name: "cyan", idx: [6, 14] as const },
+  { name: "orange", idx: [16] as const },
 ] as const;
 
 export async function extractAccents(
   image: InputImage,
   options: GenerateOptions,
 ): Promise<{
-  primary: { name: (typeof GROUPS)[number]["name"]; hex: string };
-  secondary: { name: (typeof GROUPS)[number]["name"]; hex: string };
+  primary: { name: (typeof ACCENT_GROUPS)[number]["name"]; hex: string };
+  secondary: { name: (typeof ACCENT_GROUPS)[number]["name"]; hex: string };
 }> {
   const stolenPalette = await stealPalette(image);
   const { mapping } = assignTerminalColorsOKHSL(
@@ -129,16 +129,19 @@ export async function extractAccents(
   ) as CssColor[];
   const contrastColors = getContrastPalette(ordered17, options);
 
-  const centroids = GROUPS.map((g) => {
-    const a = oklab(String(ordered17[g.idx[0]]));
-    const b = oklab(String(ordered17[g.idx[1]]));
-    return avg(a, b);
+  const centroids = ACCENT_GROUPS.map((g) => {
+    if (g.idx.length === 2) {
+      const a = oklab(String(ordered17[g.idx[0]]));
+      const b = oklab(String(ordered17[g.idx[1]]));
+      return avg(a, b);
+    }
+    return oklab(String(ordered17[g.idx[0]]));
   });
 
   const tau = 4;
   const sigma = 0.06;
   const twoS2 = 2 * sigma * sigma;
-  const scores = new Array(GROUPS.length).fill(0) as number[];
+  const scores = new Array(ACCENT_GROUPS.length).fill(0) as number[];
   for (let i = 0; i < stolenPalette.length; i++) {
     const p = oklab(normalizeHex(stolenPalette[i]));
     let bestK = 0;
@@ -170,13 +173,13 @@ export async function extractAccents(
       const idx = Math.min(5, g.values.length - 1);
       return String(g.values[idx].value);
     }
-    const gi = GROUPS.findIndex((gr) => gr.name === groupName);
-    const keyIdx = GROUPS[gi]?.idx?.[0] ?? 3;
+    const gi = ACCENT_GROUPS.findIndex((gr) => gr.name === groupName);
+    const keyIdx = ACCENT_GROUPS[gi]?.idx?.[0] ?? 3;
     return String(ordered17[keyIdx]);
   }
 
-  const primaryName = GROUPS[primaryIdx].name;
-  const secondaryName = GROUPS[secondaryIdx].name;
+  const primaryName = ACCENT_GROUPS[primaryIdx].name;
+  const secondaryName = ACCENT_GROUPS[secondaryIdx].name;
   return {
     primary: { name: primaryName, hex: repHex(primaryName) },
     secondary: { name: secondaryName, hex: repHex(secondaryName) },
@@ -209,6 +212,11 @@ export async function computeSemanticColors(
   image: InputImage,
   options: GenerateOptions,
 ): Promise<SemanticColors> {
+  // Precompute orange mid swatch (no dedicated ANSI slot)
+  const orangeGroup = getGroup(contrastColors, "orange");
+  const orangeMidIdx = Math.min(5, orangeGroup.values.length - 1);
+  const orangeMidHex = String(orangeGroup.values[orangeMidIdx].value);
+
   const semanticColors: SemanticColors = {
     background: {
       terminalColor: terminal[0],
@@ -227,8 +235,8 @@ export async function computeSemanticColors(
       color: getGroup(contrastColors, "green"),
     },
     warning: {
-      terminalColor: terminal[brightIndexByName.yellow],
-      color: getGroup(contrastColors, "yellow"),
+      terminalColor: orangeMidHex,
+      color: getGroup(contrastColors, "orange"),
     },
     primary: {
       terminalColor: terminal[12],
@@ -238,24 +246,93 @@ export async function computeSemanticColors(
       terminalColor: terminal[14],
       color: getGroup(contrastColors, "cyan"),
     },
+    tertiary: {
+      terminalColor: terminal[12],
+      color: getGroup(contrastColors, "blue"),
+    },
+    quaternary: {
+      terminalColor: terminal[14],
+      color: getGroup(contrastColors, "cyan"),
+    },
   };
 
+  // Rank candidate groups (blue, magenta, cyan, orange) and assign
   try {
-    const accents = await extractAccents(image, options);
-    const primaryName = accents.primary.name;
-    const secondaryName = accents.secondary.name;
-    const pIdx = brightIndexByName[primaryName] ?? 12;
-    const sIdx = brightIndexByName[secondaryName] ?? 14;
-    semanticColors.primary = {
-      terminalColor: terminal[pIdx],
-      color: getGroup(contrastColors, primaryName),
+    const stolenPalette = await stealPalette(image);
+    const { mapping } = assignTerminalColorsOKHSL(
+      stolenPalette,
+      {},
+      options.mode,
+    );
+    const ordered17 = mapping.map((i) =>
+      normalizeHex(stolenPalette[i]),
+    ) as CssColor[];
+
+    const centroids = ACCENT_GROUPS.map((g) => {
+      if (g.idx.length === 2) {
+        const a = oklab(String(ordered17[g.idx[0]]));
+        const b = oklab(String(ordered17[g.idx[1]]));
+        return avg(a, b);
+      }
+      return oklab(String(ordered17[g.idx[0]]));
+    });
+
+    const tau = 4;
+    const sigma = 0.06;
+    const twoS2 = 2 * sigma * sigma;
+    const scores = new Array(ACCENT_GROUPS.length).fill(0) as number[];
+    for (let i = 0; i < stolenPalette.length; i++) {
+      const p = oklab(normalizeHex(stolenPalette[i]));
+      let bestK = 0;
+      let bestD2 = Infinity;
+      for (let k = 0; k < centroids.length; k++) {
+        const dist2 = d2(p, centroids[k]);
+        if (dist2 < bestD2) {
+          bestD2 = dist2;
+          bestK = k;
+        }
+      }
+      const rankWeight = Math.exp(-i / tau);
+      const distWeight = Math.exp(-bestD2 / twoS2);
+      scores[bestK] += rankWeight * distWeight;
+    }
+
+    const order = scores
+      .map((s, i) => [s, i] as const)
+      .sort((a, b) => b[0] - a[0])
+      .map(([, i]) => i);
+
+    const names = order.map((i) => ACCENT_GROUPS[i].name);
+    const setEntry = (
+      slot: "primary" | "secondary" | "tertiary" | "quaternary",
+      name?: string,
+    ) => {
+      if (!name) return;
+      const idx = brightIndexByName[name] ?? null;
+      const termHex =
+        idx != null
+          ? terminal[idx]
+          : (() => {
+              const g = getGroup(contrastColors, name);
+              const mid = Math.min(5, g.values.length - 1);
+              return String(g.values[mid].value);
+            })();
+      (
+        semanticColors as unknown as Record<
+          string,
+          { terminalColor: string; color: ContrastGroup }
+        >
+      )[slot] = {
+        terminalColor: termHex,
+        color: getGroup(contrastColors, name),
+      };
     };
-    semanticColors.secondary = {
-      terminalColor: terminal[sIdx],
-      color: getGroup(contrastColors, secondaryName),
-    };
+    setEntry("primary", names[0]);
+    setEntry("secondary", names[1]);
+    setEntry("tertiary", names[2]);
+    setEntry("quaternary", names[3]);
   } catch {
-    // keep defaults
+    // keep defaults if ranking fails
   }
 
   return semanticColors;

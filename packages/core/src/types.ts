@@ -90,4 +90,6 @@ export type SemanticColors = {
   warning: SemanticEntry<ContrastGroup>;
   primary: SemanticEntry<ContrastGroup>;
   secondary: SemanticEntry<ContrastGroup>;
+  tertiary: SemanticEntry<ContrastGroup>;
+  quaternary: SemanticEntry<ContrastGroup>;
 };

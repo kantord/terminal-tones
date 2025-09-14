@@ -10,7 +10,7 @@ describe("extractAccents", () => {
       const { primary, secondary } = await extractAccents(imagePath, {
         mode: "dark",
       });
-      const allowed = new Set(["yellow", "blue", "magenta", "cyan"]);
+      const allowed = new Set(["blue", "magenta", "cyan", "orange"]);
       expect(allowed.has(primary.name)).toBe(true);
       expect(allowed.has(secondary.name)).toBe(true);
       expect(primary.name).not.toBe(secondary.name);

@@ -139,6 +139,8 @@ program
           { key: "warning", label: "warning" },
           { key: "primary", label: "primary" },
           { key: "secondary", label: "secondary" },
+          { key: "tertiary", label: "tertiary" },
+          { key: "quaternary", label: "quaternary" },
         ];
       process.stdout.write("\nSemantic colors:\n");
       const rows = lines.map(({ key, label }) => {
