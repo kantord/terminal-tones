@@ -1,5 +1,11 @@
 import type { CssColor } from "@adobe/leonardo-contrast-colors";
-import type { ImageFilePath, InputImage, TerminalColors, ColorScheme, GenerateOptions } from "./types";
+import type {
+  ImageFilePath,
+  InputImage,
+  TerminalColors,
+  ColorScheme,
+  GenerateOptions,
+} from "./types";
 import { normalizeHex } from "./utils";
 import { getContrastPalette } from "./contrast";
 import { assignTerminalColorsOKHSL } from "./cost-matrix";
@@ -20,7 +26,11 @@ export async function generateColorScheme(
     );
   }
 
-  const { mapping } = assignTerminalColorsOKHSL(stolenPalette, {}, options.mode);
+  const { mapping } = assignTerminalColorsOKHSL(
+    stolenPalette,
+    {},
+    options.mode,
+  );
   const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
   const contrastColors = getContrastPalette(ordered17 as CssColor[], options);
 
@@ -41,7 +51,7 @@ export async function generateColorScheme(
     contrastColors[6].values[5].value,
     contrastColors[7].values[5].value,
     contrastColors[1].values[5].value,
-  ]
+  ];
 
   return { terminal, contrastColors };
 }

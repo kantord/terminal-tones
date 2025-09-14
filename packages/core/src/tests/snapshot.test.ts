@@ -25,8 +25,14 @@ describe("generateColorScheme()", () => {
     const imagePath = path.join(__dirname, "images", `image1.jpg`);
     const toOkhsl = converter("okhsl") as (c: string) => { l?: number };
 
-    const a = await generateColorScheme(imagePath, { mode: "dark", lightnessMultiplier: 1 });
-    const b = await generateColorScheme(imagePath, { mode: "dark", lightnessMultiplier: 2 });
+    const a = await generateColorScheme(imagePath, {
+      mode: "dark",
+      lightnessMultiplier: 1,
+    });
+    const b = await generateColorScheme(imagePath, {
+      mode: "dark",
+      lightnessMultiplier: 2,
+    });
 
     const la = toOkhsl(a.contrastColors[0].background).l ?? 0;
     const lb = toOkhsl(b.contrastColors[0].background).l ?? 0;
@@ -37,14 +43,23 @@ describe("generateColorScheme()", () => {
     expect(lb).toBeLessThanOrEqual(1);
 
     // Snapshot ensures the structure stays consistent
-    expect({ a: a.contrastColors[0].background, b: b.contrastColors[0].background }).toMatchSnapshot();
+    expect({
+      a: a.contrastColors[0].background,
+      b: b.contrastColors[0].background,
+    }).toMatchSnapshot();
   });
 
   it("applies contrast multiplier to ratios", async () => {
     const imagePath = path.join(__dirname, "images", `image1.jpg`);
 
-    const a = await generateColorScheme(imagePath, { mode: "dark", contrastMultiplier: 1 });
-    const b = await generateColorScheme(imagePath, { mode: "dark", contrastMultiplier: 2 });
+    const a = await generateColorScheme(imagePath, {
+      mode: "dark",
+      contrastMultiplier: 1,
+    });
+    const b = await generateColorScheme(imagePath, {
+      mode: "dark",
+      contrastMultiplier: 2,
+    });
 
     const getGroup = (name: string, x: any) =>
       x.contrastColors.find((g: any) => "name" in g && g.name === name);

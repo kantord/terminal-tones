@@ -61,70 +61,79 @@ program
     (v: string) => (v === "light" || v === "dark" ? v : "dark"),
     "dark",
   )
-  .action(async (imagePath: string, opts: { lightnessMultiplier: number; contrastMultiplier: number; mode: "light" | "dark" }) => {
-    // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
-    const baseCwd = process.env.INIT_CWD || process.cwd();
-    const resolvedPath = path.isAbsolute(imagePath)
-      ? imagePath
-      : path.resolve(baseCwd, imagePath);
-
-    if (!fs.existsSync(resolvedPath)) {
-      console.error(`File not found: ${resolvedPath}`);
-      process.exitCode = 1;
-      return;
-    }
-    let generateColorScheme: Core["generateColorScheme"];
-    try {
-      ({ generateColorScheme } = (await import(
-        // computed specifier prevents TS from trying to resolve types here
-        "@terminal-tones/" + "core"
-      )) as Core);
-    } catch {
-      // Fallback for dev without workspace linking: import source directly
-      ({ generateColorScheme } = (await import(
-        // Avoid TS resolving the path by computing the specifier
-        "../../core/src/" + "index.ts"
-      )) as Core);
-    }
-
-    const { terminal, contrastColors } = await generateColorScheme(
-      resolvedPath,
-      {
-        mode: opts.mode,
-        lightnessMultiplier: opts.lightnessMultiplier,
-        contrastMultiplier: opts.contrastMultiplier,
+  .action(
+    async (
+      imagePath: string,
+      opts: {
+        lightnessMultiplier: number;
+        contrastMultiplier: number;
+        mode: "light" | "dark";
       },
-    );
+    ) => {
+      // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
+      const baseCwd = process.env.INIT_CWD || process.cwd();
+      const resolvedPath = path.isAbsolute(imagePath)
+        ? imagePath
+        : path.resolve(baseCwd, imagePath);
 
-    // Print terminal 16 colors
-    process.stdout.write("Terminal 16 colors:\n");
-    terminal.forEach((hex, i) => {
-      const block = colorPreviewBlock(hex);
-      const idx = String(i).padStart(2, " ");
-      process.stdout.write(`${idx}  ${hex}  ${block}\n`);
-    });
+      if (!fs.existsSync(resolvedPath)) {
+        console.error(`File not found: ${resolvedPath}`);
+        process.exitCode = 1;
+        return;
+      }
+      let generateColorScheme: Core["generateColorScheme"];
+      try {
+        ({ generateColorScheme } = (await import(
+          // computed specifier prevents TS from trying to resolve types here
+          "@terminal-tones/" + "core"
+        )) as Core);
+      } catch {
+        // Fallback for dev without workspace linking: import source directly
+        ({ generateColorScheme } = (await import(
+          // Avoid TS resolving the path by computing the specifier
+          "../../core/src/" + "index.ts"
+        )) as Core);
+      }
 
-    // Print full contrast color swatches
-    process.stdout.write("\nContrast color swatches:\n");
-    for (const group of contrastColors) {
-      if ("background" in group) {
-        const hex = String(group.background);
+      const { terminal, contrastColors } = await generateColorScheme(
+        resolvedPath,
+        {
+          mode: opts.mode,
+          lightnessMultiplier: opts.lightnessMultiplier,
+          contrastMultiplier: opts.contrastMultiplier,
+        },
+      );
+
+      // Print terminal 16 colors
+      process.stdout.write("Terminal 16 colors:\n");
+      terminal.forEach((hex, i) => {
         const block = colorPreviewBlock(hex);
-        process.stdout.write(`bg  ${hex}  ${block}\n`);
-      } else {
-        process.stdout.write(`\n${group.name}:\n`);
-        for (const v of group.values) {
-          const hex = String(v.value);
+        const idx = String(i).padStart(2, " ");
+        process.stdout.write(`${idx}  ${hex}  ${block}\n`);
+      });
+
+      // Print full contrast color swatches
+      process.stdout.write("\nContrast color swatches:\n");
+      for (const group of contrastColors) {
+        if ("background" in group) {
+          const hex = String(group.background);
           const block = colorPreviewBlock(hex);
-          process.stdout.write(
-            `  ${v.name.padEnd(16)} ${String(v.contrast).padStart(4)}  ${hex}  ${block}\n`,
-          );
+          process.stdout.write(`bg  ${hex}  ${block}\n`);
+        } else {
+          process.stdout.write(`\n${group.name}:\n`);
+          for (const v of group.values) {
+            const hex = String(v.value);
+            const block = colorPreviewBlock(hex);
+            process.stdout.write(
+              `  ${v.name.padEnd(16)} ${String(v.contrast).padStart(4)}  ${hex}  ${block}\n`,
+            );
+          }
         }
       }
-    }
 
-    await renderCodePreview(terminal);
-  });
+      await renderCodePreview(terminal);
+    },
+  );
 
 // Commander + pnpm: pnpm inserts a standalone "--" before script args.
 // Strip it so options after it are still parsed by Commander.

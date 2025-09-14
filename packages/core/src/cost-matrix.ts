@@ -1,11 +1,7 @@
 import { minWeightAssign } from "munkres-algorithm";
 import { getReferenceColors } from "./reference-palette";
 import { toOkhsl, hueDeltaDeg, okhslDiff, isHexColor } from "./utils";
-import type {
-  LHSWeights,
-  AssignmentDetail,
-  AssignmentResult,
-} from "./types";
+import type { LHSWeights, AssignmentDetail, AssignmentResult } from "./types";
 
 export const DEFAULT_WEIGHTS: Required<LHSWeights> = {
   wL: 1,

@@ -25,7 +25,10 @@ export function getReferenceColors(mode: "light" | "dark"): RefEntry[] {
   // Light mode: swap neutrals so background is white (#ffffff) at index 0,
   // and grayscale roles (7 and 8) are swapped accordingly.
   const arr = [...REFERENCE_COLORS_DARK];
-  const idx0 = 0, idx15 = 15, idx7 = 7, idx8 = 8;
+  const idx0 = 0,
+    idx15 = 15,
+    idx7 = 7,
+    idx8 = 8;
   const tmp0 = arr[idx0];
   arr[idx0] = arr[idx15];
   arr[idx15] = tmp0;

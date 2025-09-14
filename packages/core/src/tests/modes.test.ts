@@ -10,13 +10,15 @@ function getLightnessValue(hex: string): number {
 }
 
 describe("Modes: light vs dark", () => {
-  it.each([1, 2])("light mode background is lighter than dark for image %s", async (n: number) => {
-    const img = path.join(__dirname, "images", `image${n}.jpg`);
-    const dark = await generateColorScheme(img, { mode: "dark" });
-    const light = await generateColorScheme(img, { mode: "light" });
-    const lDark = getLightnessValue(dark.contrastColors[0].background);
-    const lLight = getLightnessValue(light.contrastColors[0].background);
-    expect(lLight).toBeGreaterThan(lDark);
-  });
+  it.each([1, 2])(
+    "light mode background is lighter than dark for image %s",
+    async (n: number) => {
+      const img = path.join(__dirname, "images", `image${n}.jpg`);
+      const dark = await generateColorScheme(img, { mode: "dark" });
+      const light = await generateColorScheme(img, { mode: "light" });
+      const lDark = getLightnessValue(dark.contrastColors[0].background);
+      const lLight = getLightnessValue(light.contrastColors[0].background);
+      expect(lLight).toBeGreaterThan(lDark);
+    },
+  );
 });
-

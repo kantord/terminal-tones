@@ -1,7 +1,9 @@
 import { converter } from "culori";
 import type { OKHSL } from "./types";
 
-export const toOkhsl = converter("okhsl") as (c: string | { mode?: string }) => OKHSL;
+export const toOkhsl = converter("okhsl") as (
+  c: string | { mode?: string },
+) => OKHSL;
 
 export function isHexColor(s: string): boolean {
   return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(s.trim());
@@ -44,4 +46,3 @@ export function normalizeHex(hex: string): string {
       : s;
   return ("#" + six.toLowerCase()).slice(0, 7);
 }
-

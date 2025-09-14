@@ -18,10 +18,7 @@ function stripAnsi(input: string): string {
   return input.replace(/\x1B\[[0-9;]*m/g, "");
 }
 
-export async function renderCodePreview(
-  terminal: string[],
-  code?: string,
-) {
+export async function renderCodePreview(terminal: string[], code?: string) {
   // dynamic imports so CLI works without optional deps
   let highlightFn: ((code: string, o: any) => string) | null = null;
   let chalkLib: any = null;

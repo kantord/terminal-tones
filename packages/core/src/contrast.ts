@@ -1,4 +1,9 @@
-import { BackgroundColor, Color, Theme, type CssColor } from "@adobe/leonardo-contrast-colors";
+import {
+  BackgroundColor,
+  Color,
+  Theme,
+  type CssColor,
+} from "@adobe/leonardo-contrast-colors";
 import { toOkhsl } from "./utils";
 import type { GenerateOptions } from "./types";
 
@@ -6,13 +11,10 @@ export function getContrastPalette(
   rawColors: CssColor[],
   options: GenerateOptions,
 ): Theme["contrastColors"] {
-  const {
-    mode,
-    lightnessMultiplier = 1,
-    contrastMultiplier = 1,
-  } = options;
-  const baseRatios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  const ratios = baseRatios.map((r) => r * (contrastMultiplier || 1));
+  const { mode, lightnessMultiplier = 1, contrastMultiplier = 1 } = options;
+  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(
+    (r) => r * (contrastMultiplier || 1),
+  );
 
   const background = new BackgroundColor({
     name: "background",
