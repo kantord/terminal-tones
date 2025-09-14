@@ -51,7 +51,6 @@ export async function generateColorScheme(
     contrastColors[7].values[5].value,
     contrastColors[1].values[5].value,
   ];
-  // Note: lightness normalization occurs inside getContrastPalette now.
 
   return { terminal, contrastColors };
 }
