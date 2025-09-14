@@ -5,6 +5,22 @@ export const toOkhsl = converter("okhsl") as (
   c: string | { mode?: string },
 ) => OKHSL;
 
+const toRgb = converter("rgb") as (c: string | { mode?: string }) => {
+  mode: "rgb";
+  r?: number;
+  g?: number;
+  b?: number;
+  alpha?: number;
+};
+
+export function okhslToHex(c: OKHSL): string {
+  const rgb = toRgb(c);
+  const r = Math.max(0, Math.min(255, Math.round((rgb.r ?? 0) * 255)));
+  const g = Math.max(0, Math.min(255, Math.round((rgb.g ?? 0) * 255)));
+  const b = Math.max(0, Math.min(255, Math.round((rgb.b ?? 0) * 255)));
+  return rgbToHex(r, g, b);
+}
+
 export function isHexColor(s: string): boolean {
   return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(s.trim());
 }

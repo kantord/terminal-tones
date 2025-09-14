@@ -14,23 +14,57 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
 }
 
+// Strip ANSI SGR sequences (ESC [ ... m). Build pattern dynamically to satisfy lint.
+const ESC = String.fromCharCode(27);
+const ANSI_SGR_RE = new RegExp(`${ESC}\\[[0-9;]*m`, "g");
 function stripAnsi(input: string): string {
-  return input.replace(/\x1B\[[0-9;]*m/g, "");
+  return input.replace(ANSI_SGR_RE, "");
 }
 
 export async function renderCodePreview(terminal: string[], code?: string) {
   // dynamic imports so CLI works without optional deps
-  let highlightFn: ((code: string, o: any) => string) | null = null;
-  let chalkLib: any = null;
+  type ColorFn = (s: string) => string;
+  type Highlighter = (
+    code: string,
+    o: {
+      language?: string;
+      theme?: Record<string, ColorFn>;
+      ignoreIllegals?: boolean;
+    },
+  ) => string;
+  type HighlightModule = { highlight: Highlighter };
+  type ChalkLike = { rgb: (r: number, g: number, b: number) => ColorFn };
+
+  let highlightFn: Highlighter | null = null;
+  let chalkLib: ChalkLike | null = null;
   try {
-    const hlMod: any = await import("cli-highlight");
-    if (hlMod && typeof hlMod.highlight === "function") {
-      highlightFn = hlMod.highlight.bind(hlMod);
+    const hlMod: unknown = await import("cli-highlight");
+    if (
+      hlMod &&
+      typeof hlMod === "object" &&
+      "highlight" in hlMod &&
+      typeof (hlMod as { highlight: unknown }).highlight === "function"
+    ) {
+      const m = hlMod as HighlightModule;
+      highlightFn = m.highlight.bind(m);
     } else if (typeof hlMod === "function") {
-      highlightFn = hlMod;
+      highlightFn = hlMod as Highlighter;
     }
-    const chalkMod: any = await import("chalk");
-    chalkLib = chalkMod.default ?? chalkMod;
+
+    const chalkMod: unknown = await import("chalk");
+    // Prefer default export if present
+    const maybeChalk =
+      chalkMod && typeof chalkMod === "object" && "default" in chalkMod
+        ? (chalkMod as { default: unknown }).default
+        : chalkMod;
+    if (
+      (typeof maybeChalk === "function" || typeof maybeChalk === "object") &&
+      maybeChalk !== null &&
+      "rgb" in (maybeChalk as Record<string, unknown>) &&
+      typeof (maybeChalk as { rgb: unknown }).rgb === "function"
+    ) {
+      chalkLib = maybeChalk as ChalkLike;
+    }
   } catch {
     // optional deps missing
   }
@@ -70,8 +104,10 @@ export async function renderCodePreview(terminal: string[], code?: string) {
       `console.log('found', find(2))\n`;
 
   const bg = toRgb(terminal[0]);
+  const df = toRgb(terminal[7]);
   const columns = Math.max(0, process.stdout.columns ?? 80);
   const startBg = `\x1b[48;2;${bg.r};${bg.g};${bg.b}m`;
+  const startFg = `\x1b[38;2;${df.r};${df.g};${df.b}m`;
   const reset = "\x1b[0m";
 
   const missingDeps = !highlightFn || !chalkLib;
@@ -84,7 +120,9 @@ export async function renderCodePreview(terminal: string[], code?: string) {
     for (const rawLine of sample.split(/\r?\n/)) {
       const visible = rawLine;
       const pad = Math.max(0, columns - visible.length);
-      process.stdout.write(startBg + rawLine + " ".repeat(pad) + reset + "\n");
+      process.stdout.write(
+        startBg + startFg + rawLine + " ".repeat(pad) + reset + "\n",
+      );
     }
     return;
   }
@@ -98,11 +136,16 @@ export async function renderCodePreview(terminal: string[], code?: string) {
   process.stdout.write("\nHighlighted preview:\n\n");
   const lines = highlighted.split(/\r?\n/);
   for (let line of lines) {
+    // After any reset, re-apply background and default foreground so
+    // unstyled text uses our palette (affected by contrast settings).
     line = line
-      .replaceAll("\x1b[0m", `\x1b[0m${startBg}`)
-      .replaceAll("\x1b[49m", startBg);
+      .replaceAll("\x1b[0m", `\x1b[0m${startBg}${startFg}`)
+      .replaceAll("\x1b[49m", startBg)
+      .replaceAll("\x1b[39m", startFg);
     const visibleLen = stripAnsi(line).length;
     const pad = Math.max(0, columns - visibleLen);
-    process.stdout.write(startBg + line + " ".repeat(pad) + reset + "\n");
+    process.stdout.write(
+      startBg + startFg + line + " ".repeat(pad) + reset + "\n",
+    );
   }
 }
