@@ -21,7 +21,25 @@ function stripAnsi(input: string): string {
   return input.replace(ANSI_SGR_RE, "");
 }
 
-export async function renderCodePreview(terminal: string[], code?: string) {
+// Minimal shape for semantic colors from core
+type SemValue = { terminalColor: string };
+type BackgroundSem = { terminalColor: string; color: { background: string } };
+type SemanticColorsLike = {
+  background: BackgroundSem;
+  neutral: SemValue;
+  error: SemValue;
+  success: SemValue;
+  warning: SemValue;
+  primary: SemValue;
+  secondary: SemValue;
+  tertiary?: SemValue;
+  quaternary?: SemValue;
+};
+
+export async function renderCodePreview(
+  semantic: SemanticColorsLike,
+  code?: string,
+) {
   // dynamic imports so CLI works without optional deps
   type ColorFn = (s: string) => string;
   type Highlighter = (
@@ -80,19 +98,18 @@ export async function renderCodePreview(terminal: string[], code?: string) {
   };
 
   const theme = {
-    keyword: fg(terminal[12]),
-    built_in: fg(terminal[13]),
-    literal: fg(terminal[11]),
-    number: fg(terminal[11]),
-    string: fg(terminal[10]),
-    regexp: fg(terminal[14]),
-    comment: fg(terminal[8]),
-    meta: fg(terminal[6]),
-    title: fg(terminal[7]),
-    function: fg(terminal[9]),
-    attr: fg(terminal[4]),
-    params: fg(terminal[15]),
-    "": fg(terminal[7]),
+    keyword: fg(semantic.primary.terminalColor),
+    built_in: fg(semantic.secondary.terminalColor),
+    literal: fg((semantic.tertiary ?? semantic.secondary).terminalColor),
+    number: fg((semantic.tertiary ?? semantic.secondary).terminalColor),
+    string: fg((semantic.quaternary ?? semantic.secondary).terminalColor),
+    regexp: fg((semantic.quaternary ?? semantic.secondary).terminalColor),
+    comment: fg(semantic.neutral.terminalColor),
+    meta: fg(semantic.neutral.terminalColor),
+    title: fg(semantic.primary.terminalColor),
+    function: fg(semantic.primary.terminalColor),
+    attr: fg(semantic.secondary.terminalColor),
+    "": fg(semantic.neutral.terminalColor),
   } as const;
 
   const sample =
@@ -103,8 +120,8 @@ export async function renderCodePreview(terminal: string[], code?: string) {
       `function find(id: number) {\n  return users.find(u => u.id === id)\n}\n` +
       `console.log('found', find(2))\n`;
 
-  const bg = toRgb(terminal[0]);
-  const df = toRgb(terminal[7]);
+  const bg = toRgb(semantic.background.color.background);
+  const df = toRgb(semantic.neutral.terminalColor);
   const columns = Math.max(0, process.stdout.columns ?? 80);
   const startBg = `\x1b[48;2;${bg.r};${bg.g};${bg.b}m`;
   const startFg = `\x1b[38;2;${df.r};${df.g};${df.b}m`;

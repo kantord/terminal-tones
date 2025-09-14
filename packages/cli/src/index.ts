@@ -162,7 +162,7 @@ program
         );
       }
 
-      await renderCodePreview(terminal);
+      await renderCodePreview(semanticColors);
     },
   );
 
