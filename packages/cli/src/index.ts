@@ -163,6 +163,21 @@ program
       }
 
       await renderCodePreview(semanticColors);
+
+      // Diff-style preview using semantic background highlights
+      const diffSample =
+        `function sum(a: number, b: number) {\n` +
+        `  const result = a + b\n` +
+        `  return result\n` +
+        `}\n` +
+        `\n` +
+        `console.log(sum(2, 3))\n`;
+      await renderCodePreview(semanticColors, {
+        heading: "Diff preview:",
+        code: diffSample,
+        added: [2],
+        removed: [3],
+      });
     },
   );
 

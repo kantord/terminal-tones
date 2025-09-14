@@ -22,23 +22,30 @@ function stripAnsi(input: string): string {
 }
 
 // Minimal shape for semantic colors from core
-type SemValue = { terminalColor: string };
+type ContrastValue = { value: string; contrast: number; name?: string };
+type ContrastGroupLike = { name?: string; values?: ContrastValue[] };
+type SemValueFull = { terminalColor: string; color?: ContrastGroupLike };
 type BackgroundSem = { terminalColor: string; color: { background: string } };
 type SemanticColorsLike = {
   background: BackgroundSem;
-  neutral: SemValue;
-  error: SemValue;
-  success: SemValue;
-  warning: SemValue;
-  primary: SemValue;
-  secondary: SemValue;
-  tertiary?: SemValue;
-  quaternary?: SemValue;
+  neutral: SemValueFull;
+  error: SemValueFull;
+  success: SemValueFull;
+  warning: SemValueFull;
+  primary: SemValueFull;
+  secondary: SemValueFull;
+  tertiary?: SemValueFull;
+  quaternary?: SemValueFull;
 };
 
 export async function renderCodePreview(
   semantic: SemanticColorsLike,
-  code?: string,
+  opts?: {
+    code?: string;
+    added?: number[];
+    removed?: number[];
+    heading?: string;
+  },
 ) {
   // dynamic imports so CLI works without optional deps
   type ColorFn = (s: string) => string;
@@ -109,11 +116,12 @@ export async function renderCodePreview(
     title: fg(semantic.primary.terminalColor),
     function: fg(semantic.primary.terminalColor),
     attr: fg(semantic.secondary.terminalColor),
+    params: fg(semantic.neutral.terminalColor),
     "": fg(semantic.neutral.terminalColor),
   } as const;
 
   const sample =
-    code ??
+    opts?.code ??
     `// Terminal Tones sample preview\n` +
       `type User = { id: number; name: string }\n` +
       `const users: User[] = [{ id: 1, name: 'Ada' }, { id: 2, name: 'Linus' }]\n` +
@@ -150,19 +158,43 @@ export async function renderCodePreview(
     ignoreIllegals: true,
   });
 
-  process.stdout.write("\nHighlighted preview:\n\n");
+  const addBgHex =
+    semantic.success.color?.values?.[1]?.value ||
+    semantic.success.terminalColor;
+  const delBgHex =
+    semantic.error.color?.values?.[1]?.value || semantic.error.terminalColor;
+  const addBg = toRgb(String(addBgHex));
+  const delBg = toRgb(String(delBgHex));
+  const addBgEsc = `\x1b[48;2;${addBg.r};${addBg.g};${addBg.b}m`;
+  const delBgEsc = `\x1b[48;2;${delBg.r};${delBg.g};${delBg.b}m`;
+  const addedSet = new Set(
+    (opts?.added ?? []).map((n) => Math.max(1, Math.floor(n))),
+  );
+  const removedSet = new Set(
+    (opts?.removed ?? []).map((n) => Math.max(1, Math.floor(n))),
+  );
+
+  const heading = opts?.heading ?? "Highlighted preview:";
+  process.stdout.write(`\n${heading}\n\n`);
   const lines = highlighted.split(/\r?\n/);
-  for (let line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    const lineNo = i + 1;
+    const lineBg = addedSet.has(lineNo)
+      ? addBgEsc
+      : removedSet.has(lineNo)
+        ? delBgEsc
+        : startBg;
     // After any reset, re-apply background and default foreground so
     // unstyled text uses our palette (affected by contrast settings).
     line = line
-      .replaceAll("\x1b[0m", `\x1b[0m${startBg}${startFg}`)
-      .replaceAll("\x1b[49m", startBg)
+      .replaceAll("\x1b[0m", `\x1b[0m${lineBg}${startFg}`)
+      .replaceAll("\x1b[49m", lineBg)
       .replaceAll("\x1b[39m", startFg);
     const visibleLen = stripAnsi(line).length;
     const pad = Math.max(0, columns - visibleLen);
     process.stdout.write(
-      startBg + startFg + line + " ".repeat(pad) + reset + "\n",
+      lineBg + startFg + line + " ".repeat(pad) + reset + "\n",
     );
   }
 }
