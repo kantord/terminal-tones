@@ -1,9 +1,9 @@
 import type { CssColor } from "@adobe/leonardo-contrast-colors";
 import type { ImageFilePath, InputImage, TerminalColors, ColorScheme, GenerateOptions } from "./types";
-import { getPalette } from "colorthief";
-import { rgbToHex, normalizeHex } from "./utils";
+import { normalizeHex } from "./utils";
 import { getContrastPalette } from "./contrast";
 import { assignTerminalColorsOKHSL } from "./cost-matrix";
+import { stealPalette } from "./palette";
 
 export * from "./types";
 
@@ -14,13 +14,7 @@ export { assignTerminalColorsOKHSL };
 
 // cost-matrix: moved assignTerminalColorsOKHSL to ./cost-matrix
 
-// rgbToHex and normalizeHex moved to utils
-
-async function stealPalette(image: InputImage) {
-  return (await getPalette(image, 30, 100)).map(
-    ([r, g, b]: [number, number, number]) => rgbToHex(r, g, b),
-  );
-}
+// palette: stealPalette moved to ./palette
 
 // getContrastPalette moved to ./contrast
 
