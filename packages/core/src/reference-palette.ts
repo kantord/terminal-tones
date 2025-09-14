@@ -22,8 +22,6 @@ export const REFERENCE_COLORS_DARK: RefEntry[] = [
 
 export function getReferenceColors(mode: "light" | "dark"): RefEntry[] {
   if (mode === "dark") return REFERENCE_COLORS_DARK;
-  // Light mode: swap neutrals so background is white (#ffffff) at index 0,
-  // and grayscale roles (7 and 8) are swapped accordingly.
   const arr = [...REFERENCE_COLORS_DARK];
   const idx0 = 0,
     idx15 = 15,
@@ -37,6 +35,3 @@ export function getReferenceColors(mode: "light" | "dark"): RefEntry[] {
   arr[idx8] = tmp7;
   return arr;
 }
-
-// Backwards export for any internal imports expecting REFERENCE_COLORS
-export const REFERENCE_COLORS = REFERENCE_COLORS_DARK;
