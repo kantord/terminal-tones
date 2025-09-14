@@ -22,12 +22,7 @@ export async function generateColorScheme(
 
   const { mapping } = assignTerminalColorsOKHSL(stolenPalette, {}, options.mode);
   const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
-  const contrastColors = getContrastPalette(
-    ordered17 as CssColor[],
-    options.lightnessMultiplier ?? 1,
-    options.contrastMultiplier ?? 1,
-    options.mode,
-  );
+  const contrastColors = getContrastPalette(ordered17 as CssColor[], options);
 
   const terminal: TerminalColors = [
     contrastColors[0].background,
