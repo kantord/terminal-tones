@@ -1,5 +1,5 @@
 import { minWeightAssign } from "munkres-algorithm";
-import { REFERENCE_COLORS } from "./reference-palette";
+import { getReferenceColors } from "./reference-palette";
 import { toOkhsl, hueDeltaDeg, okhslDiff, isHexColor } from "./utils";
 import type {
   LHSWeights,
@@ -23,7 +23,12 @@ export function lhsCost(
   return wL * d.dL + wS * d.dS + wH * hTerm;
 }
 
-export function buildCostMatrix(inputs: string[], weights: LHSWeights): number[][] {
+export function buildCostMatrix(
+  inputs: string[],
+  weights: LHSWeights,
+  mode: "light" | "dark",
+): number[][] {
+  const REFERENCE_COLORS = getReferenceColors(mode);
   const refs = REFERENCE_COLORS.map(([hex]) => toOkhsl(hex));
   const ins = inputs.map(toOkhsl);
 
@@ -54,6 +59,7 @@ export function buildCostMatrix(inputs: string[], weights: LHSWeights): number[]
 export function assignTerminalColorsOKHSL(
   inputHexColors: string[],
   weights: LHSWeights = {},
+  mode: "light" | "dark",
 ): AssignmentResult {
   if (!Array.isArray(inputHexColors) || inputHexColors.length < 17) {
     throw new Error("Provide an array of at least 17 hex colors.");
@@ -63,7 +69,7 @@ export function assignTerminalColorsOKHSL(
       throw new Error(`Invalid hex at index ${i}: "${hex}"`);
   });
 
-  const cost = buildCostMatrix(inputHexColors, weights);
+  const cost = buildCostMatrix(inputHexColors, weights, mode);
   const { assignments, assignmentsWeight } = minWeightAssign(cost);
 
   const mapping: number[] = new Array(17);
@@ -74,6 +80,7 @@ export function assignTerminalColorsOKHSL(
     const c = assignments[r] as number; // expect full assignment
     mapping[r] = c;
 
+    const REFERENCE_COLORS = getReferenceColors(mode);
     const d = okhslDiff(REFERENCE_COLORS[r][0], inputHexColors[c]);
     const costVal = lhsCost(d, weights);
     details.push({
@@ -93,4 +100,3 @@ export function assignTerminalColorsOKHSL(
 
   return { mapping, totalCost, details };
 }
-

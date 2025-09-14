@@ -16,15 +16,16 @@ function byName(name: string, contrastColors: any) {
 const EPS = 1e-9;
 
 describe("Lightness and contrast ordering", () => {
+  describe.each(["dark", "light"]) ("mode %s", (mode) => {
   describe.each([1, 2])("image %s", (n) => {
     const img = path.join(__dirname, "images", `image${n}.jpg`);
 
     it.each(["red", "blue"]) (
       "lightness multiplier keeps expected swatch order (%s)",
       async (colorName: string) => {
-        const reduced = await generateColorScheme(img, { lightnessMultiplier: 0.5 });
-        const normal = await generateColorScheme(img, { lightnessMultiplier: 1 });
-        const increased = await generateColorScheme(img, { lightnessMultiplier: 1.5 });
+        const reduced = await generateColorScheme(img, { mode, lightnessMultiplier: 0.5 });
+        const normal = await generateColorScheme(img, { mode, lightnessMultiplier: 1 });
+        const increased = await generateColorScheme(img, { mode, lightnessMultiplier: 1.5 });
 
         // Use a stable swatch index across the 9 steps for comparison
         const idx = 5; // sixth value in the ramp
@@ -45,9 +46,9 @@ describe("Lightness and contrast ordering", () => {
     );
 
     it("lightness multiplier keeps expected terminal order (bright red)", async () => {
-      const reduced = await generateColorScheme(img, { lightnessMultiplier: 0.5 });
-      const normal = await generateColorScheme(img, { lightnessMultiplier: 1 });
-      const increased = await generateColorScheme(img, { lightnessMultiplier: 1.5 });
+      const reduced = await generateColorScheme(img, { mode, lightnessMultiplier: 0.5 });
+      const normal = await generateColorScheme(img, { mode, lightnessMultiplier: 1 });
+      const increased = await generateColorScheme(img, { mode, lightnessMultiplier: 1.5 });
 
       const samples = [reduced.terminal[9], normal.terminal[9], increased.terminal[9]];
       const expectedOrder = [samples[0], samples[1], samples[2]];
@@ -62,9 +63,9 @@ describe("Lightness and contrast ordering", () => {
     it.each(["red", "blue"]) (
       "contrast multiplier keeps expected swatch order by lightness delta vs background (%s)",
       async (colorName: string) => {
-        const low = await generateColorScheme(img, { contrastMultiplier: 0.5 });
-        const mid = await generateColorScheme(img, { contrastMultiplier: 1 });
-        const high = await generateColorScheme(img, { contrastMultiplier: 1.5 });
+        const low = await generateColorScheme(img, { mode, contrastMultiplier: 0.5 });
+        const mid = await generateColorScheme(img, { mode, contrastMultiplier: 1 });
+        const high = await generateColorScheme(img, { mode, contrastMultiplier: 1.5 });
 
         const idx = 5; // sixth value in ramp
 
@@ -93,9 +94,9 @@ describe("Lightness and contrast ordering", () => {
     it.each([9, 12]) (
       "contrast multiplier keeps expected terminal order by lightness delta vs background (index %s)",
       async (termIndex: number) => {
-        const low = await generateColorScheme(img, { contrastMultiplier: 0.5 });
-        const mid = await generateColorScheme(img, { contrastMultiplier: 1 });
-        const high = await generateColorScheme(img, { contrastMultiplier: 1.5 });
+        const low = await generateColorScheme(img, { mode, contrastMultiplier: 0.5 });
+        const mid = await generateColorScheme(img, { mode, contrastMultiplier: 1 });
+        const high = await generateColorScheme(img, { mode, contrastMultiplier: 1.5 });
 
         const samples = [
           { hex: low.terminal[termIndex], lbg: getLightnessValue(low.terminal[0]) },
@@ -114,5 +115,6 @@ describe("Lightness and contrast ordering", () => {
         expect(sorted.map((s) => s.hex)).toEqual(expectedOrder.map((s) => s.hex));
       }
     );
+  });
   });
 });

@@ -5,6 +5,7 @@ export function getContrastPalette(
   rawColors: CssColor[],
   lightnessMultiplier: number,
   contrastMultiplier: number,
+  mode: "light" | "dark",
 ): Theme["contrastColors"] {
   const baseRatios = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const ratios = baseRatios.map((r) => r * (contrastMultiplier || 1));
@@ -23,8 +24,14 @@ export function getContrastPalette(
   if (l0 < -1e-6 || l0 > 1 + 1e-6)
     throw new Error(`OKHSL lightness out of [0,1]: ${l0}`);
 
-  const lCapped = Math.min(l0, 0.1);
-  const lTarget = Math.min(Math.max(lCapped * (lightnessMultiplier || 1), 0), 1);
+  let lTarget: number;
+  if (mode === "dark") {
+    const lCapped = Math.min(l0, 0.1);
+    lTarget = Math.min(Math.max(lCapped * (lightnessMultiplier || 1), 0), 1);
+  } else {
+    const delta = Math.min(1 - l0, 0.1);
+    lTarget = Math.min(Math.max(l0 + delta * (lightnessMultiplier || 1), 0), 1);
+  }
   const lightness = Math.round(lTarget * 100);
 
   const colorPairs: Array<[[number, number], string]> = [

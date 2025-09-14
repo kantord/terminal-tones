@@ -11,7 +11,7 @@ export { assignTerminalColorsOKHSL };
 
 export async function generateColorScheme(
   image: InputImage,
-  options: GenerateOptions = {},
+  options: GenerateOptions,
 ): Promise<ColorScheme> {
   const stolenPalette = await stealPalette(image);
   if (stolenPalette.length < 17) {
@@ -20,12 +20,13 @@ export async function generateColorScheme(
     );
   }
 
-  const { mapping } = assignTerminalColorsOKHSL(stolenPalette);
+  const { mapping } = assignTerminalColorsOKHSL(stolenPalette, {}, options.mode);
   const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
   const contrastColors = getContrastPalette(
     ordered17 as CssColor[],
     options.lightnessMultiplier ?? 1,
     options.contrastMultiplier ?? 1,
+    options.mode,
   );
 
   const terminal: TerminalColors = [

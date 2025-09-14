@@ -61,7 +61,7 @@ export type AssignmentResult = {
 };
 
 export type GenerateOptions = {
+  mode: "light" | "dark";
   lightnessMultiplier?: number;
   contrastMultiplier?: number;
 };
-

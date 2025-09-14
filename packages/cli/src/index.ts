@@ -35,7 +35,7 @@ program
 type Core = {
   generateColorScheme(
     image: string,
-    options?: GenerateOptions,
+    options: GenerateOptions,
   ): Promise<ColorScheme>;
 };
 
@@ -55,7 +55,13 @@ program
     (v) => Number(v),
     1,
   )
-  .action(async (imagePath: string, opts: { lightnessMultiplier: number; contrastMultiplier: number }) => {
+  .option(
+    "--mode <mode>",
+    "color scheme mode: light|dark",
+    (v: string) => (v === "light" || v === "dark" ? v : "dark"),
+    "dark",
+  )
+  .action(async (imagePath: string, opts: { lightnessMultiplier: number; contrastMultiplier: number; mode: "light" | "dark" }) => {
     // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
     const baseCwd = process.env.INIT_CWD || process.cwd();
     const resolvedPath = path.isAbsolute(imagePath)
@@ -84,6 +90,7 @@ program
     const { terminal, contrastColors } = await generateColorScheme(
       resolvedPath,
       {
+        mode: opts.mode,
         lightnessMultiplier: opts.lightnessMultiplier,
         contrastMultiplier: opts.contrastMultiplier,
       },
