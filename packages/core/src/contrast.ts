@@ -1,8 +1,5 @@
 import { BackgroundColor, Color, Theme, type CssColor } from "@adobe/leonardo-contrast-colors";
-import { converter } from "culori";
-import type { OKHSL } from "./types";
-
-const toOkhsl = converter("okhsl") as (c: string | { mode?: string }) => OKHSL;
+import { toOkhsl } from "./utils";
 
 export function getContrastPalette(
   rawColors: CssColor[],
@@ -71,4 +68,3 @@ export function getContrastPalette(
   const theme = new Theme({ colors, backgroundColor: background, lightness });
   return theme.contrastColors;
 }
-
