@@ -9,10 +9,10 @@ import { normalizeHex } from "./utils";
 import { getContrastPalette } from "./contrast";
 import { assignTerminalColorsOKHSL } from "./cost-matrix";
 import { stealPalette } from "./palette";
+import { computeSemanticColors } from "./semantic";
 
 export * from "./types";
-export { fuzzyPaletteWeightsOKLab } from "./weights";
-export { extractAccents } from "./accents";
+export { fuzzyPaletteWeightsOKLab, extractAccents } from "./semantic";
 
 export { assignTerminalColorsOKHSL };
 
@@ -54,5 +54,12 @@ export async function generateColorScheme(
     contrastColors[1].values[5].value,
   ];
 
-  return { terminal, contrastColors };
+  const semanticColors = await computeSemanticColors(
+    contrastColors,
+    terminal,
+    image,
+    options,
+  );
+
+  return { terminal, contrastColors, semanticColors };
 }

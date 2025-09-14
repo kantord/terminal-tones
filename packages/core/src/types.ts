@@ -1,4 +1,4 @@
-import type { Theme } from "@adobe/leonardo-contrast-colors";
+import type { Theme, CssColor } from "@adobe/leonardo-contrast-colors";
 
 export type ImageFilePath = string;
 export type InputImage = HTMLImageElement | ImageFilePath;
@@ -25,6 +25,7 @@ export type TerminalColors = [
 export type ColorScheme = {
   terminal: TerminalColors;
   contrastColors: Theme["contrastColors"];
+  semanticColors: SemanticColors;
 };
 
 export type DiffWeightOverrides = { wL?: number; wS?: number; wH?: number };
@@ -64,4 +65,29 @@ export type GenerateOptions = {
   mode: "light" | "dark";
   lightnessMultiplier?: number;
   contrastMultiplier?: number;
+};
+
+type CCElement = Theme["contrastColors"][number];
+export type ContrastGroup = Extract<
+  CCElement,
+  {
+    name: string;
+    values: { name: string; contrast: number; value: CssColor }[];
+  }
+>;
+export type BackgroundGroup = Extract<CCElement, { background: CssColor }>;
+
+export type SemanticEntry<T> = {
+  terminalColor: string;
+  color: T;
+};
+
+export type SemanticColors = {
+  background: SemanticEntry<BackgroundGroup>;
+  neutral: SemanticEntry<ContrastGroup>;
+  error: SemanticEntry<ContrastGroup>;
+  success: SemanticEntry<ContrastGroup>;
+  warning: SemanticEntry<ContrastGroup>;
+  primary: SemanticEntry<ContrastGroup>;
+  secondary: SemanticEntry<ContrastGroup>;
 };

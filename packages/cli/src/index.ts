@@ -37,13 +37,6 @@ type Core = {
     image: string,
     options: GenerateOptions,
   ): Promise<ColorScheme>;
-  extractAccents(
-    image: string,
-    options: GenerateOptions,
-  ): Promise<{
-    primary: { name: string; hex: string };
-    secondary: { name: string; hex: string };
-  }>;
 };
 
 program
@@ -89,34 +82,25 @@ program
         return;
       }
       let generateColorScheme: Core["generateColorScheme"];
-      let extractAccents: Core["extractAccents"];
       try {
-        ({ generateColorScheme, extractAccents } = (await import(
+        ({ generateColorScheme } = (await import(
           // computed specifier prevents TS from trying to resolve types here
           "@terminal-tones/" + "core"
         )) as Core);
       } catch {
         // Fallback for dev without workspace linking: import source directly
-        ({ generateColorScheme, extractAccents } = (await import(
+        ({ generateColorScheme } = (await import(
           // Avoid TS resolving the path by computing the specifier
           "../../core/src/" + "index.ts"
         )) as Core);
       }
 
-      const { terminal, contrastColors } = await generateColorScheme(
-        resolvedPath,
-        {
+      const { terminal, contrastColors, semanticColors } =
+        await generateColorScheme(resolvedPath, {
           mode: opts.mode,
           lightnessMultiplier: opts.lightnessMultiplier,
           contrastMultiplier: opts.contrastMultiplier,
-        },
-      );
-
-      const accents = await extractAccents(resolvedPath, {
-        mode: opts.mode,
-        lightnessMultiplier: opts.lightnessMultiplier,
-        contrastMultiplier: opts.contrastMultiplier,
-      });
+        });
 
       // Print terminal 16 colors
       process.stdout.write("Terminal 16 colors:\n");
@@ -145,16 +129,36 @@ program
         }
       }
 
-      // Print primary/secondary accents
-      process.stdout.write("\nAccents:\n");
-      const pBlock = colorPreviewBlock(accents.primary.hex);
-      const sBlock = colorPreviewBlock(accents.secondary.hex);
-      process.stdout.write(
-        `Primary   (${accents.primary.name}): ${accents.primary.hex}  ${pBlock}\n`,
-      );
-      process.stdout.write(
-        `Secondary (${accents.secondary.name}): ${accents.secondary.hex}  ${sBlock}\n`,
-      );
+      // Print semantic colors summary (terminal color, semantic name, actual group name)
+      const lines: Array<{ key: keyof typeof semanticColors; label: string }> =
+        [
+          { key: "background", label: "background" },
+          { key: "neutral", label: "neutral" },
+          { key: "error", label: "error" },
+          { key: "success", label: "success" },
+          { key: "warning", label: "warning" },
+          { key: "primary", label: "primary" },
+          { key: "secondary", label: "secondary" },
+        ];
+      process.stdout.write("\nSemantic colors:\n");
+      const rows = lines.map(({ key, label }) => {
+        const entry = (
+          semanticColors as Record<
+            string,
+            { terminalColor: string; color?: { name?: string } }
+          >
+        )[key as string];
+        const groupName = entry?.color?.name ?? String(key);
+        return { label, groupName, hex: entry.terminalColor };
+      });
+      const labelW = Math.max(...rows.map((r) => r.label.length));
+      const groupW = Math.max(...rows.map((r) => r.groupName.length));
+      for (const r of rows) {
+        const block = colorPreviewBlock(r.hex);
+        process.stdout.write(
+          `${r.label.padEnd(labelW)}  ${r.groupName.padEnd(groupW)}  ${r.hex}  ${block}\n`,
+        );
+      }
 
       await renderCodePreview(terminal);
     },

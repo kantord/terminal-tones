@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fuzzyPaletteWeightsOKLab } from "../weights";
+import { fuzzyPaletteWeightsOKLab } from "../semantic";
 
 describe("fuzzyPaletteWeightsOKLab", () => {
   it("normalizes weights to sum to 1", () => {
