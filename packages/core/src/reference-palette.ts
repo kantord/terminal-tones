@@ -1,6 +1,6 @@
 import type { RefEntry } from "./types";
 
-export const REFERENCE_COLORS_DARK: RefEntry[] = [
+const REFERENCE_COLORS_DARK: RefEntry[] = [
   ["#000000", { wL: 8, wH: 0, wS: 0 }], // 0 black
   ["#800000", { wH: 5, wS: 3 }], // 1 red
   ["#008000", { wH: 5, wS: 3 }], // 2 green
@@ -20,7 +20,7 @@ export const REFERENCE_COLORS_DARK: RefEntry[] = [
   ["#ffa500", { wL: 5, wS: 3, wH: 5 }], // 16 orange
 ];
 
-export const REFERENCE_COLORS_LIGHT: RefEntry[] = [
+const REFERENCE_COLORS_LIGHT: RefEntry[] = [
   ["#ffffff", { wL: 8, wH: 0, wS: 5 }], // 0 white
   ["#800000", { wH: 5, wS: 3 }], // 1 red
   ["#008000", { wH: 5, wS: 3 }], // 2 green

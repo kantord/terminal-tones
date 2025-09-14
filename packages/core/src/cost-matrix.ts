@@ -3,14 +3,14 @@ import { getReferenceColors } from "./reference-palette";
 import { toOkhsl, hueDeltaDeg, okhslDiff, isHexColor } from "./utils";
 import type { LHSWeights, AssignmentDetail, AssignmentResult } from "./types";
 
-export const DEFAULT_WEIGHTS: Required<LHSWeights> = {
+const DEFAULT_WEIGHTS: Required<LHSWeights> = {
   wL: 1,
   wS: 1,
   wH: 1,
   normalizeHue: true,
 };
 
-export function lhsCost(
+function lhsCost(
   d: { dL: number; dS: number; dH: number },
   w: LHSWeights = {},
 ): number {
@@ -19,7 +19,7 @@ export function lhsCost(
   return wL * d.dL + wS * d.dS + wH * hTerm;
 }
 
-export function buildCostMatrix(
+function buildCostMatrix(
   inputs: string[],
   weights: LHSWeights,
   mode: "light" | "dark",

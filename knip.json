@@ -1,13 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip/schema.json",
   "ignore": ["**/dist/**", "**/.turbo/**", "**/.cache/**"],
-  "project": ["packages/**/src/**/*.{ts,tsx,js,jsx}"],
-  "entry": ["packages/**/src/index.ts", "packages/**/src/index.tsx"],
-  "workspaces": {
-    "patterns": ["packages/*"]
-  },
-  "typescript": {
-    "tsConfigFile": "tsconfig.json"
-  },
-  "ignoreDependencies": ["@terminal-tones/core"]
+  "typescript": { "tsConfigFile": "tsconfig.json" }
 }
