@@ -6,7 +6,6 @@ import type {
   GenerateOptions,
 } from "./types";
 import { normalizeHex } from "./utils";
-import { equalizePaletteLightnessOKHSL } from "./equalize";
 import { getContrastPalette } from "./contrast";
 import { assignTerminalColorsOKHSL } from "./cost-matrix";
 import { stealPalette } from "./palette";
@@ -32,8 +31,7 @@ export async function generateColorScheme(
     options.mode,
   );
   const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
-  const equalized17 = equalizePaletteLightnessOKHSL(ordered17 as CssColor[], 0);
-  const contrastColors = getContrastPalette(equalized17 as CssColor[], options);
+  const contrastColors = getContrastPalette(ordered17 as CssColor[], options);
 
   const terminal: TerminalColors = [
     contrastColors[0].background,
@@ -53,8 +51,7 @@ export async function generateColorScheme(
     contrastColors[7].values[5].value,
     contrastColors[1].values[5].value,
   ];
-  // Note: lightness equalization is applied to the input keys before
-  // generating contrast colors with Leonardo, not post-hoc.
+  // Note: lightness normalization occurs inside getContrastPalette now.
 
   return { terminal, contrastColors };
 }

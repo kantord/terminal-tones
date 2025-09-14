@@ -6,11 +6,15 @@ import {
 } from "@adobe/leonardo-contrast-colors";
 import { toOkhsl } from "./utils";
 import type { GenerateOptions } from "./types";
+import { equalizePaletteLightnessOKHSL } from "./equalize";
 
 export function getContrastPalette(
   rawColors: CssColor[],
   options: GenerateOptions,
 ): Theme["contrastColors"] {
+  // Normalize OKHSL lightness of all keys except background so
+  // Leonardo builds ramps from harmonized inputs.
+  const normalizedRawColors = equalizePaletteLightnessOKHSL(rawColors, 0);
   const { mode, lightnessMultiplier = 1, contrastMultiplier = 1 } = options;
   const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(
     (r) => r * (contrastMultiplier || 1),
@@ -18,11 +22,11 @@ export function getContrastPalette(
 
   const background = new BackgroundColor({
     name: "background",
-    colorKeys: [rawColors[0]],
+    colorKeys: [normalizedRawColors[0]],
     ratios,
   });
 
-  const rawBackgroundLightness = toOkhsl(rawColors[0]).l;
+  const rawBackgroundLightness = toOkhsl(normalizedRawColors[0]).l;
   if (rawBackgroundLightness == null)
     throw new Error(
       "Failed to derive OKHSL lightness from terminal background",
@@ -60,7 +64,12 @@ export function getContrastPalette(
   const colors = [
     new Color({
       name: "neutral",
-      colorKeys: [rawColors[0], rawColors[7], rawColors[8], rawColors[15]],
+      colorKeys: [
+        normalizedRawColors[0],
+        normalizedRawColors[7],
+        normalizedRawColors[8],
+        normalizedRawColors[15],
+      ],
       colorspace: "CAM02",
       ratios,
     }),
@@ -68,7 +77,10 @@ export function getContrastPalette(
       ([[color1Index, color2Index], name]) =>
         new Color({
           name,
-          colorKeys: [rawColors[color1Index], rawColors[color2Index]],
+          colorKeys: [
+            normalizedRawColors[color1Index],
+            normalizedRawColors[color2Index],
+          ],
           colorspace: "CAM02",
           ratios,
         }),
@@ -77,7 +89,7 @@ export function getContrastPalette(
       ([colorIndex, name]) =>
         new Color({
           name,
-          colorKeys: [rawColors[colorIndex]],
+          colorKeys: [normalizedRawColors[colorIndex]],
           colorspace: "CAM02",
           ratios,
         }),
