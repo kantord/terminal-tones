@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+# Abort on errors
+set -e
+
+# Type-check the workspace first (fail fast)
+pnpm -w -r --filter @terminal-tones/* run type-check
+
+# Then run linters/formatters on staged files
+pnpm exec lint-staged
+
