@@ -1,6 +1,5 @@
 import type { RefEntry } from "./types";
 
-// Reference terminal palette with optional per-swatch weighting overrides
 export const REFERENCE_COLORS: RefEntry[] = [
   ["#000000", { wL: 8, wH: 0, wS: 0 }], // 0 black
   ["#800000", { wH: 5, wS: 3 }], // 1 red

@@ -33,7 +33,6 @@ export const rgbToHex = (r: number, g: number, b: number) =>
     })
     .join("");
 
-// normalize to lowercase #rrggbb
 export function normalizeHex(hex: string): string {
   const s = hex.trim().replace(/^#/, "");
   const six =
