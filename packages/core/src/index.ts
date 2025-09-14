@@ -7,16 +7,7 @@ import { stealPalette } from "./palette";
 
 export * from "./types";
 
-// Cost matrix helpers are re-exported from cost-matrix
 export { assignTerminalColorsOKHSL };
-
-// cost-matrix: moved DEFAULT_WEIGHTS, lhsCost, buildCostMatrix to ./cost-matrix
-
-// cost-matrix: moved assignTerminalColorsOKHSL to ./cost-matrix
-
-// palette: stealPalette moved to ./palette
-
-// getContrastPalette moved to ./contrast
 
 export async function generateColorScheme(
   image: InputImage,
@@ -29,13 +20,8 @@ export async function generateColorScheme(
     );
   }
 
-  // Compute assignment mapping from terminal indices -> input palette indices
   const { mapping } = assignTerminalColorsOKHSL(stolenPalette);
-
-  // Reorder the input palette to match terminal 0..15 indices
   const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
-
-  // Build contrast palette using the ordered terminal colors as anchors
   const contrastColors = getContrastPalette(
     ordered17 as CssColor[],
     options.lightnessMultiplier ?? 1,
