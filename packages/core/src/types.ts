@@ -77,8 +77,10 @@ export type ContrastGroup = Extract<
 >;
 export type BackgroundGroup = Extract<CCElement, { background: CssColor }>;
 
+export type TerminalVariants = { fg: string; bg: string };
+
 export type SemanticEntry<T> = {
-  terminalColor: string;
+  terminalColor: TerminalVariants;
   color: T;
 };
 

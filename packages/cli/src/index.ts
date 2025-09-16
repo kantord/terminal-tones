@@ -129,7 +129,7 @@ program
         }
       }
 
-      // Print semantic colors summary (terminal color, semantic name, actual group name)
+      // Print semantic colors summary (terminal fg/bg, semantic name, actual group name)
       const lines: Array<{ key: keyof typeof semanticColors; label: string }> =
         [
           { key: "background", label: "background" },
@@ -147,18 +147,24 @@ program
         const entry = (
           semanticColors as Record<
             string,
-            { terminalColor: string; color?: { name?: string } }
+            {
+              terminalColor: { fg: string; bg: string };
+              color?: { name?: string };
+            }
           >
         )[key as string];
         const groupName = entry?.color?.name ?? String(key);
-        return { label, groupName, hex: entry.terminalColor };
+        const fg = entry.terminalColor.fg;
+        const bg = entry.terminalColor.bg;
+        return { label, groupName, fg, bg };
       });
       const labelW = Math.max(...rows.map((r) => r.label.length));
       const groupW = Math.max(...rows.map((r) => r.groupName.length));
       for (const r of rows) {
-        const block = colorPreviewBlock(r.hex);
+        const fgBlock = colorPreviewBlock(r.fg);
+        const bgBlock = colorPreviewBlock(r.bg);
         process.stdout.write(
-          `${r.label.padEnd(labelW)}  ${r.groupName.padEnd(groupW)}  ${r.hex}  ${block}\n`,
+          `${r.label.padEnd(labelW)}  ${r.groupName.padEnd(groupW)}  fg:${r.fg}  ${fgBlock}  bg:${r.bg}  ${bgBlock}\n`,
         );
       }
 

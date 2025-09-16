@@ -24,8 +24,15 @@ function stripAnsi(input: string): string {
 // Minimal shape for semantic colors from core
 type ContrastValue = { value: string; contrast: number; name?: string };
 type ContrastGroupLike = { name?: string; values?: ContrastValue[] };
-type SemValueFull = { terminalColor: string; color?: ContrastGroupLike };
-type BackgroundSem = { terminalColor: string; color: { background: string } };
+type TerminalVariants = { fg: string; bg: string };
+type SemValueFull = {
+  terminalColor: TerminalVariants;
+  color?: ContrastGroupLike;
+};
+type BackgroundSem = {
+  terminalColor: TerminalVariants;
+  color: { background: string };
+};
 type SemanticColorsLike = {
   background: BackgroundSem;
   neutral: SemValueFull;
@@ -105,19 +112,19 @@ export async function renderCodePreview(
   };
 
   const theme = {
-    keyword: fg(semantic.primary.terminalColor),
-    built_in: fg(semantic.secondary.terminalColor),
-    literal: fg((semantic.tertiary ?? semantic.secondary).terminalColor),
-    number: fg((semantic.tertiary ?? semantic.secondary).terminalColor),
-    string: fg((semantic.quaternary ?? semantic.secondary).terminalColor),
-    regexp: fg((semantic.quaternary ?? semantic.secondary).terminalColor),
-    comment: fg(semantic.neutral.terminalColor),
-    meta: fg(semantic.neutral.terminalColor),
-    title: fg(semantic.primary.terminalColor),
-    function: fg(semantic.primary.terminalColor),
-    attr: fg(semantic.secondary.terminalColor),
-    params: fg(semantic.neutral.terminalColor),
-    "": fg(semantic.neutral.terminalColor),
+    keyword: fg(semantic.primary.terminalColor.fg),
+    built_in: fg(semantic.secondary.terminalColor.fg),
+    literal: fg((semantic.tertiary ?? semantic.secondary).terminalColor.fg),
+    number: fg((semantic.tertiary ?? semantic.secondary).terminalColor.fg),
+    string: fg((semantic.quaternary ?? semantic.secondary).terminalColor.fg),
+    regexp: fg((semantic.quaternary ?? semantic.secondary).terminalColor.fg),
+    comment: fg(semantic.neutral.terminalColor.fg),
+    meta: fg(semantic.neutral.terminalColor.fg),
+    title: fg(semantic.primary.terminalColor.fg),
+    function: fg(semantic.primary.terminalColor.fg),
+    attr: fg(semantic.secondary.terminalColor.fg),
+    params: fg(semantic.neutral.terminalColor.fg),
+    "": fg(semantic.neutral.terminalColor.fg),
   } as const;
 
   const sample =
@@ -129,7 +136,7 @@ export async function renderCodePreview(
       `console.log('found', find(2))\n`;
 
   const bg = toRgb(semantic.background.color.background);
-  const df = toRgb(semantic.neutral.terminalColor);
+  const df = toRgb(semantic.neutral.terminalColor.fg);
   const columns = Math.max(0, process.stdout.columns ?? 80);
   const startBg = `\x1b[48;2;${bg.r};${bg.g};${bg.b}m`;
   const startFg = `\x1b[38;2;${df.r};${df.g};${df.b}m`;
@@ -158,11 +165,8 @@ export async function renderCodePreview(
     ignoreIllegals: true,
   });
 
-  const addBgHex =
-    semantic.success.color?.values?.[1]?.value ||
-    semantic.success.terminalColor;
-  const delBgHex =
-    semantic.error.color?.values?.[1]?.value || semantic.error.terminalColor;
+  const addBgHex = semantic.success.terminalColor.bg;
+  const delBgHex = semantic.error.terminalColor.bg;
   const addBg = toRgb(String(addBgHex));
   const delBg = toRgb(String(delBgHex));
   const addBgEsc = `\x1b[48;2;${addBg.r};${addBg.g};${addBg.b}m`;

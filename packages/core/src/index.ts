@@ -35,10 +35,12 @@ export async function generateColorScheme(
   const ordered17 = mapping.map((idx) => normalizeHex(stolenPalette[idx]));
   const contrastColors = getContrastPalette(ordered17 as CssColor[], options);
 
+  console.log(contrastColors[2]);
+
   const terminal: TerminalColors = [
     contrastColors[0].background,
-    contrastColors[2].values[1].value,
-    contrastColors[3].values[1].value,
+    contrastColors[2].values[0].value,
+    contrastColors[3].values[0].value,
     contrastColors[4].values[1].value,
     contrastColors[5].values[1].value,
     contrastColors[6].values[1].value,

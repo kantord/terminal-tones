@@ -212,46 +212,57 @@ export async function computeSemanticColors(
   image: InputImage,
   options: GenerateOptions,
 ): Promise<SemanticColors> {
-  // Precompute orange mid swatch (no dedicated ANSI slot)
-  const orangeGroup = getGroup(contrastColors, "orange");
-  const orangeMidIdx = Math.min(5, orangeGroup.values.length - 1);
-  const orangeMidHex = String(orangeGroup.values[orangeMidIdx].value);
+  const pairFromPalette = (idx: number) => {
+    const base = idx % 8;
+    const bright = base + 8;
+    return { fg: terminal[bright], bg: terminal[base] } as const;
+  };
 
   const semanticColors: SemanticColors = {
     background: {
-      terminalColor: terminal[0],
+      terminalColor: { fg: terminal[7], bg: terminal[0] },
       color: contrastColors[0] as BackgroundGroup,
     },
     neutral: {
-      terminalColor: terminal[7],
+      terminalColor: pairFromPalette(7),
       color: getGroup(contrastColors, "neutral"),
     },
     error: {
-      terminalColor: terminal[brightIndexByName.red],
+      terminalColor: pairFromPalette(brightIndexByName.red),
       color: getGroup(contrastColors, "red"),
     },
     success: {
-      terminalColor: terminal[brightIndexByName.green],
+      terminalColor: pairFromPalette(brightIndexByName.green),
       color: getGroup(contrastColors, "green"),
     },
     warning: {
-      terminalColor: orangeMidHex,
+      terminalColor: (() => {
+        const g = getGroup(contrastColors, "orange");
+        const mid = Math.min(5, g.values.length - 1);
+        const fg = String(g.values[mid].value);
+        const bgIdx =
+          options.mode === "dark"
+            ? Math.max(0, mid - 2)
+            : Math.min(g.values.length - 1, mid + 2);
+        const bg = String(g.values[bgIdx].value);
+        return { fg, bg } as const;
+      })(),
       color: getGroup(contrastColors, "orange"),
     },
     primary: {
-      terminalColor: terminal[12],
+      terminalColor: pairFromPalette(12),
       color: getGroup(contrastColors, "blue"),
     },
     secondary: {
-      terminalColor: terminal[14],
+      terminalColor: pairFromPalette(14),
       color: getGroup(contrastColors, "cyan"),
     },
     tertiary: {
-      terminalColor: terminal[12],
+      terminalColor: pairFromPalette(12),
       color: getGroup(contrastColors, "blue"),
     },
     quaternary: {
-      terminalColor: terminal[14],
+      terminalColor: pairFromPalette(14),
       color: getGroup(contrastColors, "cyan"),
     },
   };
@@ -309,21 +320,27 @@ export async function computeSemanticColors(
     ) => {
       if (!name) return;
       const idx = brightIndexByName[name] ?? null;
-      const termHex =
+      const termPair =
         idx != null
-          ? terminal[idx]
+          ? pairFromPalette(idx)
           : (() => {
               const g = getGroup(contrastColors, name);
               const mid = Math.min(5, g.values.length - 1);
-              return String(g.values[mid].value);
+              const fg = String(g.values[mid].value);
+              const bgIdx =
+                options.mode === "dark"
+                  ? Math.max(0, mid - 2)
+                  : Math.min(g.values.length - 1, mid + 2);
+              const bg = String(g.values[bgIdx].value);
+              return { fg, bg } as const;
             })();
       (
         semanticColors as unknown as Record<
           string,
-          { terminalColor: string; color: ContrastGroup }
+          { terminalColor: { fg: string; bg: string }; color: ContrastGroup }
         >
       )[slot] = {
-        terminalColor: termHex,
+        terminalColor: termPair,
         color: getGroup(contrastColors, name),
       };
     };
