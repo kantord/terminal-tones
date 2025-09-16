@@ -56,6 +56,12 @@ program
     1,
   )
   .option(
+    "--contrast-lift <number>",
+    "add to contrast ratios 1..9 (e.g. 1.5)",
+    (v) => Number(v),
+    0,
+  )
+  .option(
     "--mode <mode>",
     "color scheme mode: light|dark",
     (v: string) => (v === "light" || v === "dark" ? v : "dark"),
@@ -67,6 +73,7 @@ program
       opts: {
         lightnessMultiplier: number;
         contrastMultiplier: number;
+        contrastLift: number;
         mode: "light" | "dark";
       },
     ) => {
@@ -100,6 +107,7 @@ program
           mode: opts.mode,
           lightnessMultiplier: opts.lightnessMultiplier,
           contrastMultiplier: opts.contrastMultiplier,
+          contrastLift: opts.contrastLift,
         });
 
       // Print terminal 16 colors

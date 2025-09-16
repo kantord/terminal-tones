@@ -15,10 +15,17 @@ export function getContrastPalette(
   // Normalize OKHSL lightness of all keys except background so
   // Leonardo builds ramps from harmonized inputs.
   const normalizedRawColors = equalizePaletteLightnessOKHSL(rawColors, 0);
-  const { mode, lightnessMultiplier = 1, contrastMultiplier = 1 } = options;
-  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(
-    (r) => r * (contrastMultiplier || 1),
-  );
+  const {
+    mode,
+    lightnessMultiplier = 1,
+    contrastMultiplier = 1,
+    contrastLift = 0,
+  } = options;
+  // Build ratios with additive lift after scaling. Ensure minimum of 1.
+  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((r) => {
+    const v = r * (contrastMultiplier || 1) + (contrastLift || 0);
+    return Math.max(1, v);
+  });
 
   const background = new BackgroundColor({
     name: "background",

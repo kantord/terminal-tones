@@ -476,7 +476,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         ],
       },
       "terminalColor": {
-        "bg": "#22110d",
+        "bg": "#7d2f1e",
         "fg": "#cf7f64",
       },
     },
@@ -756,7 +756,7 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
         ],
       },
       "terminalColor": {
-        "bg": "#12160e",
+        "bg": "#394e28",
         "fg": "#7c9d65",
       },
     },
@@ -875,8 +875,8 @@ exports[`generateColorScheme() > returns the correct values 1`] = `
   },
   "terminal": [
     "#11160e",
-    "#22110d",
-    "#12160e",
+    "#7d2f1e",
+    "#394e28",
     "#4e4832",
     "#3d4b4a",
     "#574535",
@@ -1363,7 +1363,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         ],
       },
       "terminalColor": {
-        "bg": "#221111",
+        "bg": "#7c2e32",
         "fg": "#d47a77",
       },
     },
@@ -1643,7 +1643,7 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
         ],
       },
       "terminalColor": {
-        "bg": "#151611",
+        "bg": "#454b35",
         "fg": "#90967f",
       },
     },
@@ -1762,8 +1762,8 @@ exports[`generateColorScheme() > returns the correct values 2`] = `
   },
   "terminal": [
     "#15150d",
-    "#221111",
-    "#151611",
+    "#7c2e32",
+    "#454b35",
     "#4a4a33",
     "#46484a",
     "#663d40",

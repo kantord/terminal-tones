@@ -65,6 +65,9 @@ export type GenerateOptions = {
   mode: "light" | "dark";
   lightnessMultiplier?: number;
   contrastMultiplier?: number;
+  // Additive lift applied to all contrast ratios after multiplication.
+  // Example: ratios = [1..9].map(r => r*contrastMultiplier + contrastLift)
+  contrastLift?: number;
 };
 
 type CCElement = Theme["contrastColors"][number];
