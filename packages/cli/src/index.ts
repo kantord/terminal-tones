@@ -44,10 +44,16 @@ program
   .description("Generate a color scheme from an image")
   .argument("<path>", "path to image file")
   .option(
-    "--lightness-multiplier <number>",
+    "--background-lightness-multiplier <number>",
     "multiply target background lightness (e.g. 1.5)",
     (v) => Number(v),
     1,
+  )
+  // Legacy alias (deprecated): --lightness-multiplier
+  .option(
+    "--lightness-multiplier <number>",
+    "[deprecated] alias of --background-lightness-multiplier",
+    (v) => Number(v),
   )
   .option(
     "--contrast-multiplier <number>",
@@ -62,6 +68,12 @@ program
     0,
   )
   .option(
+    "--foreground-lightness-multiplier <number>",
+    "multiply default foreground lightness (e.g. 1.2)",
+    (v) => Number(v),
+    1,
+  )
+  .option(
     "--mode <mode>",
     "color scheme mode: light|dark",
     (v: string) => (v === "light" || v === "dark" ? v : "dark"),
@@ -71,9 +83,11 @@ program
     async (
       imagePath: string,
       opts: {
-        lightnessMultiplier: number;
+        backgroundLightnessMultiplier: number;
+        lightnessMultiplier?: number; // legacy
         contrastMultiplier: number;
         contrastLift: number;
+        foregroundLightnessMultiplier: number;
         mode: "light" | "dark";
       },
     ) => {
@@ -105,7 +119,9 @@ program
       const { terminal, contrastColors, semanticColors } =
         await generateColorScheme(resolvedPath, {
           mode: opts.mode,
-          lightnessMultiplier: opts.lightnessMultiplier,
+          backgroundLightnessMultiplier:
+            opts.backgroundLightnessMultiplier ?? opts.lightnessMultiplier ?? 1,
+          foregroundLightnessMultiplier: opts.foregroundLightnessMultiplier,
           contrastMultiplier: opts.contrastMultiplier,
           contrastLift: opts.contrastLift,
         });

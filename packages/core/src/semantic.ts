@@ -10,7 +10,7 @@ import type {
 } from "./types";
 import { stealPalette } from "./palette";
 import { assignTerminalColorsOKHSL } from "./cost-matrix";
-import { normalizeHex } from "./utils";
+import { normalizeHex, toOkhsl, okhslToHex } from "./utils";
 import { getContrastPalette } from "./contrast";
 
 // ---------- OKLab helpers ----------
@@ -351,6 +351,34 @@ export async function computeSemanticColors(
   } catch {
     // keep defaults if ranking fails
   }
-
+  // Apply foregroundLightnessMultiplier to semantic foregrounds that are not
+  // coming directly from the terminal palette (which was already adjusted).
+  const flm = options.foregroundLightnessMultiplier ?? 1;
+  if (Math.abs(flm - 1) > 1e-9) {
+    const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+    const adjustedFgSet = new Set(
+      [7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => normalizeHex(terminal[i])),
+    );
+    const keys: (keyof SemanticColors)[] = [
+      "background",
+      "neutral",
+      "error",
+      "success",
+      "warning",
+      "primary",
+      "secondary",
+      "tertiary",
+      "quaternary",
+    ];
+    for (const k of keys) {
+      const entry = semanticColors[k];
+      if (!entry?.terminalColor?.fg) continue;
+      const fgHex = normalizeHex(String(entry.terminalColor.fg));
+      if (adjustedFgSet.has(fgHex)) continue; // already adjusted via terminal palette
+      const o = toOkhsl(fgHex);
+      o.l = clamp01((o.l ?? 0) * flm);
+      entry.terminalColor = { fg: okhslToHex(o), bg: entry.terminalColor.bg };
+    }
+  }
   return semanticColors;
 }

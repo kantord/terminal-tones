@@ -63,7 +63,11 @@ export type AssignmentResult = {
 
 export type GenerateOptions = {
   mode: "light" | "dark";
+  // Deprecated: use backgroundLightnessMultiplier
   lightnessMultiplier?: number;
+  backgroundLightnessMultiplier?: number;
+  // Multiplies OKHSL lightness for the default foreground (neutral fg)
+  foregroundLightnessMultiplier?: number;
   contrastMultiplier?: number;
   // Additive lift applied to all contrast ratios after multiplication.
   // Example: ratios = [1..9].map(r => r*contrastMultiplier + contrastLift)

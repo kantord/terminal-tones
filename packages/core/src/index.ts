@@ -5,7 +5,7 @@ import type {
   ColorScheme,
   GenerateOptions,
 } from "./types";
-import { normalizeHex } from "./utils";
+import { normalizeHex, okhslToHex, toOkhsl } from "./utils";
 import { getContrastPalette } from "./contrast";
 import { assignTerminalColorsOKHSL } from "./cost-matrix";
 import { stealPalette } from "./palette";
@@ -55,6 +55,23 @@ export async function generateColorScheme(
     contrastColors[7].values[5].value,
     contrastColors[1].values[5].value,
   ];
+
+  // Optional: adjust lightness of all foreground indices:
+  // - bright variants 8..15 are used as foregrounds in semantics
+  // - index 7 (white) is the default foreground for background section
+  const flm = options.foregroundLightnessMultiplier ?? 1;
+  if (Math.abs(flm - 1) > 1e-9) {
+    const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+    const adjust = (hex: string) => {
+      const o = toOkhsl(String(hex));
+      o.l = clamp01((o.l ?? 0) * flm);
+      return okhslToHex(o);
+    };
+    const fgIdx = new Set<number>([7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    for (const i of fgIdx) {
+      terminal[i] = adjust(terminal[i]);
+    }
+  }
 
   const semanticColors = await computeSemanticColors(
     contrastColors,

@@ -17,7 +17,8 @@ export function getContrastPalette(
   const normalizedRawColors = equalizePaletteLightnessOKHSL(rawColors, 0);
   const {
     mode,
-    lightnessMultiplier = 1,
+    lightnessMultiplier, // deprecated alias
+    backgroundLightnessMultiplier,
     contrastMultiplier = 1,
     contrastLift = 0,
   } = options;
@@ -42,16 +43,15 @@ export function getContrastPalette(
     throw new Error(`OKHSL lightness out of [0,1]: ${rawBackgroundLightness}`);
 
   let backgroundLightness: number;
+  const lMult =
+    (backgroundLightnessMultiplier ?? lightnessMultiplier ?? 1) || 1;
   if (mode === "dark") {
     const lCapped = Math.min(rawBackgroundLightness, 0.1);
-    backgroundLightness = Math.min(
-      Math.max(lCapped * (lightnessMultiplier || 1), 0),
-      1,
-    );
+    backgroundLightness = Math.min(Math.max(lCapped * lMult, 0), 1);
   } else {
     const delta = Math.min(1 - rawBackgroundLightness, 0.1);
     backgroundLightness = Math.min(
-      Math.max(rawBackgroundLightness + delta * (lightnessMultiplier || 1), 0),
+      Math.max(rawBackgroundLightness + delta * lMult, 0),
       1,
     );
   }
