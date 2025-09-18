@@ -382,5 +382,46 @@ export async function computeSemanticColors(
       entry.terminalColor = { fg: okhslToHex(o), bg: entry.terminalColor.bg };
     }
   }
+
+  // Additional group-specific saturation tweaks (applied after generic ones):
+  // - error (red), success (green), warning (orange): +25% saturation
+  // - neutral: -25% saturation
+  // Applies to both fg and bg for the semantic terminalColor.
+  {
+    const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+    const satFactorByKey: Partial<Record<keyof SemanticColors, number>> = {
+      error: 1.25,
+      success: 1.25,
+      warning: 1.25,
+      neutral: 0.75,
+    };
+    const keys: (keyof SemanticColors)[] = [
+      "background",
+      "neutral",
+      "error",
+      "success",
+      "warning",
+      "primary",
+      "secondary",
+      "tertiary",
+      "quaternary",
+    ];
+    const adjustS = (hex: string, k: keyof SemanticColors): string => {
+      const f = satFactorByKey[k];
+      if (f == null || Math.abs(f - 1) < 1e-9) return hex;
+      const o = toOkhsl(String(hex));
+      o.s = clamp01((o.s ?? 0) * f);
+      return okhslToHex(o);
+    };
+    for (const k of keys) {
+      const entry = semanticColors[k];
+      if (!entry?.terminalColor) continue;
+      const { fg, bg } = entry.terminalColor;
+      entry.terminalColor = {
+        fg: adjustS(fg, k),
+        bg: adjustS(bg, k),
+      };
+    }
+  }
   return semanticColors;
 }
