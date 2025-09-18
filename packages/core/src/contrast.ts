@@ -21,9 +21,31 @@ export function getContrastPalette(
     backgroundLightnessMultiplier,
     contrastMultiplier = 1,
     contrastLift = 0,
+    contrastScale = "linear",
+    contrastMin,
+    contrastMax,
+    contrastGamma,
   } = options;
-  // Build ratios with additive lift after scaling. Ensure minimum of 1.
-  const ratios = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((r) => {
+
+  // Build base ratios according to the selected spacing, then apply
+  // multiplier/lift and clamp to >= 1.
+  const N = 9;
+  let base: number[];
+  if (contrastScale === "geometric") {
+    // Defaults tuned to be reasonable across modes without extreme clipping.
+    const rMin = Math.max(1, contrastMin ?? 1.2);
+    const rMax = Math.max(rMin, contrastMax ?? (mode === "dark" ? 10 : 12));
+    const gamma = contrastGamma ?? 0.7;
+    base = Array.from({ length: N }, (_, i) => {
+      const t = i / (N - 1);
+      const u = Math.pow(t, gamma);
+      const ratio = rMin * Math.pow(rMax / rMin, u);
+      return ratio;
+    });
+  } else {
+    base = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  }
+  const ratios = base.map((r) => {
     const v = r * (contrastMultiplier || 1) + (contrastLift || 0);
     return Math.max(1, v);
   });

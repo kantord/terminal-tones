@@ -68,6 +68,31 @@ program
     0,
   )
   .option(
+    "--contrast-scale <scale>",
+    "contrast ratio spacing: linear|geometric",
+    (v: string) => {
+      const val = String(v).toLowerCase();
+      if (val !== "linear" && val !== "geometric") {
+        throw new Error(
+          `Invalid value for --contrast-scale: ${v}. Expected 'linear' or 'geometric'.`,
+        );
+      }
+      return val as "linear" | "geometric";
+    },
+    "linear",
+  )
+  .option("--contrast-min <number>", "min contrast (geometric scale)", (v) =>
+    Number(v),
+  )
+  .option("--contrast-max <number>", "max contrast (geometric scale)", (v) =>
+    Number(v),
+  )
+  .option(
+    "--contrast-gamma <number>",
+    "easing exponent (geometric scale)",
+    (v) => Number(v),
+  )
+  .option(
     "--foreground-lightness-multiplier <number>",
     "multiply default foreground lightness (e.g. 1.2)",
     (v) => Number(v),
@@ -91,6 +116,10 @@ program
         lightnessMultiplier?: number; // legacy
         contrastMultiplier: number;
         contrastLift: number;
+        contrastScale: "linear" | "geometric";
+        contrastMin?: number;
+        contrastMax?: number;
+        contrastGamma?: number;
         foregroundLightnessMultiplier: number;
         mode: "light" | "dark";
         template?: string;
@@ -121,15 +150,25 @@ program
         )) as Core);
       }
 
+      const genOpts: GenerateOptions & {
+        contrastScale?: "linear" | "geometric";
+        contrastMin?: number;
+        contrastMax?: number;
+        contrastGamma?: number;
+      } = {
+        mode: opts.mode,
+        backgroundLightnessMultiplier:
+          opts.backgroundLightnessMultiplier ?? opts.lightnessMultiplier ?? 1,
+        foregroundLightnessMultiplier: opts.foregroundLightnessMultiplier,
+        contrastMultiplier: opts.contrastMultiplier,
+        contrastLift: opts.contrastLift,
+        contrastScale: opts.contrastScale,
+        contrastMin: opts.contrastMin,
+        contrastMax: opts.contrastMax,
+        contrastGamma: opts.contrastGamma,
+      };
       const { terminal, contrastColors, semanticColors } =
-        await generateColorScheme(resolvedPath, {
-          mode: opts.mode,
-          backgroundLightnessMultiplier:
-            opts.backgroundLightnessMultiplier ?? opts.lightnessMultiplier ?? 1,
-          foregroundLightnessMultiplier: opts.foregroundLightnessMultiplier,
-          contrastMultiplier: opts.contrastMultiplier,
-          contrastLift: opts.contrastLift,
-        });
+        await generateColorScheme(resolvedPath, genOpts);
 
       // If a template is requested, render it and exit early
       if (opts.template) {

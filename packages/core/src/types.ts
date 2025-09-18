@@ -72,6 +72,13 @@ export type GenerateOptions = {
   // Additive lift applied to all contrast ratios after multiplication.
   // Example: ratios = [1..9].map(r => r*contrastMultiplier + contrastLift)
   contrastLift?: number;
+  // Spacing of contrast ratio targets used by Leonardo.
+  // linear: current behavior (1..9 transformed by multiplier/lift)
+  // geometric: exponential spacing between contrastMin and contrastMax with easing gamma
+  contrastScale?: "linear" | "geometric";
+  contrastMin?: number; // only for geometric; default chosen in implementation
+  contrastMax?: number; // only for geometric; default chosen in implementation
+  contrastGamma?: number; // only for geometric; default 0.7
 };
 
 type CCElement = Theme["contrastColors"][number];
