@@ -56,21 +56,31 @@ export async function generateColorScheme(
     contrastColors[1].values[5].value,
   ];
 
-  // Optional: adjust lightness of all foreground indices:
-  // - bright variants 8..15 are used as foregrounds in semantics
-  // - index 7 (white) is the default foreground for background section
+  // Optional adjustments in OKHSL space
+  const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
   const flm = options.foregroundLightnessMultiplier ?? 1;
+  const sm = options.saturationMultiplier ?? 1;
+
+  // Lightness: only foreground indices
   if (Math.abs(flm - 1) > 1e-9) {
-    const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
-    const adjust = (hex: string) => {
+    const adjustL = (hex: string) => {
       const o = toOkhsl(String(hex));
       o.l = clamp01((o.l ?? 0) * flm);
       return okhslToHex(o);
     };
     const fgIdx = new Set<number>([7, 8, 9, 10, 11, 12, 13, 14, 15]);
-    for (const i of fgIdx) {
-      terminal[i] = adjust(terminal[i]);
-    }
+    for (const i of fgIdx) terminal[i] = adjustL(terminal[i]);
+  }
+
+  // Saturation: apply to all terminal colors to keep harmony consistent
+  if (Math.abs(sm - 1) > 1e-9) {
+    const adjustS = (hex: string) => {
+      const o = toOkhsl(String(hex));
+      o.s = clamp01((o.s ?? 0) * sm);
+      return okhslToHex(o);
+    };
+    for (let i = 0; i < terminal.length; i++)
+      terminal[i] = adjustS(terminal[i]);
   }
 
   const semanticColors = await computeSemanticColors(

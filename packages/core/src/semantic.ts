@@ -351,10 +351,11 @@ export async function computeSemanticColors(
   } catch {
     // keep defaults if ranking fails
   }
-  // Apply foregroundLightnessMultiplier to semantic foregrounds that are not
-  // coming directly from the terminal palette (which was already adjusted).
+  // Apply foregroundLightnessMultiplier and saturationMultiplier to semantic foregrounds
+  // that are not coming directly from the terminal palette (which was already adjusted).
   const flm = options.foregroundLightnessMultiplier ?? 1;
-  if (Math.abs(flm - 1) > 1e-9) {
+  const sm = options.saturationMultiplier ?? 1;
+  if (Math.abs(flm - 1) > 1e-9 || Math.abs(sm - 1) > 1e-9) {
     const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
     const adjustedFgSet = new Set(
       [7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => normalizeHex(terminal[i])),
@@ -377,6 +378,7 @@ export async function computeSemanticColors(
       if (adjustedFgSet.has(fgHex)) continue; // already adjusted via terminal palette
       const o = toOkhsl(fgHex);
       o.l = clamp01((o.l ?? 0) * flm);
+      o.s = clamp01((o.s ?? 0) * sm);
       entry.terminalColor = { fg: okhslToHex(o), bg: entry.terminalColor.bg };
     }
   }

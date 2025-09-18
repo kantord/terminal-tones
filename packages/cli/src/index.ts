@@ -99,6 +99,12 @@ program
     1,
   )
   .option(
+    "--saturation-multiplier <number>",
+    "multiply OKHSL saturation for outputs (e.g. 0.9)",
+    (v) => Number(v),
+    1,
+  )
+  .option(
     "--mode <mode>",
     "color scheme mode: light|dark",
     (v: string) => (v === "light" || v === "dark" ? v : "dark"),
@@ -116,6 +122,7 @@ program
         lightnessMultiplier?: number; // legacy
         contrastMultiplier: number;
         contrastLift: number;
+        saturationMultiplier: number;
         contrastScale: "linear" | "geometric";
         contrastMin?: number;
         contrastMax?: number;
@@ -155,11 +162,13 @@ program
         contrastMin?: number;
         contrastMax?: number;
         contrastGamma?: number;
+        saturationMultiplier?: number;
       } = {
         mode: opts.mode,
         backgroundLightnessMultiplier:
           opts.backgroundLightnessMultiplier ?? opts.lightnessMultiplier ?? 1,
         foregroundLightnessMultiplier: opts.foregroundLightnessMultiplier,
+        saturationMultiplier: opts.saturationMultiplier,
         contrastMultiplier: opts.contrastMultiplier,
         contrastLift: opts.contrastLift,
         contrastScale: opts.contrastScale,

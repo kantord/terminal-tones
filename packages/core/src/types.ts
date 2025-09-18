@@ -68,6 +68,9 @@ export type GenerateOptions = {
   backgroundLightnessMultiplier?: number;
   // Multiplies OKHSL lightness for the default foreground (neutral fg)
   foregroundLightnessMultiplier?: number;
+  // Global OKHSL saturation multiplier applied to terminal colors and
+  // semantic foregrounds that are not sourced from the terminal palette.
+  saturationMultiplier?: number;
   contrastMultiplier?: number;
   // Additive lift applied to all contrast ratios after multiplication.
   // Example: ratios = [1..9].map(r => r*contrastMultiplier + contrastLift)
