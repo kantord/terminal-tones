@@ -79,6 +79,10 @@ program
     (v: string) => (v === "light" || v === "dark" ? v : "dark"),
     "dark",
   )
+  .option(
+    "--template <name>",
+    "render a terminal theme template (e.g. 'kitty')",
+  )
   .action(
     async (
       imagePath: string,
@@ -89,6 +93,7 @@ program
         contrastLift: number;
         foregroundLightnessMultiplier: number;
         mode: "light" | "dark";
+        template?: string;
       },
     ) => {
       // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
@@ -125,6 +130,35 @@ program
           contrastMultiplier: opts.contrastMultiplier,
           contrastLift: opts.contrastLift,
         });
+
+      // If a template is requested, render it and exit early
+      if (opts.template) {
+        const name = String(opts.template).toLowerCase();
+        if (name === "kitty") {
+          type TK = {
+            renderKittyTheme: (s: ColorScheme, o?: { name?: string }) => string;
+          };
+          let renderKittyTheme: TK["renderKittyTheme"]; // lazy import with fallback
+          try {
+            ({ renderKittyTheme } = (await import(
+              "@terminal-tones/" + "template-kitty"
+            )) as TK);
+          } catch {
+            ({ renderKittyTheme } = (await import(
+              "../../template-kitty/src/" + "index.ts"
+            )) as TK);
+          }
+          const output = renderKittyTheme(
+            { terminal, contrastColors, semanticColors },
+            { name: "terminal-tones" },
+          );
+          process.stdout.write(output);
+          return;
+        }
+        console.error(`Unknown template: ${opts.template}`);
+        process.exitCode = 2;
+        return;
+      }
 
       // Print terminal 16 colors
       process.stdout.write("Terminal 16 colors:\n");
