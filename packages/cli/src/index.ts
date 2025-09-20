@@ -218,7 +218,11 @@ program
             { terminal, contrastColors, semanticColors },
             { name: "terminal-tones" },
           );
-          if (opts.apply) opts.write = true; // applying implies writing first
+          if (opts.apply && !opts.write) {
+            console.error("--apply requires --write to be specified.");
+            process.exitCode = 2;
+            return;
+          }
           if (opts.write || opts.outputFolder) {
             const baseCwd = process.env.INIT_CWD || process.cwd();
             const targetDir = (() => {
@@ -227,25 +231,23 @@ program
                   ? opts.outputFolder
                   : path.resolve(baseCwd, opts.outputFolder);
               }
-              const platform = os.platform();
-              if (platform === "win32") {
-                const appData =
-                  process.env.APPDATA ||
-                  path.join(os.homedir(), "AppData", "Roaming");
-                return path.join(appData, "terminal-tones", "theme");
-              }
-              if (platform === "darwin") {
-                return path.join(
-                  os.homedir(),
-                  "Library",
-                  "Application Support",
-                  "terminal-tones",
-                  "theme",
-                );
-              }
+              // Prefer kitty config directory so `include current-theme.conf` works out of the box.
               const xdg =
                 process.env.XDG_CONFIG_HOME ||
                 path.join(os.homedir(), ".config");
+              const kittyDir = path.join(xdg, "kitty");
+              if (fs.existsSync(kittyDir)) return kittyDir;
+              // macOS alt location fallback
+              if (os.platform() === "darwin") {
+                const macKitty = path.join(
+                  os.homedir(),
+                  "Library",
+                  "Application Support",
+                  "kitty",
+                );
+                if (fs.existsSync(macKitty)) return macKitty;
+              }
+              // Fallback to previous generic config dir
               return path.join(xdg, "terminal-tones", "theme");
             })();
 
@@ -267,11 +269,11 @@ program
                 const res = await applyKittyTheme(targetDir, files);
                 if (res.applied) {
                   process.stdout.write(
-                    "Applied theme to kitty via remote control.\n",
+                    "Reloaded kitty config (applied theme).\n",
                   );
                 } else {
                   process.stderr.write(
-                    "Could not apply theme automatically.\n" +
+                    "Could not reload kitty config automatically.\n" +
                       (res.error ? res.error + "\n" : "") +
                       "Tried:\n" +
                       res.tried.map((t) => `  ${t}`).join("\n") +
@@ -281,7 +283,7 @@ program
                 }
               } catch (e) {
                 process.stderr.write(
-                  `Failed to apply theme: ${e instanceof Error ? e.message : String(e)}\n`,
+                  `Failed to reload config: ${e instanceof Error ? e.message : String(e)}\n`,
                 );
                 process.exitCode = 3;
               }

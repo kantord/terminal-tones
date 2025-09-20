@@ -64,9 +64,9 @@ export function renderKittyTheme(
   const content = lines.join("\n") + "\n";
   return [
     {
-      // Let the template define the filename; for kitty a conventional name
-      // is colors.conf when emitting a theme file.
-      filename: "colors.conf",
+      // Kitty setups commonly include a single file from kitty.conf
+      // like: `include current-theme.conf`.
+      filename: "current-theme.conf",
       content,
     },
   ];
@@ -79,32 +79,21 @@ export async function applyKittyTheme(
   targetDir: string,
   files: TemplateFile[],
 ): Promise<{ applied: boolean; tried: string[]; error?: string }> {
-  // Prefer the main colors file
-  const colorsFile =
-    files.find((f) => /colors\.conf$/i.test(f.filename)) || files[0];
-  const fullPath = (await import("node:path")).default.join(
-    targetDir,
-    colorsFile.filename,
-  );
+  void targetDir;
+  void files;
+  // Single IPC call to reload config on a shared socket.
+  const tried: string[] = [];
   const { spawnSync } = await import("node:child_process");
-  const tries: string[][] = [
-    ["kitty", "@", "set-colors", "-a", "-c", fullPath],
-    ["kitty", "@", "set-colors", "--all", fullPath],
-    ["kitty", "@", "set-colors", fullPath],
-  ];
-  const triedStrs: string[] = [];
-  for (const cmd of tries) {
-    triedStrs.push(cmd.join(" "));
-    const res = spawnSync(cmd[0]!, cmd.slice(1), { encoding: "utf8" });
-    if (res.status === 0) {
-      return { applied: true, tried: triedStrs };
-    }
-  }
+  const addr = process.env.KITTY_LISTEN_ON || "unix:/tmp/kitty";
+  const cmd = ["kitty", "@", "--to", addr, "load-config"];
+  tried.push(cmd.join(" "));
+  const res = spawnSync(cmd[0]!, cmd.slice(1), { encoding: "utf8" });
+  if (res.status === 0) return { applied: true, tried };
   return {
     applied: false,
-    tried: triedStrs,
+    tried,
     error:
-      "Failed to execute kitty remote control. Ensure kitty is running and kitty @ is available.",
+      "Failed to reload via kitty @. Ensure kitty.conf has `listen_on unix:/tmp/kitty` (or set KITTY_LISTEN_ON) and kitty is running.",
   };
 }
 
