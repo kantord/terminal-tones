@@ -2,6 +2,7 @@ import { Command } from "commander";
 import fs from "fs";
 import path from "path";
 import { renderCodePreview } from "./preview";
+import os from "os";
 import type { ColorScheme, GenerateOptions } from "@terminal-tones/core";
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
@@ -114,6 +115,8 @@ program
     "--template <name>",
     "render a terminal theme template (e.g. 'kitty')",
   )
+  .option("--write", "write template files to config directory")
+  .option("--output-folder <path>", "override output folder for --write")
   .action(
     async (
       imagePath: string,
@@ -130,6 +133,8 @@ program
         foregroundLightnessMultiplier: number;
         mode: "light" | "dark";
         template?: string;
+        write?: boolean;
+        outputFolder?: string;
       },
     ) => {
       // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
@@ -179,12 +184,15 @@ program
       const { terminal, contrastColors, semanticColors } =
         await generateColorScheme(resolvedPath, genOpts);
 
-      // If a template is requested, render it and exit early
+      // If a template is requested, render it and either print or write files
       if (opts.template) {
         const name = String(opts.template).toLowerCase();
         if (name === "kitty") {
           type TK = {
-            renderKittyTheme: (s: ColorScheme, o?: { name?: string }) => string;
+            renderKittyTheme: (
+              s: ColorScheme,
+              o?: { name?: string },
+            ) => Array<{ filename: string; content: string }>;
           };
           let renderKittyTheme: TK["renderKittyTheme"]; // lazy import with fallback
           try {
@@ -196,11 +204,68 @@ program
               "../../template-kitty/src/" + "index.ts"
             )) as TK);
           }
-          const output = renderKittyTheme(
+          const files = renderKittyTheme(
             { terminal, contrastColors, semanticColors },
             { name: "terminal-tones" },
           );
-          process.stdout.write(output);
+          if (opts.write || opts.outputFolder) {
+            const baseCwd = process.env.INIT_CWD || process.cwd();
+            const targetDir = (() => {
+              if (opts.outputFolder) {
+                return path.isAbsolute(opts.outputFolder)
+                  ? opts.outputFolder
+                  : path.resolve(baseCwd, opts.outputFolder);
+              }
+              const platform = os.platform();
+              if (platform === "win32") {
+                const appData =
+                  process.env.APPDATA ||
+                  path.join(os.homedir(), "AppData", "Roaming");
+                return path.join(appData, "terminal-tones", "theme");
+              }
+              if (platform === "darwin") {
+                return path.join(
+                  os.homedir(),
+                  "Library",
+                  "Application Support",
+                  "terminal-tones",
+                  "theme",
+                );
+              }
+              const xdg =
+                process.env.XDG_CONFIG_HOME ||
+                path.join(os.homedir(), ".config");
+              return path.join(xdg, "terminal-tones", "theme");
+            })();
+
+            fs.mkdirSync(targetDir, { recursive: true });
+            const written: string[] = [];
+            for (const f of files) {
+              const fullPath = path.join(targetDir, f.filename);
+              fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+              fs.writeFileSync(fullPath, f.content, "utf8");
+              written.push(fullPath);
+            }
+            process.stdout.write(
+              `Wrote ${written.length} file(s) to ${targetDir}\n` +
+                written.map((p) => ` - ${p}`).join("\n") +
+                "\n",
+            );
+            return;
+          }
+
+          // Print all files to stdout using simple headers
+          const multi = files.length > 1;
+          for (let i = 0; i < files.length; i++) {
+            const f = files[i];
+            if (multi) {
+              process.stdout.write(`==> ${f.filename} <==\n`);
+            } else {
+              process.stdout.write(`## ${f.filename}\n`);
+            }
+            process.stdout.write(f.content);
+            if (i < files.length - 1) process.stdout.write("\n");
+          }
           return;
         }
         console.error(`Unknown template: ${opts.template}`);
