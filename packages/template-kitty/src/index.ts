@@ -79,12 +79,21 @@ export async function applyKittyTheme(
   targetDir: string,
   files: TemplateFile[],
 ): Promise<{ applied: boolean; tried: string[]; error?: string }> {
+  // Single strategy: reload config on the addressed kitty instance.
+  // Assumes kitty.conf includes the generated theme via `include`.
   void targetDir;
   void files;
-  // Single IPC call to reload config on a shared socket.
   const tried: string[] = [];
   const { spawnSync } = await import("node:child_process");
-  const addr = process.env.KITTY_LISTEN_ON || "unix:/tmp/kitty";
+  // Prefer explicit env from kitty, else fall back to the standard single-socket path
+  const addr = (() => {
+    const envAddr = process.env.KITTY_LISTEN_ON; // e.g. "unix:/run/user/1000/kitty.sock"
+    if (envAddr) return envAddr;
+    const xdg = process.env.XDG_RUNTIME_DIR || `${process.env.HOME}/.cache/run`;
+    return `unix:${xdg}/kitty.sock`;
+  })();
+
+  // Ask the single kitty server instance to load its config
   const cmd = ["kitty", "@", "--to", addr, "load-config"];
   tried.push(cmd.join(" "));
   const res = spawnSync(cmd[0]!, cmd.slice(1), { encoding: "utf8" });
@@ -93,7 +102,7 @@ export async function applyKittyTheme(
     applied: false,
     tried,
     error:
-      "Failed to reload via kitty @. Ensure kitty.conf has `listen_on unix:/tmp/kitty` (or set KITTY_LISTEN_ON) and kitty is running.",
+      "Failed to load via kitty @ load-config. Ensure kitty is running and remote control is enabled. If you use a custom socket, set KITTY_LISTEN_ON.",
   };
 }
 
