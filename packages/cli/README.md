@@ -28,6 +28,12 @@ terminal-tones from-image <image> --template kitty --write --output-folder ./my-
 terminal-tones from-image <image> --template kitty --write --apply
 ```
 
+- Generate a scheme and set your X11 wallpaper (per-screen, cover via feh):
+
+```sh
+terminal-tones set-wallpaper <image> --template kitty --write --apply
+```
+
 When writing without an explicit `--output-folder`, files are written to:
 
 - Linux: `${XDG_CONFIG_HOME:-~/.config}/terminal-tones/theme`
@@ -74,3 +80,13 @@ Notes:
 
 - Kitty must be running for `--apply` to work.
 - `--apply` changes colors for active sessions; use the `include` line above to persist the theme across restarts.
+
+## X11 Wallpaper
+
+- The `set-wallpaper` command sets your X11 wallpaper per-screen, fitting to cover the screen.
+- Requires `feh`. Install it with your package manager, for example:
+  - Debian/Ubuntu: `sudo apt install feh`
+  - Arch: `sudo pacman -S feh`
+  - Fedora: `sudo dnf install feh`
+- Command used under the hood:
+  - `feh --no-fehbg --bg-fill <image>`

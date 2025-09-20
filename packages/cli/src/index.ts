@@ -4,6 +4,7 @@ import path from "path";
 import { renderCodePreview } from "./preview";
 import os from "os";
 import type { ColorScheme, GenerateOptions } from "@terminal-tones/core";
+import { spawnSync } from "node:child_process";
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const s = hex.replace(/^#/, "");
@@ -377,6 +378,326 @@ program
       await renderCodePreview(semanticColors);
 
       // Diff-style preview using semantic background highlights
+      const diffSample =
+        `function sum(a: number, b: number) {\n` +
+        `  const result = a + b\n` +
+        `  return result\n` +
+        `}\n` +
+        `\n` +
+        `console.log(sum(2, 3))\n`;
+      await renderCodePreview(semanticColors, {
+        heading: "Diff preview:",
+        code: diffSample,
+        added: [2],
+        removed: [3],
+      });
+    },
+  );
+
+// Best-effort X11 wallpaper setter (per-screen, cover)
+function setX11Wallpaper(imagePath: string): {
+  ok: boolean;
+  tried: string[];
+  error?: string;
+} {
+  const tried: string[] = [];
+  // feh covers per-screen with --bg-fill and preserves aspect ratio
+  const cmd = ["feh", "--no-fehbg", "--bg-fill", imagePath];
+  tried.push(cmd.join(" "));
+  const res = spawnSync(cmd[0]!, cmd.slice(1), { encoding: "utf8" });
+  if (res.status === 0) return { ok: true, tried };
+  const error = "Failed to set X11 wallpaper. Please install 'feh'.";
+  return { ok: false, tried, error };
+}
+
+program
+  .command("set-wallpaper")
+  .description(
+    "Same as from-image, and also set X11 wallpaper per-screen (cover)",
+  )
+  .argument("<path>", "path to image file")
+  .option(
+    "--background-lightness-multiplier <number>",
+    "multiply target background lightness (e.g. 1.5)",
+    (v) => Number(v),
+    1,
+  )
+  .option(
+    "--lightness-multiplier <number>",
+    "[deprecated] alias of --background-lightness-multiplier",
+    (v) => Number(v),
+  )
+  .option(
+    "--contrast-multiplier <number>",
+    "multiply contrast ratios 1..9 (e.g. 1.5)",
+    (v) => Number(v),
+    1,
+  )
+  .option(
+    "--contrast-lift <number>",
+    "add to contrast ratios 1..9 (e.g. 1.5)",
+    (v) => Number(v),
+    0,
+  )
+  .option(
+    "--contrast-scale <scale>",
+    "contrast ratio spacing: linear|geometric",
+    (v: string) => {
+      const val = String(v).toLowerCase();
+      if (val !== "linear" && val !== "geometric") {
+        throw new Error(
+          `Invalid value for --contrast-scale: ${v}. Expected 'linear' or 'geometric'.`,
+        );
+      }
+      return val as "linear" | "geometric";
+    },
+    "linear",
+  )
+  .option("--contrast-min <number>", "min contrast (geometric scale)", (v) =>
+    Number(v),
+  )
+  .option("--contrast-max <number>", "max contrast (geometric scale)", (v) =>
+    Number(v),
+  )
+  .option(
+    "--contrast-gamma <number>",
+    "easing exponent (geometric scale)",
+    (v) => Number(v),
+  )
+  .option(
+    "--foreground-lightness-multiplier <number>",
+    "multiply default foreground lightness (e.g. 1.2)",
+    (v) => Number(v),
+    1,
+  )
+  .option(
+    "--saturation-multiplier <number>",
+    "multiply OKHSL saturation for outputs (e.g. 0.9)",
+    (v) => Number(v),
+    1,
+  )
+  .option(
+    "--mode <mode>",
+    "color scheme mode: light|dark",
+    (v: string) => (v === "light" || v === "dark" ? v : "dark"),
+    "dark",
+  )
+  .option(
+    "--template <name>",
+    "render a terminal theme template (e.g. 'kitty')",
+  )
+  .option("--write", "write template files to config directory")
+  .option("--output-folder <path>", "override output folder for --write")
+  .option(
+    "--apply",
+    "write and apply the template immediately (template-specific)",
+  )
+  .action(
+    async (
+      imagePath: string,
+      opts: {
+        backgroundLightnessMultiplier: number;
+        lightnessMultiplier?: number;
+        contrastMultiplier: number;
+        contrastLift: number;
+        saturationMultiplier: number;
+        contrastScale: "linear" | "geometric";
+        contrastMin?: number;
+        contrastMax?: number;
+        contrastGamma?: number;
+        foregroundLightnessMultiplier: number;
+        mode: "light" | "dark";
+        template?: string;
+        write?: boolean;
+        outputFolder?: string;
+        apply?: boolean;
+      },
+    ) => {
+      const baseCwd = process.env.INIT_CWD || process.cwd();
+      const resolvedPath = path.isAbsolute(imagePath)
+        ? imagePath
+        : path.resolve(baseCwd, imagePath);
+
+      if (!fs.existsSync(resolvedPath)) {
+        console.error(`File not found: ${resolvedPath}`);
+        process.exitCode = 1;
+        return;
+      }
+
+      let generateColorScheme: Core["generateColorScheme"];
+      try {
+        ({ generateColorScheme } = (await import(
+          "@terminal-tones/" + "core"
+        )) as Core);
+      } catch {
+        ({ generateColorScheme } = (await import(
+          "../../core/src/" + "index.ts"
+        )) as Core);
+      }
+
+      const genOpts: GenerateOptions & {
+        contrastScale?: "linear" | "geometric";
+        contrastMin?: number;
+        contrastMax?: number;
+        contrastGamma?: number;
+        saturationMultiplier?: number;
+      } = {
+        mode: opts.mode,
+        backgroundLightnessMultiplier:
+          opts.backgroundLightnessMultiplier ?? opts.lightnessMultiplier ?? 1,
+        foregroundLightnessMultiplier: opts.foregroundLightnessMultiplier,
+        saturationMultiplier: opts.saturationMultiplier,
+        contrastMultiplier: opts.contrastMultiplier,
+        contrastLift: opts.contrastLift,
+        contrastScale: opts.contrastScale,
+        contrastMin: opts.contrastMin,
+        contrastMax: opts.contrastMax,
+        contrastGamma: opts.contrastGamma,
+      };
+      const { terminal, contrastColors, semanticColors } =
+        await generateColorScheme(resolvedPath, genOpts);
+
+      // Template workflow (same as from-image)
+      if (opts.template) {
+        const name = String(opts.template).toLowerCase();
+        if (name === "kitty") {
+          type TK = {
+            renderKittyTheme: (
+              s: ColorScheme,
+              o?: { name?: string },
+            ) => Array<{ filename: string; content: string }>;
+            applyKittyTheme: (
+              targetDir: string,
+              files: Array<{ filename: string; content: string }>,
+            ) => Promise<{ applied: boolean; tried: string[]; error?: string }>;
+          };
+          let renderKittyTheme: TK["renderKittyTheme"]; // lazy import with fallback
+          let applyKittyTheme: TK["applyKittyTheme"]; // optional
+          try {
+            ({ renderKittyTheme, applyKittyTheme } = (await import(
+              "@terminal-tones/" + "template-kitty"
+            )) as TK);
+          } catch {
+            ({ renderKittyTheme, applyKittyTheme } = (await import(
+              "../../template-kitty/src/" + "index.ts"
+            )) as TK);
+          }
+          const files = renderKittyTheme(
+            { terminal, contrastColors, semanticColors },
+            { name: "terminal-tones" },
+          );
+          if (opts.apply && !opts.write) {
+            console.error("--apply requires --write to be specified.");
+            process.exitCode = 2;
+            return;
+          }
+          if (opts.write || opts.outputFolder) {
+            const baseCwd = process.env.INIT_CWD || process.cwd();
+            const targetDir = (() => {
+              if (opts.outputFolder) {
+                return path.isAbsolute(opts.outputFolder)
+                  ? opts.outputFolder
+                  : path.resolve(baseCwd, opts.outputFolder);
+              }
+              const xdg =
+                process.env.XDG_CONFIG_HOME ||
+                path.join(os.homedir(), ".config");
+              const kittyDir = path.join(xdg, "kitty");
+              if (fs.existsSync(kittyDir)) return kittyDir;
+              if (os.platform() === "darwin") {
+                const macKitty = path.join(
+                  os.homedir(),
+                  "Library",
+                  "Application Support",
+                  "kitty",
+                );
+                if (fs.existsSync(macKitty)) return macKitty;
+              }
+              return path.join(xdg, "terminal-tones", "theme");
+            })();
+
+            fs.mkdirSync(targetDir, { recursive: true });
+            const written: string[] = [];
+            for (const f of files) {
+              const fullPath = path.join(targetDir, f.filename);
+              fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+              fs.writeFileSync(fullPath, f.content, "utf8");
+              written.push(fullPath);
+            }
+            process.stdout.write(
+              `Wrote ${written.length} file(s) to ${targetDir}\n` +
+                written.map((p) => ` - ${p}`).join("\n") +
+                "\n",
+            );
+            if (opts.apply && applyKittyTheme) {
+              try {
+                const res = await applyKittyTheme(targetDir, files);
+                if (res.applied) {
+                  process.stdout.write("Applied kitty colors.\n");
+                } else {
+                  process.stderr.write(
+                    "Could not apply kitty colors automatically.\n" +
+                      (res.error ? res.error + "\n" : "") +
+                      "Tried:\n" +
+                      res.tried.map((t) => `  ${t}`).join("\n") +
+                      "\n",
+                  );
+                  process.exitCode = 3;
+                }
+              } catch (e) {
+                process.stderr.write(
+                  `Failed to apply kitty colors: ${e instanceof Error ? e.message : String(e)}\n`,
+                );
+                process.exitCode = 3;
+              }
+            }
+          }
+        }
+      }
+
+      // Always attempt to set wallpaper (X11)
+      const wall = setX11Wallpaper(resolvedPath);
+      if (wall.ok) {
+        process.stdout.write("Set X11 wallpaper.\n");
+      } else {
+        process.stderr.write(
+          "Could not set X11 wallpaper automatically.\n" +
+            (wall.error ? wall.error + "\n" : "") +
+            "Tried:\n" +
+            wall.tried.map((t) => `  ${t}`).join("\n") +
+            "\n",
+        );
+        // Do not hard-fail; color/theme part still succeeded
+      }
+
+      // Also mirror the informational output from from-image for consistency
+      process.stdout.write("Terminal 16 colors:\n");
+      terminal.forEach((hex, i) => {
+        const block = colorPreviewBlock(hex);
+        const idx = String(i).padStart(2, " ");
+        process.stdout.write(`${idx}  ${hex}  ${block}\n`);
+      });
+
+      process.stdout.write("\nContrast color swatches:\n");
+      for (const group of contrastColors) {
+        if ("background" in group) {
+          const hex = String(group.background);
+          const block = colorPreviewBlock(hex);
+          process.stdout.write(`bg  ${hex}  ${block}\n`);
+        } else {
+          process.stdout.write(`\n${group.name}:\n`);
+          for (const v of group.values) {
+            const hex = String(v.value);
+            const block = colorPreviewBlock(hex);
+            process.stdout.write(
+              `  ${v.name.padEnd(16)} ${String(v.contrast).padStart(4)}  ${hex}  ${block}\n`,
+            );
+          }
+        }
+      }
+
+      await renderCodePreview(semanticColors);
+
       const diffSample =
         `function sum(a: number, b: number) {\n` +
         `  const result = a + b\n` +
