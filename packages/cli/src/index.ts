@@ -268,12 +268,10 @@ program
               try {
                 const res = await applyKittyTheme(targetDir, files);
                 if (res.applied) {
-                  process.stdout.write(
-                    "Reloaded kitty config (applied theme).\n",
-                  );
+                  process.stdout.write("Applied kitty colors.\n");
                 } else {
                   process.stderr.write(
-                    "Could not reload kitty config automatically.\n" +
+                    "Could not apply kitty colors automatically.\n" +
                       (res.error ? res.error + "\n" : "") +
                       "Tried:\n" +
                       res.tried.map((t) => `  ${t}`).join("\n") +
@@ -283,7 +281,7 @@ program
                 }
               } catch (e) {
                 process.stderr.write(
-                  `Failed to reload config: ${e instanceof Error ? e.message : String(e)}\n`,
+                  `Failed to apply kitty colors: ${e instanceof Error ? e.message : String(e)}\n`,
                 );
                 process.exitCode = 3;
               }

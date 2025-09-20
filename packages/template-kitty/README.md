@@ -7,7 +7,7 @@ Kitty template for Terminal Tones. Produces a `current-theme.conf` file and prov
 - `renderKittyTheme(scheme, opts?) => Array<{ filename, content }>`
   - Returns an array of files to write. Currently a single `current-theme.conf`.
 - `applyKittyTheme(targetDir, files) => Promise<{ applied, tried, error? }>`
-  - Asks the running kitty instance to `load-config` via remote control. Returns whether it applied and which commands were tried.
+  - Uses Kitty remote control to run `set-colors --all -c <file>`. Returns whether it applied and which commands were tried.
 
 ## CLI usage
 
@@ -45,22 +45,19 @@ The `--apply` flow requires Kitty remote control. Add to `kitty.conf` and restar
 ```conf
 allow_remote_control yes
 single_instance yes
+listen_on unix:/tmp/kitty
 ```
 
-The CLI targets the single kitty server socket.
-It prefers `KITTY_LISTEN_ON` if set (e.g. `unix:/run/user/1000/kitty.sock`).
-Otherwise it falls back to: `unix:${XDG_RUNTIME_DIR:-$HOME/.cache/run}/kitty.sock`.
-
-If you use a custom socket, point the environment to it for your shell:
-
-```sh
-export KITTY_LISTEN_ON=unix:/path/to/kitty.sock
-```
+The apply helper first tries `KITTY_LISTEN_ON` (or running inside Kitty), and then falls back to `unix:/tmp/kitty`.
 
 You can test manually:
 
 ```sh
-kitty @ --to "unix:${XDG_RUNTIME_DIR:-$HOME/.cache/run}/kitty.sock" load-config
+# If running inside a Kitty window (or KITTY_LISTEN_ON is exported):
+kitty @ set-colors --all -c current-theme.conf
+
+# Or target the configured socket explicitly:
+kitty @ --to "unix:/tmp/kitty" set-colors --all -c current-theme.conf
 ```
 
 Notes:

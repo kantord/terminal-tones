@@ -50,27 +50,24 @@ When using the Kitty template with `--write`, the CLI first tries the Kitty conf
 
 ### Applying automatically with `--apply`
 
-The `--apply` flag writes the template files and then attempts to apply them to a running Kitty instance using `kitty @ load-config`.
+The `--apply` flag writes the template files and then applies them to a running Kitty instance using `kitty @ set-colors --all -c <file>`.
 
 Kitty remote control must be enabled. Add the following to your `kitty.conf` and restart Kitty:
 
 ```conf
 allow_remote_control yes
 single_instance yes
+listen_on unix:/tmp/kitty
 ```
 
-The Kitty template targets a single kitty server socket. It prefers `KITTY_LISTEN_ON` if set (e.g. `unix:/run/user/1000/kitty.sock`). Otherwise it falls back to `unix:${XDG_RUNTIME_DIR:-$HOME/.cache/run}/kitty.sock`.
+When applying, the CLI first tries `KITTY_LISTEN_ON` (or running inside Kitty), and then falls back to `unix:/tmp/kitty`.
 
-If you use a custom socket, either export it for the shell running the CLI:
-
-```sh
-export KITTY_LISTEN_ON=unix:/path/to/kitty.sock
-```
-
-…or pass `--to` manually when testing `kitty @` yourself (the CLI uses the defaults):
+When testing manually, you can use:
 
 ```sh
-kitty @ --to "unix:${XDG_RUNTIME_DIR:-$HOME/.cache/run}/kitty.sock" load-config
+kitty @ set-colors --all -c current-theme.conf
+# or target an explicit socket you configured
+kitty @ --to "unix:/tmp/kitty" set-colors --all -c current-theme.conf
 ```
 
 Notes:
