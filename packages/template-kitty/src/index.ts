@@ -72,4 +72,40 @@ export function renderKittyTheme(
   ];
 }
 
-export default { renderKittyTheme };
+// Try to apply the theme using kitty's remote control. We best-effort a couple
+// of common invocations. If all fail, return false to let the caller inform
+// the user with hints.
+export async function applyKittyTheme(
+  targetDir: string,
+  files: TemplateFile[],
+): Promise<{ applied: boolean; tried: string[]; error?: string }> {
+  // Prefer the main colors file
+  const colorsFile =
+    files.find((f) => /colors\.conf$/i.test(f.filename)) || files[0];
+  const fullPath = (await import("node:path")).default.join(
+    targetDir,
+    colorsFile.filename,
+  );
+  const { spawnSync } = await import("node:child_process");
+  const tries: string[][] = [
+    ["kitty", "@", "set-colors", "-a", "-c", fullPath],
+    ["kitty", "@", "set-colors", "--all", fullPath],
+    ["kitty", "@", "set-colors", fullPath],
+  ];
+  const triedStrs: string[] = [];
+  for (const cmd of tries) {
+    triedStrs.push(cmd.join(" "));
+    const res = spawnSync(cmd[0]!, cmd.slice(1), { encoding: "utf8" });
+    if (res.status === 0) {
+      return { applied: true, tried: triedStrs };
+    }
+  }
+  return {
+    applied: false,
+    tried: triedStrs,
+    error:
+      "Failed to execute kitty remote control. Ensure kitty is running and kitty @ is available.",
+  };
+}
+
+export default { renderKittyTheme, applyKittyTheme };

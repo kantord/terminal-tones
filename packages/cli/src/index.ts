@@ -117,6 +117,10 @@ program
   )
   .option("--write", "write template files to config directory")
   .option("--output-folder <path>", "override output folder for --write")
+  .option(
+    "--apply",
+    "write and apply the template immediately (template-specific)",
+  )
   .action(
     async (
       imagePath: string,
@@ -135,6 +139,7 @@ program
         template?: string;
         write?: boolean;
         outputFolder?: string;
+        apply?: boolean;
       },
     ) => {
       // Resolve the image path relative to the shell's original CWD (pnpm sets INIT_CWD)
@@ -184,7 +189,7 @@ program
       const { terminal, contrastColors, semanticColors } =
         await generateColorScheme(resolvedPath, genOpts);
 
-      // If a template is requested, render it and either print or write files
+      // If a template is requested, render it and either print or write/apply files
       if (opts.template) {
         const name = String(opts.template).toLowerCase();
         if (name === "kitty") {
@@ -193,14 +198,19 @@ program
               s: ColorScheme,
               o?: { name?: string },
             ) => Array<{ filename: string; content: string }>;
+            applyKittyTheme: (
+              targetDir: string,
+              files: Array<{ filename: string; content: string }>,
+            ) => Promise<{ applied: boolean; tried: string[]; error?: string }>;
           };
           let renderKittyTheme: TK["renderKittyTheme"]; // lazy import with fallback
+          let applyKittyTheme: TK["applyKittyTheme"]; // optional
           try {
-            ({ renderKittyTheme } = (await import(
+            ({ renderKittyTheme, applyKittyTheme } = (await import(
               "@terminal-tones/" + "template-kitty"
             )) as TK);
           } catch {
-            ({ renderKittyTheme } = (await import(
+            ({ renderKittyTheme, applyKittyTheme } = (await import(
               "../../template-kitty/src/" + "index.ts"
             )) as TK);
           }
@@ -208,6 +218,7 @@ program
             { terminal, contrastColors, semanticColors },
             { name: "terminal-tones" },
           );
+          if (opts.apply) opts.write = true; // applying implies writing first
           if (opts.write || opts.outputFolder) {
             const baseCwd = process.env.INIT_CWD || process.cwd();
             const targetDir = (() => {
@@ -251,6 +262,30 @@ program
                 written.map((p) => ` - ${p}`).join("\n") +
                 "\n",
             );
+            if (opts.apply && applyKittyTheme) {
+              try {
+                const res = await applyKittyTheme(targetDir, files);
+                if (res.applied) {
+                  process.stdout.write(
+                    "Applied theme to kitty via remote control.\n",
+                  );
+                } else {
+                  process.stderr.write(
+                    "Could not apply theme automatically.\n" +
+                      (res.error ? res.error + "\n" : "") +
+                      "Tried:\n" +
+                      res.tried.map((t) => `  ${t}`).join("\n") +
+                      "\n",
+                  );
+                  process.exitCode = 3;
+                }
+              } catch (e) {
+                process.stderr.write(
+                  `Failed to apply theme: ${e instanceof Error ? e.message : String(e)}\n`,
+                );
+                process.exitCode = 3;
+              }
+            }
             return;
           }
 
